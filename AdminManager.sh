@@ -6,9 +6,9 @@ PROJECT_DIR="/root/admin-panel"
 API_DIR="$PROJECT_DIR/api"
 CLIENT_DIR="$PROJECT_DIR/client"
 PM2_API_NAME="admin-api"
-REPO_URL="https://github.com/ToxicWixorg/SalesBot.git"
-# پوشه‌ای از ریپو که کد admin-panel در آن قرار دارد
-REPO_SUBDIR="admin-panel"
+REPO_URL="https://github.com/ToxicWixorg/SalesBotAdminPanel.git"
+# اگر ریپوی جداگانه داری این را خالی بگذار
+REPO_SUBDIR=""
 
 header() {
   clear

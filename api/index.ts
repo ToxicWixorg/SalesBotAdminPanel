@@ -76,6 +76,15 @@ app.onError((err, c) => {
 // ─── Start Server ─────────────────────────────────────────────────────────────
 const port = parseInt(process.env.PORT ?? "3000");
 
+// ─── جلوگیری از crash سرور در صورت خطای unhandled ──────────────────────────
+process.on("uncaughtException", (err) => {
+  console.error("[UNCAUGHT EXCEPTION]", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[UNHANDLED REJECTION]", reason);
+});
+
 export default {
   port,
   fetch: app.fetch,

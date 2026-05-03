@@ -103,8 +103,6 @@ export default function UserProfileModal({ user, onClose }: Props) {
             ✕
           </button>
         </div>
-
-        {/* اطلاعات */}
         <div className="p-4 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="bg-white/5 rounded-lg p-3">
@@ -130,17 +128,7 @@ export default function UserProfileModal({ user, onClose }: Props) {
             </div>
             <div className="bg-white/5 rounded-lg p-3">
               <p className="text-white/50 text-xs mb-1">{t("users.role")}</p>
-              <select
-                className="bg-transparent text-white text-sm outline-none w-full"
-                value={user.role}
-                onChange={(e) => roleMutation.mutate(e.target.value)}
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r} className="bg-slate-900">
-                    {t(`users.roles.${r}`)}
-                  </option>
-                ))}
-              </select>
+              {t(`users.roles.${user.role}`)}
             </div>
             <div className="bg-white/5 rounded-lg p-3">
               <p className="text-white/50 text-xs mb-1">
@@ -152,7 +140,6 @@ export default function UserProfileModal({ user, onClose }: Props) {
             </div>
           </div>
 
-          {/* فرم کیف پول */}
           {showWallet ? (
             <div className="border border-white/10 rounded-xl p-3 flex flex-col gap-2">
               <p className="text-sm font-medium text-white/80">

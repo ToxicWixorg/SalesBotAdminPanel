@@ -161,25 +161,29 @@ usersRouter.patch("/:id/wallet", async (c) => {
   if (!user) return c.json({ error: "User not found" }, 404);
 
   const currentBalance = parseFloat(user.walletBalance ?? "0");
-  const newBalance =
-    type === "credit" ? currentBalance + amount : currentBalance - amount;
+  const newBalance = parseFloat(
+    (type === "credit"
+      ? currentBalance + amount
+      : currentBalance - amount
+    ).toFixed(2),
+  );
 
   if (newBalance < 0) return c.json({ error: "Insufficient balance" }, 400);
 
   await db.transaction(async (tx) => {
     await tx
       .update(usersTable)
-      .set({ walletBalance: newBalance.toString(), updatedAt: new Date() })
+      .set({ walletBalance: newBalance.toFixed(2), updatedAt: new Date() })
       .where(eq(usersTable.id, id));
 
     await tx.insert(walletTransactionsTable).values({
       userId: id,
-      amount: amount.toString(),
+      amount: amount.toFixed(2),
       type,
       source: "manual",
       description: description ?? "Manual adjustment by admin",
-      balanceBefore: currentBalance.toString(),
-      balanceAfter: newBalance.toString(),
+      balanceBefore: currentBalance.toFixed(2),
+      balanceAfter: newBalance.toFixed(2),
     });
   });
 

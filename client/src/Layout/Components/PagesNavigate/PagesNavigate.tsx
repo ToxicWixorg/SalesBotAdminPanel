@@ -7,8 +7,6 @@ const PagesNavigate = ({
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   Pages: string[];
 }) => {
-  const { t } = useTranslation();
-
   return (
     <div
       className={`w-full h-full flex justify-center items-start p-2 absolute lg:hidden

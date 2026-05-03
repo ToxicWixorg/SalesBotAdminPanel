@@ -551,6 +551,7 @@ export const adminsTable = pgTable(
     lastActivityAt: timestamp("last_activity_at"),
     loginCount: integer("login_count").default(0),
     notes: text("notes"),
+    passwordHash: text("password_hash"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     createdBy: bigint("created_by", { mode: "number" }).references(

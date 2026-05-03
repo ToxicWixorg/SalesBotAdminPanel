@@ -48,7 +48,7 @@ interface AuthContextType {
   admin: AdminInfo | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: () => Promise<void>;
+  login: (telegramId: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
 }
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async () => {
+  const login = async (telegramId: string, password: string) => {
     if (DEV_BYPASS) {
       setAdmin(DEV_MOCK_ADMIN);
       return;
@@ -90,15 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const initData = isTelegramEnvironment()
-        ? getInitData()
-        : getMockInitData();
-
-      if (!initData) throw new Error("Could not get Telegram initData");
-
       const res = await api.post<{ token: string; admin: AdminInfo }>(
         "/api/auth/login",
-        { initData },
+        { telegramId: Number(telegramId), password },
       );
 
       localStorage.setItem("admin_token", res.data.token);

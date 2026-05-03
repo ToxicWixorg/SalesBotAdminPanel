@@ -9,6 +9,10 @@ PM2_API_NAME="admin-api"
 REPO_URL="https://github.com/ToxicWixorg/SalesBotAdminPanel.git"
 # اگر ریپوی جداگانه داری این را خالی بگذار
 REPO_SUBDIR=""
+# دامین سرور (خالی = فقط IP)
+SERVER_DOMAIN=""
+# پورت Nginx
+NGINX_PORT=8080
 
 header() {
   clear
@@ -243,14 +247,31 @@ setup_nginx() {
   API_PORT=$(grep -E "^PORT=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs)
   API_PORT=${API_PORT:-3000}
 
+  # server_name: دامین یا wildcard
+  SNAME=${SERVER_DOMAIN:-_}
+
   cat > /etc/nginx/sites-available/admin-panel << EOF
 server {
-    listen 80;
-    server_name _;
+    listen $NGINX_PORT;
+    server_name $SNAME;
+
+    # Cloudflare real IP headers
+    real_ip_header CF-Connecting-IP;
 
     # Client (SPA)
     root $CLIENT_DIR/dist;
     index index.html;
+
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json;
+    gzip_min_length 1024;
+
+    # Cache static assets
+    location ~* \.(js|css|woff2|ttf|png|svg|ico)\$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+    }
 
     location / {
         try_files \$uri \$uri/ /index.html;
@@ -258,11 +279,12 @@ server {
 
     # API proxy
     location /api/ {
-        proxy_pass http://127.0.0.1:$API_PORT;
+        proxy_pass http://127.0.0.1:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$http_x_forwarded_proto;
     }
 }
 EOF
@@ -270,7 +292,202 @@ EOF
   ln -sf /etc/nginx/sites-available/admin-panel /etc/nginx/sites-enabled/admin-panel
   rm -f /etc/nginx/sites-enabled/default 2>/dev/null
   nginx -t && systemctl reload nginx
-  ok "Nginx configured. Panel is available on port 80."
+  ok "Nginx configured. Panel is available on port $NGINX_PORT."
+}
+
+# ─── SSL با acme.sh (DNS challenge) ──────────────────────────────────────────
+setup_ssl() {
+  header
+  echo -e "${C}این گزینه با DNS Challenge کار می‌کند — نیازی به باز بودن پورت 80 نیست.${N}"
+  echo -e "${Y}پیش‌نیاز: پورت 443 باید از طرف هاستینگ باز باشد.${N}"
+  echo ""
+  read -r -p "دامین خود را وارد کن (مثال: admin.example.ir): " ssl_domain
+  [[ -z "$ssl_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
+
+  # نصب acme.sh اگر نیست
+  if [[ ! -f ~/.acme.sh/acme.sh ]]; then
+    info "Installing acme.sh..."
+    curl -fsSL https://get.acme.sh | bash -s -- --email "admin@${ssl_domain}"
+    # shellcheck disable=SC1090
+    source ~/.bashrc
+  fi
+  ACME="${HOME}/.acme.sh/acme.sh"
+
+  echo ""
+  echo -e "${C}مرحله ۱: در حال دریافت TXT record مورد نیاز...${N}"
+  "$ACME" --issue --dns -d "$ssl_domain" --yes-I-know-dns-manual-mode-enough-go-ahead-please 2>&1 | tee /tmp/acme_step1.txt
+
+  echo ""
+  echo -e "${C}┌─────────────────────────────────────────────────────┐${N}"
+  echo -e "${C}│${N} در پنل DNS (ایران‌سرور) این TXT record را اضافه کن: ${C}│${N}"
+  echo -e "${C}│${N}   Name: ${W}_acme-challenge.${ssl_domain}${N}           ${C}│${N}"
+  echo -e "${C}│${N}   Type: ${W}TXT${N}                                       ${C}│${N}"
+  echo -e "${C}│${N}   Value: به خروجی بالا (DCV value) نگاه کن         ${C}│${N}"
+  echo -e "${C}└─────────────────────────────────────────────────────┘${N}"
+  echo ""
+  echo -e "${Y}بعد از اضافه کردن TXT record، چند دقیقه صبر کن تا DNS پروپاگیت بشه.${N}"
+  read -r -p "آماده‌ای؟ Enter بزن تا گواهی صادر بشه..."
+
+  # مرحله ۲: صدور گواهی
+  info "در حال صدور گواهی SSL..."
+  "$ACME" --renew -d "$ssl_domain" --yes-I-know-dns-manual-mode-enough-go-ahead-please
+
+  CERT_DIR="${HOME}/.acme.sh/${ssl_domain}_ecc"
+  [[ ! -d "$CERT_DIR" ]] && CERT_DIR="${HOME}/.acme.sh/${ssl_domain}"
+
+  if [[ ! -f "$CERT_DIR/$ssl_domain.cer" ]]; then
+    err "صدور گواهی ناموفق بود. TXT record را چک کن و دوباره امتحان کن."
+    sleep 3; return
+  fi
+
+  # نصب گواهی در nginx
+  mkdir -p /etc/nginx/ssl
+  "$ACME" --install-cert -d "$ssl_domain" \
+    --cert-file /etc/nginx/ssl/cert.pem \
+    --key-file /etc/nginx/ssl/key.pem \
+    --fullchain-file /etc/nginx/ssl/fullchain.pem \
+    --reloadcmd "systemctl reload nginx"
+
+  # پیکربندی Nginx برای HTTPS
+  API_PORT=$(grep -E "^PORT=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs)
+  API_PORT=${API_PORT:-3000}
+
+  # پورت HTTPS: اگر 443 بسته است از NGINX_PORT استفاده کن
+  read -r -p "از پورت 443 استفاده کنم؟ (اگر بسته است n بزن — از پورت $NGINX_PORT استفاده می‌شود) [y/N]: " use_443
+  if [[ "$use_443" =~ ^[Yy]$ ]]; then
+    HTTPS_PORT=443
+  else
+    HTTPS_PORT=$NGINX_PORT
+  fi
+
+  cat > /etc/nginx/sites-available/admin-panel << EOF
+server {
+    listen $HTTPS_PORT ssl;
+    server_name $ssl_domain;
+
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    root $CLIENT_DIR/dist;
+    index index.html;
+
+    gzip on;
+    gzip_types text/plain text/css application/javascript application/json;
+
+    location ~* \.(js|css|woff2|ttf|png|svg|ico)\$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+    }
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:${API_PORT}/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+EOF
+
+  ln -sf /etc/nginx/sites-available/admin-panel /etc/nginx/sites-enabled/admin-panel
+  nginx -t && systemctl reload nginx
+
+  # آپدیت .env
+  if [[ $HTTPS_PORT -eq 443 ]]; then
+    ORIGIN_URL="https://$ssl_domain"
+  else
+    ORIGIN_URL="https://$ssl_domain:$HTTPS_PORT"
+  fi
+  [[ -f "$API_DIR/.env" ]] && sed -i "s|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=$ORIGIN_URL|" "$API_DIR/.env"
+  if [[ -f "$CLIENT_DIR/.env" ]]; then
+    sed -i "s|^VITE_API_URL=.*|VITE_API_URL=$ORIGIN_URL/api|" "$CLIENT_DIR/.env"
+  fi
+
+  pm2 restart "$PM2_API_NAME" --update-env 2>/dev/null || true
+
+  info "Rebuilding client with HTTPS URL..."
+  cd "$CLIENT_DIR" && bun run build
+
+  ok "HTTPS فعال شد!"
+  echo -e "  سایت: ${W}$ORIGIN_URL${N}"
+  echo -e "  ${Y}گواهی Let's Encrypt هر 90 روز منقضی می‌شود — گزینه r برای تجدید${N}"
+  sleep 4
+}
+
+# ─── تجدید SSL ────────────────────────────────────────────────────────────────
+renew_ssl() {
+  header
+  ACME="${HOME}/.acme.sh/acme.sh"
+  if [[ ! -f "$ACME" ]]; then
+    err "acme.sh نصب نیست. ابتدا SSL تنظیم کن (گزینه 8)."; sleep 2; return
+  fi
+  info "در حال تجدید گواهی..."
+  "$ACME" --renew-all --yes-I-know-dns-manual-mode-enough-go-ahead-please
+  systemctl reload nginx
+  ok "تجدید انجام شد."
+  sleep 2
+}
+
+# ─── setup دامین / HTTPS (Cloudflare) ────────────────────────────────────────
+setup_domain() {
+  header
+  echo -e "${Y}این گزینه تنظیمات دامین را برای Cloudflare HTTPS آپدیت می‌کند.${N}"
+  echo -e "${C}پیش‌نیاز:${N}"
+  echo -e "  1) یک دامین داشته باشی (مثلاً admin.example.com)"
+  echo -e "  2) دامین رو به IP ${W}77.223.214.210${N} پوینت کنی در Cloudflare"
+  echo -e "  3) در Cloudflare، Proxy را ON کنی (ابر نارنجی)"
+  echo ""
+  read -r -p "دامین خود را وارد کن (مثال: admin.example.com): " input_domain
+  [[ -z "$input_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
+
+  SERVER_DOMAIN="$input_domain"
+  ORIGIN_URL="https://$input_domain"
+
+  # آپدیت API .env
+  if [[ -f "$API_DIR/.env" ]]; then
+    if grep -q "^ALLOWED_ORIGINS=" "$API_DIR/.env"; then
+      sed -i "s|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=$ORIGIN_URL|" "$API_DIR/.env"
+    else
+      echo "ALLOWED_ORIGINS=$ORIGIN_URL" >> "$API_DIR/.env"
+    fi
+    ok "API .env آپدیت شد → ALLOWED_ORIGINS=$ORIGIN_URL"
+  fi
+
+  # آپدیت Client .env
+  if [[ -f "$CLIENT_DIR/.env" ]]; then
+    if grep -q "^VITE_API_URL=" "$CLIENT_DIR/.env"; then
+      sed -i "s|^VITE_API_URL=.*|VITE_API_URL=$ORIGIN_URL/api|" "$CLIENT_DIR/.env"
+    else
+      echo "VITE_API_URL=$ORIGIN_URL/api" >> "$CLIENT_DIR/.env"
+    fi
+    ok "Client .env آپدیت شد → VITE_API_URL=$ORIGIN_URL/api"
+  fi
+
+  # آپدیت Nginx
+  setup_nginx
+
+  # ری‌استارت API
+  pm2 restart "$PM2_API_NAME" --update-env 2>/dev/null || true
+
+  # ری‌بیلد کلاینت
+  info "Rebuilding client with new API URL..."
+  cd "$CLIENT_DIR" && bun run build
+
+  echo ""
+  ok "تنظیمات کامل شد!"
+  echo -e "${C}حالا در Cloudflare:${N}"
+  echo -e "  • A Record: ${W}$input_domain${N} → ${W}77.223.214.210${N} (Proxied ON)"
+  echo -e "  • SSL/TLS mode: ${W}Flexible${N} (در Cloudflare dashboard)"
+  echo -e "  • سایت: ${W}https://$input_domain${N}"
+  sleep 4
 }
 
 # ─── ۸. لاگ‌ها ────────────────────────────────────────────────────────────────
@@ -302,8 +519,9 @@ while true; do
   echo -e "${C}│${N}  ${B}${G}5)${N} 🔨 Rebuild Client (frontend)       ${C}│${N}"
   echo -e "${C}│${N}  ${B}${G}6)${N} ⏹️  Stop API                       ${C}│${N}"
   echo -e "${C}│${N}  ${B}${G}7)${N} 🌐 Setup / Reload Nginx            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}8)${N} 📋 Logs                            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}9)${N} 📊 PM2 Status                      ${C}│${N}"
+  echo -e "${C}│${N}  ${B}${G}8)${N} � Setup Domain / HTTPS            ${C}│${N}"
+  echo -e "${C}│${N}  ${B}${G}9)${N} 📋 Logs                            ${C}│${N}"
+  echo -e "${C}│${N}  ${B}${G}s)${N} 📊 PM2 Status                      ${C}│${N}"
   echo -e "${C}│${N}  ${B}${R}d)${N} 🗑️  Remove Project                 ${C}│${N}"
   echo -e "${C}│${N}  ${B}${R}q)${N} 🚪 Exit                            ${C}│${N}"
   echo -e "${C}└──────────────────────────────────────┘${N}"
@@ -319,8 +537,9 @@ while true; do
     5) rebuild_client ;;
     6) stop_api ;;
     7) setup_nginx; sleep 2 ;;
-    8) show_logs ;;
-    9) pm2 status; read -p "Press Enter to return..." ;;
+    8) setup_domain ;;
+    9) show_logs ;;
+    s) pm2 status; read -p "Press Enter to return..." ;;
     d)
       read -p "Remove entire project? (y/n): " confirm
       if [[ $confirm == "y" ]]; then

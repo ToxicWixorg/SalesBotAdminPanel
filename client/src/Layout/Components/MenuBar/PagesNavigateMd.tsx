@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import PageButtonMd from "./Components/PageButtonMd";
 
 const PagesNavigateMd = ({
@@ -8,8 +7,6 @@ const PagesNavigateMd = ({
   isMenuOpen: boolean;
   Pages: string[];
 }) => {
-  const { t } = useTranslation();
-
   return (
     <div
       className={`w-full h-full flex flex-col justify-start items-start overflow-hidden `}
@@ -18,7 +15,7 @@ const PagesNavigateMd = ({
         className="w-full flex flex-col justify-around items-start gap-2
       "
       >
-        <PageButtonMd name="dashboard" route={""} isMenuOpen={isMenuOpen} />
+        <PageButtonMd name="dashboard" isMenuOpen={isMenuOpen} />
         {Pages.map((name, i) => (
           <PageButtonMd key={i} name={name} isMenuOpen={isMenuOpen} />
         ))}

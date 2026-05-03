@@ -10,11 +10,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import { api } from "../lib/api";
-import {
-  getInitData,
-  getMockInitData,
-  isTelegramEnvironment,
-} from "../lib/tma";
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === "true";
 

@@ -76,7 +76,7 @@ export default function ProductsPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">{t("products.title")}</h1>
         <button
@@ -100,7 +100,7 @@ export default function ProductsPage() {
             className="w-8 p-1 rounded-lg cursor-pointer hover:bg-white/60 active:scale-95 transition-all duration-300"
           >
             <img
-              src="/search.svg"
+              src="/svgs/search.svg"
               alt={t("common.search")}
               className="w-full h-full object-cover object-center"
             />

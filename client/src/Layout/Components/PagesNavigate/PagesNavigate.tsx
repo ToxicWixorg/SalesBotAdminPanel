@@ -6,7 +6,7 @@ const PagesNavigate = ({
   Pages,
 }: {
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  Pages: { name: string; route: string }[];
+  Pages: string[];
 }) => {
   const { t } = useTranslation();
 
@@ -20,18 +20,9 @@ const PagesNavigate = ({
         className="w-full flex flex-wrap justify-around items-start gap-2
       "
       >
-        <PageButton
-          name={t("nav.dashboard")}
-          route={""}
-          setIsMenuOpen={setIsMenuOpen}
-        />
-        {Pages.map((d: { name: string; route: string }, i) => (
-          <PageButton
-            key={i}
-            name={d.name}
-            route={d.route}
-            setIsMenuOpen={setIsMenuOpen}
-          />
+        <PageButton name="dashboard" setIsMenuOpen={setIsMenuOpen} />
+        {Pages.map((name, i) => (
+          <PageButton key={i} name={name} setIsMenuOpen={setIsMenuOpen} />
         ))}
       </div>
     </div>

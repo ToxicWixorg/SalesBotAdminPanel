@@ -1,34 +1,40 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const PageButtonMd = ({
   name,
-  route,
   isMenuOpen,
 }: {
   name: string;
-  route: string;
   isMenuOpen: boolean;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = location.pathname === `/${route}`;
+  const isActive = location.pathname === `/${name === "dashboard" ? "" : name}`;
   return (
     <button
       onClick={() => {
-        navigate(`/${route}`);
+        navigate(`/${name === "dashboard" ? "" : name}`);
       }}
       disabled={isActive}
-      className="relative w-2/3 min-w-10 h-10 p-2 text-sm bg-slate-900 text-white border 
-              border-white rounded-lg cursor-pointer flex gap-2
+      className={`relative w-2/3 min-w-10 h-10 text-sm bg-black/40 text-white 
+                rounded-lg cursor-pointer flex gap-2 items-center
                 hover:opacity-70 active:scale-95 
               disabled:text-black disabled:bg-white disabled:cursor-default disabled:w-full
-                transition-all duration-300"
+                transition-all duration-300 overflow-hidden`}
     >
-      <img src="/search.svg" className="w-6 h-6 object-cover object-center" />
+      <div className="min-w-10 h-full p-1">
+        <img
+          src={`/svgs/${name}.svg`}
+          className="w-full h-full object-cover object-center"
+        />
+      </div>
+      <div></div>
       <p
         className={`text-sm ${isMenuOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-400`}
       >
-        {name}
+        {t(`nav.${name}`)}
       </p>
     </button>
   );

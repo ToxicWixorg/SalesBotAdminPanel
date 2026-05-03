@@ -3,8 +3,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 import UserProfileModal from "./Components/UserProfileModal";
 import RoleFilter from "./Components/RoleFliter";
 import IsBlockedFilter from "./Components/IsBlockedFilter";
@@ -49,7 +47,7 @@ export default function UsersPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">{t("users.title")}</h1>
       </div>
@@ -71,7 +69,7 @@ export default function UsersPage() {
             className="w-8 h-8 text-black rounded-lg p-1 hover:bg-white/20 active:scale-95 transition-all duration-300"
           >
             <img
-              src="/search.svg"
+              src="/svgs/search.svg"
               alt={t("common.search")}
               className="w-full h-full object-cover object-center"
             />
@@ -89,62 +87,57 @@ export default function UsersPage() {
       </div>
 
       <div
-        className={`w-full overflow-x-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <table className="w-full border">
-          <thead className="bg-white/80 text-black">
-            <tr className="border-b">
-              <Th Text="ID" />
-              <Th Text={t("common.name")} />
-              <Th Text={t("users.username")} />
-              <Th Text={t("users.role")} />
-              <Th Text={t("users.walletBalance")} />
-              <Th Text={t("common.status")} />
-              <Th Text={t("common.actions")} />
-            </tr>
-          </thead>
-          <tbody>
-            {users
-              ?.filter(
-                (user: User) =>
-                  user.role === "customer" || user.role === "support",
-              )
-              .map((user: User, i: number) => (
-                <tr
-                  key={user.id}
-                  className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-                >
-                  <Td>#{user.id}</Td>
-                  <Td>{user.firstName}</Td>
-                  <Td>@{user.username}</Td>
-                  <Td>{t(`users.roles.${user.role}`)}</Td>
-                  <Td>
+        <ul className="flex flex-col gap-2">
+          {users
+            ?.filter(
+              (user: User) =>
+                user.role === "customer" || user.role === "support",
+            )
+            .map((user: User) => (
+              <li
+                key={user.id}
+                className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex items-center justify-between gap-3 flex-wrap"
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-white/40 font-mono">
+                    #{user.id}
+                  </span>
+                  <span className="font-semibold text-white/90 text-sm">
+                    {user.firstName}
+                  </span>
+                  <span className="text-xs text-white/50">
+                    @{user.username}
+                  </span>
+                  <span className="text-xs bg-white/10 text-white/60 rounded-full px-2 py-0.5">
+                    {t(`users.roles.${user.role}`)}
+                  </span>
+                  <span className="text-xs text-white/60">
                     {Number(user.walletBalance).toLocaleString()}{" "}
                     {t("common.toman")}
-                  </Td>
-                  <Td>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        user.isBlocked
-                          ? "bg-red-500/20 text-red-400"
-                          : "bg-green-500/20 text-green-400"
-                      }`}
-                    >
-                      {user.isBlocked ? t("users.blocked") : t("users.active")}
-                    </span>
-                  </Td>
-                  <Td>
-                    <button
-                      onClick={() => setSelectedUser(user)}
-                      className="text-xs bg-white/10 hover:bg-white/20 rounded px-2 py-1 transition-all"
-                    >
-                      {t("users.profile")}
-                    </button>
-                  </Td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      user.isBlocked
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-green-500/20 text-green-400"
+                    }`}
+                  >
+                    {user.isBlocked ? t("users.blocked") : t("users.active")}
+                  </span>
+                  <button
+                    onClick={() => setSelectedUser(user)}
+                    className="text-xs bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
+                  >
+                    {t("users.profile")}
+                  </button>
+                </div>
+              </li>
+            ))}
+        </ul>
         {(!users || users.length === 0) && (
           <p className="text-center text-white/40 py-8">{t("common.noData")}</p>
         )}

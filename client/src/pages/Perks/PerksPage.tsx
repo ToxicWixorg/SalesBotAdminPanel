@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 
 // ── Types ────────────────────────────────────────────────
 type PerksTask = {
@@ -111,7 +109,7 @@ function TaskFormModal({
     setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 ">
       <div className="bg-slate-900 border border-white/20 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-bold mb-4">
           {initial.id ? "ویرایش وظیفه" : "وظیفه جدید"}
@@ -353,7 +351,7 @@ export default function PerksPage() {
   };
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">وظایف و پاداش‌ها (Perks)</h1>
@@ -388,44 +386,25 @@ export default function PerksPage() {
             </button>
           </div>
 
-          <div className="w-full overflow-x-auto">
-            <table className="w-full border">
-              <thead className="bg-white/80 text-black">
-                <tr className="border-b">
-                  <Th Text="ID" />
-                  <Th Text="عنوان" />
-                  <Th Text="نوع" />
-                  <Th Text="پاداش" />
-                  <Th Text="مقدار" />
-                  <Th Text="پیشرفت" />
-                  <Th Text="انقضا" />
-                  <Th Text="وضعیت" />
-                  <Th Text="عملیات" />
-                </tr>
-              </thead>
-              <tbody>
-                {tasks?.map((task, i) => (
-                  <tr
-                    key={task.id}
-                    className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-                  >
-                    <Td>#{task.id}</Td>
-                    <Td>
-                      <div>
-                        <span className="font-medium">{task.title}</span>
-                        {task.description && (
-                          <span className="block text-xs text-white/40">
-                            {task.description}
-                          </span>
-                        )}
-                      </div>
-                    </Td>
-                    <Td>
-                      <span className="text-xs text-white/60">
+          <div className="w-full">
+            <ul className="flex flex-col gap-2">
+              {tasks?.map((task) => (
+                <li
+                  key={task.id}
+                  className={`rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2 ${!task.isActive ? "opacity-50" : ""}`}
+                >
+                  {/* Row 1: ID + title + type + reward badge + status */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-white/40 font-mono">
+                        #{task.id}
+                      </span>
+                      <span className="font-semibold text-white/90 text-sm">
+                        {task.title}
+                      </span>
+                      <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
                         {TASK_TYPE_LABEL[task.type] ?? task.type}
                       </span>
-                    </Td>
-                    <Td>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           task.rewardType === "wallet_credit"
@@ -437,83 +416,90 @@ export default function PerksPage() {
                       >
                         {REWARD_TYPE_LABEL[task.rewardType] ?? task.rewardType}
                       </span>
-                    </Td>
-                    <Td>
-                      {task.rewardValue
-                        ? `${Number(task.rewardValue).toLocaleString()} تومان`
-                        : "—"}
-                    </Td>
-                    <Td>
-                      <span className="text-xs">
+                      {task.rewardValue && (
+                        <span className="text-sm text-white/80">
+                          {Number(task.rewardValue).toLocaleString()} تومان
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        task.isActive
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-white/10 text-white/40"
+                      }`}
+                    >
+                      {task.isActive ? "فعال" : "غیرفعال"}
+                    </span>
+                  </div>
+
+                  {/* Row 2: meta + actions */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <span>
+                        <span className="text-white/30 mr-1">پیشرفت:</span>
                         {task.currentRewards}
                         {task.maxRewards ? ` / ${task.maxRewards}` : ""}
                       </span>
-                    </Td>
-                    <Td>
-                      {task.expiresAt ? (
+                      {task.expiresAt && (
                         <span
-                          className={`text-xs ${new Date(task.expiresAt) < new Date() ? "text-red-400" : "text-white/60"}`}
+                          className={
+                            new Date(task.expiresAt) < new Date()
+                              ? "text-red-400"
+                              : ""
+                          }
                         >
+                          <span className="text-white/30 mr-1">انقضا:</span>
                           {new Date(task.expiresAt).toLocaleDateString("fa-IR")}
                         </span>
-                      ) : (
-                        <span className="text-white/30 text-xs">—</span>
                       )}
-                    </Td>
-                    <Td>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          task.isActive
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-white/10 text-white/40"
-                        }`}
+                      {task.description && (
+                        <span className="text-white/30">
+                          {task.description}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() =>
+                          setTaskModal({
+                            id: task.id,
+                            title: task.title,
+                            description: task.description ?? "",
+                            type: task.type,
+                            rewardType: task.rewardType,
+                            rewardValue: task.rewardValue ?? "",
+                            maxRewards: task.maxRewards?.toString() ?? "",
+                            isActive: task.isActive,
+                            expiresAt: task.expiresAt ?? "",
+                          })
+                        }
+                        className="bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
                       >
-                        {task.isActive ? "فعال" : "غیرفعال"}
-                      </span>
-                    </Td>
-                    <Td>
-                      <div className="flex gap-1 flex-wrap">
-                        <button
-                          onClick={() =>
-                            setTaskModal({
-                              id: task.id,
-                              title: task.title,
-                              description: task.description ?? "",
-                              type: task.type,
-                              rewardType: task.rewardType,
-                              rewardValue: task.rewardValue ?? "",
-                              maxRewards: task.maxRewards?.toString() ?? "",
-                              isActive: task.isActive,
-                              expiresAt: task.expiresAt ?? "",
-                            })
-                          }
-                          className="text-xs bg-white/10 hover:bg-white/20 rounded px-2 py-1 transition-all"
-                        >
-                          ویرایش
-                        </button>
-                        <button
-                          onClick={() => toggleTaskMutation.mutate(task.id)}
-                          disabled={toggleTaskMutation.isPending}
-                          className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                        >
-                          {task.isActive ? "غیرفعال" : "فعال"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm("وظیفه حذف شود؟"))
-                              deleteTaskMutation.mutate(task.id);
-                          }}
-                          disabled={deleteTaskMutation.isPending}
-                          className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                        >
-                          حذف
-                        </button>
-                      </div>
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        ویرایش
+                      </button>
+                      <button
+                        onClick={() => toggleTaskMutation.mutate(task.id)}
+                        disabled={toggleTaskMutation.isPending}
+                        className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                      >
+                        {task.isActive ? "غیرفعال" : "فعال"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm("وظیفه حذف شود؟"))
+                            deleteTaskMutation.mutate(task.id);
+                        }}
+                        disabled={deleteTaskMutation.isPending}
+                        className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
             {(!tasks || tasks.length === 0) && (
               <p className="text-center text-white/40 py-8">
                 هنوز وظیفه‌ای تعریف نشده
@@ -554,49 +540,31 @@ export default function PerksPage() {
             </select>
           </div>
 
-          {/* Table */}
+          {/* List */}
           <div
-            className={`w-full overflow-x-auto transition-opacity duration-200 ${reqFetching ? "opacity-60 pointer-events-none" : ""}`}
+            className={`w-full transition-opacity duration-200 ${reqFetching ? "opacity-60 pointer-events-none" : ""}`}
           >
-            <table className="w-full border">
-              <thead className="bg-white/80 text-black">
-                <tr className="border-b">
-                  <Th Text="ID" />
-                  <Th Text="کاربر" />
-                  <Th Text="وظیفه" />
-                  <Th Text="نوع پاداش" />
-                  <Th Text="مقدار پاداش" />
-                  <Th Text="وضعیت" />
-                  <Th Text="تاریخ" />
-                  <Th Text="عملیات" />
-                </tr>
-              </thead>
-              <tbody>
-                {requests?.map((item, i) => (
-                  <tr
-                    key={item.userPerk.id}
-                    className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-                  >
-                    <Td>#{item.userPerk.id}</Td>
-                    <Td>
-                      <div>
-                        <span className="font-medium">
-                          {item.user.firstName}
-                        </span>
-                        <span className="block text-xs text-white/40">
-                          @{item.user.username}
-                        </span>
-                      </div>
-                    </Td>
-                    <Td>
-                      <div>
-                        <span className="font-medium">{item.task.title}</span>
-                        <span className="block text-xs text-white/40">
-                          {TASK_TYPE_LABEL[item.task.type] ?? item.task.type}
-                        </span>
-                      </div>
-                    </Td>
-                    <Td>
+            <ul className="flex flex-col gap-2">
+              {requests?.map((item) => (
+                <li
+                  key={item.userPerk.id}
+                  className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2"
+                >
+                  {/* Row 1: ID + user + task + reward badge + status */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-white/40 font-mono">
+                        #{item.userPerk.id}
+                      </span>
+                      <span className="font-semibold text-white/90 text-sm">
+                        {item.user.firstName}
+                      </span>
+                      <span className="text-xs text-white/40">
+                        @{item.user.username}
+                      </span>
+                      <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
+                        {item.task.title}
+                      </span>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                           item.task.rewardType === "wallet_credit"
@@ -609,53 +577,58 @@ export default function PerksPage() {
                         {REWARD_TYPE_LABEL[item.task.rewardType] ??
                           item.task.rewardType}
                       </span>
-                    </Td>
-                    <Td>
-                      {item.task.rewardValue
-                        ? `${Number(item.task.rewardValue).toLocaleString()} تومان`
-                        : "—"}
-                    </Td>
-                    <Td>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${REQUEST_STATUS_BADGE[item.userPerk.status] ?? ""}`}
-                      >
-                        {REQUEST_STATUS_LABEL[item.userPerk.status] ??
-                          item.userPerk.status}
+                      {item.task.rewardValue && (
+                        <span className="text-sm text-white/80">
+                          {Number(item.task.rewardValue).toLocaleString()} تومان
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${REQUEST_STATUS_BADGE[item.userPerk.status] ?? ""}`}
+                    >
+                      {REQUEST_STATUS_LABEL[item.userPerk.status] ??
+                        item.userPerk.status}
+                    </span>
+                  </div>
+
+                  {/* Row 2: task type + date + actions */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                    <div className="flex items-center gap-4">
+                      <span>
+                        {TASK_TYPE_LABEL[item.task.type] ?? item.task.type}
                       </span>
-                    </Td>
-                    <Td>
-                      {new Date(item.userPerk.createdAt).toLocaleDateString(
-                        "fa-IR",
-                      )}
-                    </Td>
-                    <Td>
-                      {item.userPerk.status === "pending" && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() =>
-                              verifyMutation.mutate(item.userPerk.id)
-                            }
-                            disabled={verifyMutation.isPending}
-                            className="text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                          >
-                            تأیید
-                          </button>
-                          <button
-                            onClick={() =>
-                              rejectMutation.mutate(item.userPerk.id)
-                            }
-                            disabled={rejectMutation.isPending}
-                            className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                          >
-                            رد
-                          </button>
-                        </div>
-                      )}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span>
+                        {new Date(item.userPerk.createdAt).toLocaleDateString(
+                          "fa-IR",
+                        )}
+                      </span>
+                    </div>
+                    {item.userPerk.status === "pending" && (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() =>
+                            verifyMutation.mutate(item.userPerk.id)
+                          }
+                          disabled={verifyMutation.isPending}
+                          className="bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                        >
+                          تأیید
+                        </button>
+                        <button
+                          onClick={() =>
+                            rejectMutation.mutate(item.userPerk.id)
+                          }
+                          disabled={rejectMutation.isPending}
+                          className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                        >
+                          رد
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
             {(!requests || requests.length === 0) && (
               <p className="text-center text-white/40 py-8">
                 داده‌ای وجود ندارد

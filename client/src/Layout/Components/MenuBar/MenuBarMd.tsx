@@ -8,7 +8,7 @@ const MenuBarMd = ({
 }: {
   isMenuOpen: boolean;
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  Pages: { name: string; route: string }[];
+  Pages: string[];
 }) => {
   return (
     <div

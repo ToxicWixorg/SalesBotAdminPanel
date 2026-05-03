@@ -3,8 +3,6 @@ import { useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 
 // ── Types ─────────────────────────────────────────────────
 type AdminRow = {
@@ -276,7 +274,7 @@ export default function SettingsPage() {
     return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">تنظیمات</h1>
@@ -313,136 +311,111 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="w-full overflow-x-auto">
-            <table className="w-full border">
-              <thead className="bg-white/80 text-black">
-                <tr className="border-b">
-                  <Th Text="نام" />
-                  <Th Text="کاربر تلگرام" />
-                  <Th Text="نقش" />
-                  <Th Text="دسترسی‌ها" />
-                  <Th Text="آخرین ورود" />
-                  <Th Text="ورودها" />
-                  <Th Text="وضعیت" />
-                  <Th Text="عملیات" />
-                </tr>
-              </thead>
-              <tbody>
-                {admins?.map((row, i) => (
-                  <tr
-                    key={row.admin.id}
-                    className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""} ${!row.admin.isActive ? "opacity-50" : ""}`}
-                  >
-                    <Td>
-                      <div>
-                        <span className="font-medium">
-                          {row.admin.displayName ?? "—"}
+          <div className="w-full">
+            <ul className="flex flex-col gap-2">
+              {admins?.map((row) => (
+                <li
+                  key={row.admin.id}
+                  className={`rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2 ${!row.admin.isActive ? "opacity-50" : ""}`}
+                >
+                  {/* Row 1: name + role + status */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-semibold text-white/90 text-sm">
+                        {row.admin.displayName ?? "—"}
+                      </span>
+                      {row.admin.isSuperAdmin && (
+                        <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md">
+                          Super
                         </span>
-                        {row.admin.isSuperAdmin && (
-                          <span className="mr-1.5 text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded">
-                            Super
-                          </span>
-                        )}
-                        {row.admin.notes && (
-                          <span className="block text-xs text-white/40">
-                            {row.admin.notes}
-                          </span>
-                        )}
-                      </div>
-                    </Td>
-                    <Td>
+                      )}
+                      <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
+                        {ROLE_LABEL[row.admin.role] ?? row.admin.role}
+                      </span>
                       {row.user ? (
-                        <div>
-                          <span className="text-sm">{row.user.firstName}</span>
-                          <span className="block text-xs text-white/40">
+                        <span className="text-xs text-white/50">
+                          {row.user.firstName}{" "}
+                          <span className="text-white/30">
                             @{row.user.username}
                           </span>
-                        </div>
+                        </span>
                       ) : (
-                        <span className="text-white/30 text-xs">
+                        <span className="text-xs text-white/30">
                           #{row.admin.userId}
                         </span>
                       )}
-                    </Td>
-                    <Td>
-                      <span className="text-xs text-white/70">
-                        {ROLE_LABEL[row.admin.role] ?? row.admin.role}
-                      </span>
-                    </Td>
-                    <Td>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        row.admin.isActive
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-white/10 text-white/40"
+                      }`}
+                    >
+                      {row.admin.isActive ? "فعال" : "غیرفعال"}
+                    </span>
+                  </div>
+
+                  {/* Row 2: sections + last login + actions */}
+                  <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                    <div className="flex items-center gap-3 flex-wrap">
                       {row.admin.allowedSections ? (
                         <div className="flex flex-wrap gap-1">
                           {row.admin.allowedSections.map((s) => (
                             <span
                               key={s}
-                              className="text-xs bg-white/10 text-white/60 px-1.5 py-0.5 rounded"
+                              className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded-md"
                             >
                               {SECTION_LABEL[s] ?? s}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-green-400">همه</span>
+                        <span className="text-green-400">همه بخش‌ها</span>
                       )}
-                    </Td>
-                    <Td>
-                      <span className="text-xs text-white/60">
+                      <span>
+                        <span className="text-white/30 mr-1">آخرین ورود:</span>
                         {row.admin.lastLoginAt
                           ? new Date(row.admin.lastLoginAt).toLocaleDateString(
                               "fa-IR",
                             )
                           : "—"}
                       </span>
-                    </Td>
-                    <Td>
-                      <span className="text-xs text-white/50">
-                        {row.admin.loginCount}
+                      <span className="text-white/30">
+                        {row.admin.loginCount} بار
                       </span>
-                    </Td>
-                    <Td>
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full ${
-                          row.admin.isActive
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-white/10 text-white/40"
-                        }`}
-                      >
-                        {row.admin.isActive ? "فعال" : "غیرفعال"}
-                      </span>
-                    </Td>
-                    <Td>
-                      {admin?.isSuperAdmin && !row.admin.isSuperAdmin && (
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() =>
-                              toggleAdminMutation.mutate(row.admin.id)
-                            }
-                            disabled={toggleAdminMutation.isPending}
-                            className="text-xs bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                          >
-                            {row.admin.isActive ? "غیرفعال" : "فعال"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (
-                                confirm(
-                                  `حذف ${row.admin.displayName ?? "این ادمین"}؟`,
-                                )
+                    </div>
+                    {admin?.isSuperAdmin && !row.admin.isSuperAdmin && (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() =>
+                            toggleAdminMutation.mutate(row.admin.id)
+                          }
+                          disabled={toggleAdminMutation.isPending}
+                          className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                        >
+                          {row.admin.isActive ? "غیرفعال" : "فعال"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `حذف ${row.admin.displayName ?? "این ادمین"}؟`,
                               )
-                                deleteAdminMutation.mutate(row.admin.id);
-                            }}
-                            disabled={deleteAdminMutation.isPending}
-                            className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                          >
-                            حذف
-                          </button>
-                        </div>
-                      )}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            )
+                              deleteAdminMutation.mutate(row.admin.id);
+                          }}
+                          disabled={deleteAdminMutation.isPending}
+                          className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                        >
+                          حذف
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
             {(!admins || admins.length === 0) && (
               <p className="text-center text-white/40 py-8">
                 هیچ ادمینی وجود ندارد
@@ -517,68 +490,51 @@ export default function SettingsPage() {
 
           {!logsLoading && (
             <div
-              className={`w-full overflow-x-auto transition-opacity duration-200 ${logsFetching ? "opacity-60 pointer-events-none" : ""}`}
+              className={`w-full transition-opacity duration-200 ${logsFetching ? "opacity-60 pointer-events-none" : ""}`}
             >
-              <table className="w-full border">
-                <thead className="bg-white/80 text-black">
-                  <tr className="border-b">
-                    <Th Text="ادمین" />
-                    <Th Text="عملیات" />
-                    <Th Text="موجودیت" />
-                    <Th Text="توضیح" />
-                    <Th Text="شدت" />
-                    <Th Text="تاریخ" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs?.map((row, i) => (
-                    <tr
-                      key={row.log.id}
-                      className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-                    >
-                      <Td>
-                        <span className="text-sm font-medium">
+              <ul className="flex flex-col gap-2">
+                {logs?.map((row) => (
+                  <li
+                    key={row.log.id}
+                    className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-1.5"
+                  >
+                    {/* Row 1: admin + action + entity + severity */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-semibold text-white/90">
                           {row.admin?.displayName ?? "—"}
                         </span>
-                      </Td>
-                      <Td>
-                        <span className="font-mono text-xs text-white/80">
+                        <span className="font-mono text-xs text-white/70 bg-white/10 px-2 py-0.5 rounded-md">
                           {row.log.action}
                         </span>
-                      </Td>
-                      <Td>
-                        <div>
-                          <span className="text-xs text-white/60">
-                            {row.log.entityType}
-                          </span>
+                        <span className="text-xs text-white/50">
+                          {row.log.entityType}
                           {row.log.entityId && (
-                            <span className="text-xs text-white/30 mr-1">
+                            <span className="text-white/30 mr-1">
                               #{row.log.entityId}
                             </span>
                           )}
-                        </div>
-                      </Td>
-                      <Td>
-                        <span className="text-xs text-white/60 max-w-xs block truncate">
-                          {row.log.description ?? "—"}
                         </span>
-                      </Td>
-                      <Td>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[row.log.severity] ?? ""}`}
-                        >
-                          {row.log.severity}
-                        </span>
-                      </Td>
-                      <Td>
-                        <span className="text-xs text-white/60">
-                          {new Date(row.log.createdAt).toLocaleString("fa-IR")}
-                        </span>
-                      </Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEVERITY_BADGE[row.log.severity] ?? ""}`}
+                      >
+                        {row.log.severity}
+                      </span>
+                    </div>
+
+                    {/* Row 2: description + date */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/40">
+                      <span className="truncate max-w-md">
+                        {row.log.description ?? "—"}
+                      </span>
+                      <span>
+                        {new Date(row.log.createdAt).toLocaleString("fa-IR")}
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
               {(!logs || logs.length === 0) && (
                 <p className="text-center text-white/40 py-8">لاگی یافت نشد</p>
               )}

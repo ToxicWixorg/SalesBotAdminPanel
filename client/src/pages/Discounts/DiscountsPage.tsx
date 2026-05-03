@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 
 type DiscountCode = {
   id: number;
@@ -119,7 +117,7 @@ export default function DiscountsPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">کدهای تخفیف</h1>
@@ -182,44 +180,25 @@ export default function DiscountsPage() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* List */}
       <div
-        className={`w-full overflow-x-auto mt-4 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full mt-4 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <table className="w-full border">
-          <thead className="bg-white/80 text-black">
-            <tr className="border-b">
-              <Th Text="ID" />
-              <Th Text="کد" />
-              <Th Text="نوع" />
-              <Th Text="مقدار" />
-              <Th Text="استفاده" />
-              <Th Text="حداقل سفارش" />
-              <Th Text="انقضا" />
-              <Th Text="وضعیت" />
-              <Th Text="عملیات" />
-            </tr>
-          </thead>
-          <tbody>
-            {discounts?.map((d, i) => (
-              <tr
-                key={d.id}
-                className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""} ${!d.isActive ? "opacity-50" : ""}`}
-              >
-                <Td>#{d.id}</Td>
-                <Td>
-                  <div>
-                    <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">
-                      {d.code}
-                    </code>
-                    {d.description && (
-                      <p className="text-white/40 text-xs mt-0.5">
-                        {d.description}
-                      </p>
-                    )}
-                  </div>
-                </Td>
-                <Td>
+        <ul className="flex flex-col gap-2">
+          {discounts?.map((d) => (
+            <li
+              key={d.id}
+              className={`rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2 ${!d.isActive ? "opacity-50" : ""}`}
+            >
+              {/* Row 1: code + type badge + value + status toggle */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-white/40 font-mono">
+                    #{d.id}
+                  </span>
+                  <code className="bg-white/10 px-2 py-0.5 rounded-lg text-sm font-mono text-white/90">
+                    {d.code}
+                  </code>
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       d.type === "percentage"
@@ -229,86 +208,86 @@ export default function DiscountsPage() {
                   >
                     {d.type === "percentage" ? "درصدی" : "مبلغی"}
                   </span>
-                </Td>
-                <Td>
-                  <div>
-                    <span className="font-medium">
-                      {d.type === "percentage"
-                        ? `${d.value}٪`
-                        : `${Number(d.value).toLocaleString()} تومان`}
-                    </span>
+                  <span className="text-sm font-medium text-white/80">
+                    {d.type === "percentage"
+                      ? `${d.value}٪`
+                      : `${Number(d.value).toLocaleString()} تومان`}
                     {d.maxDiscount && (
-                      <p className="text-white/40 text-xs">
-                        سقف: {Number(d.maxDiscount).toLocaleString()}
-                      </p>
+                      <span className="text-white/40 text-xs mr-1">
+                        (سقف: {Number(d.maxDiscount).toLocaleString()})
+                      </span>
                     )}
-                  </div>
-                </Td>
-                <Td>
-                  <span
-                    className={
-                      d.maxUses != null && d.currentUses >= d.maxUses
-                        ? "text-red-400"
-                        : ""
-                    }
-                  >
-                    {d.currentUses} / {d.maxUses ?? "∞"}
                   </span>
-                </Td>
-                <Td>
-                  {d.minOrderAmount
-                    ? `${Number(d.minOrderAmount).toLocaleString()} تومان`
-                    : "—"}
-                </Td>
-                <Td>
-                  {d.expiresAt ? (
+                </div>
+                <button
+                  onClick={() => toggleMutation.mutate(d.id)}
+                  disabled={toggleMutation.isPending}
+                  className={`text-xs px-3 py-0.5 rounded-full font-medium transition-all ${
+                    d.isActive
+                      ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
+                      : "bg-white/10 text-white/40 hover:bg-white/20"
+                  }`}
+                >
+                  {d.isActive ? "فعال" : "غیرفعال"}
+                </button>
+              </div>
+
+              {/* Row 2: meta + actions */}
+              <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span>
+                    <span className="text-white/30 mr-1">استفاده:</span>
+                    <span
+                      className={
+                        d.maxUses != null && d.currentUses >= d.maxUses
+                          ? "text-red-400"
+                          : ""
+                      }
+                    >
+                      {d.currentUses} / {d.maxUses ?? "∞"}
+                    </span>
+                  </span>
+                  {d.minOrderAmount && (
+                    <span>
+                      <span className="text-white/30 mr-1">حداقل:</span>
+                      {Number(d.minOrderAmount).toLocaleString()} تومان
+                    </span>
+                  )}
+                  {d.expiresAt && (
                     <span
                       className={
                         new Date(d.expiresAt) < new Date() ? "text-red-400" : ""
                       }
                     >
+                      <span className="text-white/30 mr-1">انقضا:</span>
                       {new Date(d.expiresAt).toLocaleDateString("fa-IR")}
                     </span>
-                  ) : (
-                    "—"
                   )}
-                </Td>
-                <Td>
+                  {d.description && (
+                    <span className="text-white/30">{d.description}</span>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
                   <button
-                    onClick={() => toggleMutation.mutate(d.id)}
-                    disabled={toggleMutation.isPending}
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium transition-all ${
-                      d.isActive
-                        ? "bg-green-500/20 text-green-400 hover:bg-green-500/30"
-                        : "bg-white/10 text-white/40 hover:bg-white/20"
-                    }`}
+                    onClick={() => setEditDiscount(d)}
+                    className="bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
                   >
-                    {d.isActive ? "فعال" : "غیرفعال"}
+                    ویرایش
                   </button>
-                </Td>
-                <Td>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setEditDiscount(d)}
-                      className="text-xs bg-white/10 hover:bg-white/20 rounded px-2 py-1 transition-all"
-                    >
-                      ویرایش
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm("حذف شود؟")) deleteMutation.mutate(d.id);
-                      }}
-                      disabled={deleteMutation.isPending}
-                      className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-1 transition-all"
-                    >
-                      حذف
-                    </button>
-                  </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <button
+                    onClick={() => {
+                      if (confirm("حذف شود؟")) deleteMutation.mutate(d.id);
+                    }}
+                    disabled={deleteMutation.isPending}
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
         {(!discounts || discounts.length === 0) && (
           <p className="text-center text-white/40 py-8">داده‌ای وجود ندارد</p>
         )}

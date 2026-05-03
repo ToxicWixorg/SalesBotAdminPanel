@@ -87,7 +87,7 @@ export default function BroadcastPage() {
   const canSend = canPreview && previewCount !== null;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">ارسال پیام گروهی</h1>

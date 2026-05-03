@@ -6,7 +6,7 @@ const PagesNavigateMd = ({
   Pages,
 }: {
   isMenuOpen: boolean;
-  Pages: { name: string; route: string }[];
+  Pages: string[];
 }) => {
   const { t } = useTranslation();
 
@@ -18,18 +18,9 @@ const PagesNavigateMd = ({
         className="w-full flex flex-col justify-around items-start gap-2
       "
       >
-        <PageButtonMd
-          name={t("nav.dashboard")}
-          route={""}
-          isMenuOpen={isMenuOpen}
-        />
-        {Pages.map((d: { name: string; route: string }, i) => (
-          <PageButtonMd
-            key={i}
-            name={d.name}
-            route={d.route}
-            isMenuOpen={isMenuOpen}
-          />
+        <PageButtonMd name="dashboard" route={""} isMenuOpen={isMenuOpen} />
+        {Pages.map((name, i) => (
+          <PageButtonMd key={i} name={name} isMenuOpen={isMenuOpen} />
         ))}
       </div>
     </div>

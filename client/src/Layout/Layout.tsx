@@ -3,23 +3,21 @@ import MenuBar from "./Components/MenuBar/MenuBar";
 import { useState } from "react";
 import MenuBarMd from "./Components/MenuBar/MenuBarMd";
 import PagesNavigate from "./Components/PagesNavigate/PagesNavigate";
-import { useTranslation } from "react-i18next";
 
 const Layout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { t } = useTranslation();
   const Pages = [
-    { name: t("nav.products"), route: "products" },
-    { name: t("nav.orders"), route: "orders" },
-    { name: t("nav.users"), route: "users" },
-    { name: t("nav.tickets"), route: "tickets" },
-    { name: t("nav.wallet"), route: "wallet" },
-    { name: t("nav.discounts"), route: "discounts" },
-    { name: t("nav.referrals"), route: "referrals" },
-    { name: t("nav.perks"), route: "perks" },
-    { name: t("nav.schedules"), route: "schedules" },
-    { name: t("nav.broadcast"), route: "broadcast" },
-    { name: t("nav.settings"), route: "settings" },
+    "products",
+    "orders",
+    "users",
+    "tickets",
+    "wallet",
+    "discounts",
+    "referrals",
+    "perks",
+    "schedules",
+    "broadcast",
+    "settings",
   ];
 
   return (
@@ -50,7 +48,7 @@ const Layout = () => {
         <MenuBar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
         <div
           className="w-full h-[calc(100%)] flex justify-center items-start overflow-x-hidden 
-                      rounded-xl overflow-y-auto bgDark "
+                      rounded-xl overflow-y-auto bgDark"
         >
           {<Outlet />}
           {isMenuOpen && (

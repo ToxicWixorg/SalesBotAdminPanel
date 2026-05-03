@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 
 // ── Types ────────────────────────────────────────────────
 type ScheduleRow = {
@@ -100,7 +98,7 @@ export default function SchedulesPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">زمان‌بندی سفارشات</h1>
@@ -158,114 +156,91 @@ export default function SchedulesPage() {
         {slots?.length ?? 0} اسلات
       </p>
 
-      {/* Table */}
       <div
-        className={`w-full overflow-x-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <table className="w-full border">
-          <thead className="bg-white/80 text-black">
-            <tr className="border-b">
-              <Th Text="بازه زمانی" />
-              <Th Text="محصول" />
-              <Th Text="کاربر" />
-              <Th Text="سفارش" />
-              <Th Text="ظرفیت" />
-              <Th Text="وضعیت" />
-              <Th Text="عملیات" />
-            </tr>
-          </thead>
-          <tbody>
-            {slots?.map((item, i) => (
-              <tr
-                key={item.schedule.id}
-                className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-              >
-                <Td>
-                  <span className="font-mono font-medium text-blue-300">
+        <ul className="flex flex-col gap-2">
+          {slots?.map((item) => (
+            <li
+              key={item.schedule.id}
+              className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2"
+            >
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-mono font-semibold text-blue-300 text-sm">
                     {item.schedule.timeSlot}
                   </span>
-                </Td>
-                <Td>
-                  {item.product?.name ?? (
-                    <span className="text-white/30">—</span>
-                  )}
-                </Td>
-                <Td>
-                  {item.user ? (
-                    <div>
-                      <span className="font-medium">{item.user.firstName}</span>
-                      <span className="block text-xs text-white/40">
-                        @{item.user.username}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-white/30">—</span>
-                  )}
-                </Td>
-                <Td>
-                  {item.order ? (
-                    <div>
-                      <span className="text-xs text-white/60">
-                        #{item.order.id}
-                      </span>
-                      <span className="block text-xs text-white/40">
-                        {Number(item.order.finalPrice).toLocaleString()} تومان
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-white/30">—</span>
-                  )}
-                </Td>
-                <Td>
-                  <span className="text-sm">
+                  <span className="text-sm text-white/90">
+                    {item.product?.name ?? (
+                      <span className="text-white/30">—</span>
+                    )}
+                  </span>
+                  <span className="text-xs text-white/50">
                     {item.schedule.currentBookings} / {item.schedule.capacity}
                   </span>
-                </Td>
-                <Td>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.schedule.status] ?? ""}`}
-                  >
-                    {STATUS_LABEL[item.schedule.status] ?? item.schedule.status}
-                  </span>
-                </Td>
-                <Td>
-                  <div className="flex gap-1 flex-wrap">
-                    {(item.schedule.status === "available" ||
-                      item.schedule.status === "full" ||
-                      item.schedule.status === "in_progress") && (
+                </div>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.schedule.status] ?? ""}`}
+                >
+                  {STATUS_LABEL[item.schedule.status] ?? item.schedule.status}
+                </span>
+              </div>
+
+              {/* Row 2: user + order + actions */}
+              <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                <div className="flex items-center gap-4 flex-wrap">
+                  {item.user ? (
+                    <span>
+                      {item.user.firstName}{" "}
+                      <span className="text-white/30">
+                        @{item.user.username}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-white/30">—</span>
+                  )}
+                  {item.order && (
+                    <span>
+                      <span className="text-white/30 mr-1">سفارش:</span>#
+                      {item.order.id}{" "}
+                      <span className="text-white/30">
+                        ({Number(item.order.finalPrice).toLocaleString()} تومان)
+                      </span>
+                    </span>
+                  )}
+                  {item.schedule.reminderSent && (
+                    <span className="text-white/30">یادآور ارسال‌شد</span>
+                  )}
+                </div>
+                <div className="flex gap-1.5">
+                  {(item.schedule.status === "available" ||
+                    item.schedule.status === "full" ||
+                    item.schedule.status === "in_progress") && (
+                    <button
+                      onClick={() => completeMutation.mutate(item.schedule.id)}
+                      disabled={completeMutation.isPending}
+                      className="bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                    >
+                      تکمیل
+                    </button>
+                  )}
+                  {!item.schedule.reminderSent &&
+                    item.schedule.status !== "completed" && (
                       <button
                         onClick={() =>
-                          completeMutation.mutate(item.schedule.id)
+                          reminderMutation.mutate(item.schedule.id)
                         }
-                        disabled={completeMutation.isPending}
-                        className="text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded px-2 py-1 transition-all disabled:opacity-50"
+                        disabled={reminderMutation.isPending}
+                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                       >
-                        تکمیل
+                        یادآور
                       </button>
                     )}
-                    {!item.schedule.reminderSent &&
-                      item.schedule.status !== "completed" && (
-                        <button
-                          onClick={() =>
-                            reminderMutation.mutate(item.schedule.id)
-                          }
-                          disabled={reminderMutation.isPending}
-                          className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                        >
-                          یادآور
-                        </button>
-                      )}
-                    {item.schedule.reminderSent && (
-                      <span className="text-xs text-white/30">
-                        یادآور ارسال‌شد
-                      </span>
-                    )}
-                  </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
         {(!slots || slots.length === 0) && (
           <p className="text-center text-white/40 py-10">
             هیچ اسلاتی برای این روز وجود ندارد

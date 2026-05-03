@@ -1,21 +1,21 @@
+import { useTranslation } from "react-i18next";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const PageButton = ({
   name,
-  route,
   setIsMenuOpen,
 }: {
   name: string;
-  route: string;
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const isActive = location.pathname === `/${route}`;
+  const isActive = location.pathname === `/${name === "dashboard" ? "" : name}`;
   return (
     <button
       onClick={() => {
-        navigate(`/${route}`);
+        navigate(`/${name === "dashboard" ? "" : name}`);
         setIsMenuOpen(false);
       }}
       disabled={isActive}
@@ -25,7 +25,7 @@ const PageButton = ({
               disabled:text-black disabled:bg-white disabled:cursor-default
                 transition-all duration-300"
     >
-      {name}
+      {t(`nav.${name}`)}
     </button>
   );
 };

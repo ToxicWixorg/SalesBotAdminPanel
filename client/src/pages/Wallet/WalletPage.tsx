@@ -85,7 +85,7 @@ export default function WalletPage() {
     : (transactions ?? []);
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">{t("wallet.title")}</h1>
       </div>
@@ -112,7 +112,7 @@ export default function WalletPage() {
             className="w-8 h-8 rounded-lg p-1 hover:bg-white/20 active:scale-95 transition-all"
           >
             <img
-              src="/search.svg"
+              src="/svgs/search.svg"
               alt="search"
               className="w-full h-full object-contain"
             />
@@ -141,7 +141,7 @@ export default function WalletPage() {
       </div>
 
       <div
-        className={`w-full overflow-x-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
         <TransactionsTable
           filteredTransactions={filteredTransactions}

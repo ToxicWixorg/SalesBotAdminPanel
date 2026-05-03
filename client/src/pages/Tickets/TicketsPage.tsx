@@ -3,8 +3,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 import TicketDetailModal from "./Components/TicketDetailModal";
 
 type TicketItem = {
@@ -84,7 +82,7 @@ export default function TicketsPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">{t("tickets.title")}</h1>
       </div>
@@ -140,85 +138,71 @@ export default function TicketsPage() {
       </div>
 
       <div
-        className={`w-full overflow-x-auto transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <table className="w-full border">
-          <thead className="bg-white/80 text-black">
-            <tr className="border-b">
-              <Th Text="ID" />
-              <Th Text={t("tickets.subject")} />
-              <Th Text={t("users.username")} />
-              <Th Text={t("common.status")} />
-              <Th Text={t("common.type")} />
-              <Th
-                Text={t("tickets.allPriorities")
-                  .replace("همه ", "")
-                  .replace("All ", "")
-                  .replace("Все ", "")}
-              />
-              <Th Text={t("common.date")} />
-              <Th Text={t("common.actions")} />
-            </tr>
-          </thead>
-          <tbody>
-            {tickets?.map((item: TicketItem, i: number) => (
-              <tr
-                key={item.ticket.id}
-                className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-              >
-                <Td>#{item.ticket.id}</Td>
-                <Td>
-                  <div className="flex items-center gap-2">
-                    <span>{item.ticket.title}</span>
-                    {(item.ticket.messageCount ?? 0) > 0 && (
-                      <span className="text-xs bg-white/10 text-white/50 rounded-full px-1.5 py-0.5 leading-none">
-                        {item.ticket.messageCount}
-                      </span>
-                    )}
-                  </div>
-                </Td>
-                <Td>
-                  {item.user.firstName}{" "}
-                  <span className="text-white/40 text-xs">
-                    @{item.user.username}
+        <ul className="flex flex-col gap-2">
+          {tickets?.map((item: TicketItem) => (
+            <li
+              key={item.ticket.id}
+              className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2"
+            >
+              {/* Row 1: ID + title + message count + badges */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-white/40 font-mono">
+                    #{item.ticket.id}
                   </span>
-                </Td>
-                <Td>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.ticket.status] ?? "bg-white/10 text-white/50"}`}
-                  >
-                    {t(STATUS_LABELS[item.ticket.status] ?? item.ticket.status)}
+                  <span className="font-semibold text-white/90 text-sm">
+                    {item.ticket.title}
                   </span>
-                </Td>
-                <Td>
-                  <span className="text-xs text-white/70">
-                    {t(`tickets.type.${item.ticket.type}`, {
-                      defaultValue: item.ticket.type,
-                    })}
-                  </span>
-                </Td>
-                <Td>
+                  {(item.ticket.messageCount ?? 0) > 0 && (
+                    <span className="text-xs bg-white/10 text-white/50 rounded-full px-1.5 py-0.5 leading-none">
+                      {item.ticket.messageCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_BADGE[item.ticket.priority] ?? ""}`}
                   >
                     {t(`tickets.priority.${item.ticket.priority}`)}
                   </span>
-                </Td>
-                <Td>
-                  {new Date(item.ticket.createdAt).toLocaleDateString("fa-IR")}
-                </Td>
-                <Td>
-                  <button
-                    onClick={() => setSelectedItem(item)}
-                    className="text-xs bg-white/10 hover:bg-white/20 rounded px-2 py-1 transition-all"
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.ticket.status] ?? "bg-white/10 text-white/50"}`}
                   >
-                    {t("tickets.viewDetails")}
-                  </button>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    {t(STATUS_LABELS[item.ticket.status] ?? item.ticket.status)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 2: user + type + date + action */}
+              <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/60">
+                <div className="flex items-center gap-4 flex-wrap">
+                  <span>
+                    {item.user.firstName}{" "}
+                    <span className="text-white/30">@{item.user.username}</span>
+                  </span>
+                  <span className="text-white/40">
+                    {t(`tickets.type.${item.ticket.type}`, {
+                      defaultValue: item.ticket.type,
+                    })}
+                  </span>
+                  <span className="text-white/40">
+                    {new Date(item.ticket.createdAt).toLocaleDateString(
+                      "fa-IR",
+                    )}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedItem(item)}
+                  className="text-xs bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
+                >
+                  {t("tickets.viewDetails")}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
         {(!tickets || tickets.length === 0) && (
           <p className="text-center text-white/40 py-8">{t("common.noData")}</p>
         )}

@@ -2,8 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
-import Th from "../../Components/Th";
-import Td from "../../Components/Td";
 
 type ReferralItem = {
   reward: {
@@ -89,7 +87,7 @@ export default function ReferralsPage() {
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">پاداش‌های معرفی</h1>
@@ -154,48 +152,30 @@ export default function ReferralsPage() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* List */}
       <div
-        className={`w-full overflow-x-auto mt-4 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
+        className={`w-full mt-4 transition-opacity duration-200 ${isFetching ? "opacity-60 pointer-events-none" : ""}`}
       >
-        <table className="w-full border">
-          <thead className="bg-white/80 text-black">
-            <tr className="border-b">
-              <Th Text="ID" />
-              <Th Text="معرف" />
-              <Th Text="کاربر معرفی‌شده" />
-              <Th Text="نوع پاداش" />
-              <Th Text="مبلغ" />
-              <Th Text="وضعیت" />
-              <Th Text="تاریخ" />
-              <Th Text="عملیات" />
-            </tr>
-          </thead>
-          <tbody>
-            {referrals
-              ?.filter((item) => item?.reward)
-              .map((item, i) => (
-                <tr
-                  key={item.reward.id}
-                  className={`border-b ${i % 2 === 0 ? "bg-white/5" : ""}`}
-                >
-                  <Td>#{item.reward.id}</Td>
-                  <Td>
-                    <div>
-                      <span className="font-medium">
-                        {item.referrer.firstName}
-                      </span>
-                      <span className="text-white/40 text-xs block">
-                        @{item.referrer.username}
-                      </span>
-                    </div>
-                  </Td>
-                  <Td>
-                    <span className="text-white/50 text-xs">
-                      #{item.reward.referredUserId}
+        <ul className="flex flex-col gap-2">
+          {referrals
+            ?.filter((item) => item?.reward)
+            .map((item) => (
+              <li
+                key={item.reward.id}
+                className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2"
+              >
+                {/* Row 1: ID + referrer + reward type badge + amount + status */}
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-xs text-white/40 font-mono">
+                      #{item.reward.id}
                     </span>
-                  </Td>
-                  <Td>
+                    <span className="text-sm font-semibold text-white/90">
+                      {item.referrer.firstName}
+                    </span>
+                    <span className="text-xs text-white/40">
+                      @{item.referrer.username}
+                    </span>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         item.reward.rewardType === "wallet_credit"
@@ -206,46 +186,54 @@ export default function ReferralsPage() {
                       {REWARD_TYPE_LABEL[item.reward.rewardType] ??
                         item.reward.rewardType}
                     </span>
-                  </Td>
-                  <Td>
-                    {Number(item.reward.rewardValue).toLocaleString()} تومان
-                  </Td>
-                  <Td>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.reward.status] ?? ""}`}
-                    >
-                      {STATUS_LABEL[item.reward.status] ?? item.reward.status}
+                    <span className="text-sm text-white/80">
+                      {Number(item.reward.rewardValue).toLocaleString()} تومان
                     </span>
-                  </Td>
-                  <Td>
-                    {new Date(item.reward.createdAt).toLocaleDateString(
-                      "fa-IR",
-                    )}
-                  </Td>
-                  <Td>
-                    {item.reward.status === "pending" && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => awardMutation.mutate(item.reward.id)}
-                          disabled={awardMutation.isPending}
-                          className="text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                        >
-                          پرداخت
-                        </button>
-                        <button
-                          onClick={() => cancelMutation.mutate(item.reward.id)}
-                          disabled={cancelMutation.isPending}
-                          className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-1 transition-all disabled:opacity-50"
-                        >
-                          لغو
-                        </button>
-                      </div>
-                    )}
-                  </Td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.reward.status] ?? ""}`}
+                  >
+                    {STATUS_LABEL[item.reward.status] ?? item.reward.status}
+                  </span>
+                </div>
+
+                {/* Row 2: referred user + date + actions */}
+                <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
+                  <div className="flex items-center gap-4">
+                    <span>
+                      <span className="text-white/30 mr-1">
+                        کاربر معرفی‌شده:
+                      </span>
+                      #{item.reward.referredUserId}
+                    </span>
+                    <span>
+                      {new Date(item.reward.createdAt).toLocaleDateString(
+                        "fa-IR",
+                      )}
+                    </span>
+                  </div>
+                  {item.reward.status === "pending" && (
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => awardMutation.mutate(item.reward.id)}
+                        disabled={awardMutation.isPending}
+                        className="bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                      >
+                        پرداخت
+                      </button>
+                      <button
+                        onClick={() => cancelMutation.mutate(item.reward.id)}
+                        disabled={cancelMutation.isPending}
+                        className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
+                      >
+                        لغو
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+        </ul>
         {(!referrals || referrals.length === 0) && (
           <p className="text-center text-white/40 py-8">داده‌ای وجود ندارد</p>
         )}

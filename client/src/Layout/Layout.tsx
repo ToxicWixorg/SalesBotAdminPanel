@@ -38,7 +38,7 @@ const Layout = () => {
         />
         <div
           className="w-full h-full flex justify-center items-start overflow-x-hidden 
-                      rounded-xl overflow-y-auto bgDark dinBor"
+                      rounded-xl overflow-y-auto bgDark border-2"
         >
           {<Outlet />}
         </div>

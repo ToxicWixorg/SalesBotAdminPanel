@@ -112,32 +112,43 @@ broadcastRouter.post("/send", async (c) => {
   if (userIds.length === 0)
     return c.json({ error: "No target users found" }, 400);
 
-  // ارسال از طریق BOT_API_URL (internal)
-  const botApiUrl = process.env.BOT_API_URL; // مثال: http://localhost:3001/internal
-  if (!botApiUrl) {
-    return c.json({ error: "BOT_API_URL is not configured" }, 500);
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) {
+    return c.json({ error: "BOT_TOKEN is not configured" }, 500);
   }
 
   let successCount = 0;
   let failCount = 0;
 
-  // ارسال batch (50 تا 50 تا) برای جلوگیری از overload
-  const batchSize = 50;
+
+  const batchSize = 30;
   for (let i = 0; i < userIds.length; i += batchSize) {
     const batch = userIds.slice(i, i + batchSize);
 
     const results = await Promise.allSettled(
       batch.map((userId) =>
-        fetch(`${botApiUrl}/broadcast`, {
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, message, parseMode }),
+          body: JSON.stringify({
+            chat_id: userId,
+            text: message,
+            parse_mode: parseMode,
+          }),
+        }).then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res;
         }),
       ),
     );
 
     successCount += results.filter((r) => r.status === "fulfilled").length;
     failCount += results.filter((r) => r.status === "rejected").length;
+
+    // تاخیر بین batch ها برای رعایت rate limit تلگرام
+    if (i + batchSize < userIds.length) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }
 
   await logAdminAction(c, {

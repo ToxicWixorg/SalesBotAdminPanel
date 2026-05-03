@@ -13,7 +13,6 @@ type User = {
   createdAt: string;
 };
 
-const ROLES = ["customer", "support", "admin"] as const;
 
 type Props = {
   user: User;
@@ -48,11 +47,6 @@ export default function UserProfileModal({ user, onClose }: Props) {
     },
   });
 
-  const roleMutation = useMutation({
-    mutationFn: (role: string) =>
-      api.patch(`/api/admin/users/${user.id}/role`, { role }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
-  });
 
   const walletMutation = useMutation({
     mutationFn: () =>

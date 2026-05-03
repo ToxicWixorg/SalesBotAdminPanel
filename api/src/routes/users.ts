@@ -195,6 +195,32 @@ usersRouter.patch("/:id/wallet", async (c) => {
     severity: "warning",
   });
 
+  // ارسال پیام تلگرام به کاربر
+  const botToken = process.env.BOT_TOKEN;
+  if (botToken && user.id) {
+    const amountFormatted = Number(amount).toLocaleString("fa-IR");
+    const newBalanceFormatted = Number(newBalance).toLocaleString("fa-IR");
+    const sign = type === "credit" ? "+" : "-";
+    const emoji = type === "credit" ? "💰" : "💸";
+    const desc = description?.trim()
+      ? `\n📝 <b>توضیحات:</b> ${description.trim()}`
+      : "";
+
+    const text =
+      `${emoji} <b>تغییر موجودی کیف پول</b>\n\n` +
+      `${sign}${amountFormatted} تومان\n` +
+      `💳 <b>موجودی جدید:</b> ${newBalanceFormatted} تومان` +
+      desc;
+
+    fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: user.id, text, parse_mode: "HTML" }),
+    }).catch((err: unknown) =>
+      console.error("[wallet] failed to notify user:", err),
+    );
+  }
+
   return c.json({ newBalance });
 });
 

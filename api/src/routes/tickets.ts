@@ -99,6 +99,32 @@ ticketsRouter.get("/:id", async (c) => {
     .where(eq(ticketMessagesTable.ticketId, id))
     .orderBy(ticketMessagesTable.createdAt);
 
+  // اگه هیچ پیامی ثبت نشده ولی ticket.description وجود داشت،
+  // آن را به عنوان اولین پیام کاربر نمایش می‌دهیم (برای تیکت‌های قدیمی)
+  const ticketDescription = ticket[0].ticket.description;
+
+  if (messages.length === 0 && ticketDescription) {
+    const syntheticMessage = {
+      message: {
+        id: 0,
+        ticketId: id,
+        userId: ticket[0].ticket.userId,
+        messageId: null,
+        message: ticketDescription,
+        attachments: null,
+        isFromUser: true,
+        isSystemMessage: false,
+        createdAt: ticket[0].ticket.createdAt,
+      },
+      sender: {
+        id: ticket[0].user?.id ?? null,
+        username: ticket[0].user?.username ?? null,
+        firstName: ticket[0].user?.firstName ?? null,
+      },
+    };
+    return c.json({ ...ticket[0], messages: [syntheticMessage] });
+  }
+
   return c.json({ ...ticket[0], messages });
 });
 

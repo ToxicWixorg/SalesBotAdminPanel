@@ -1,0 +1,11 @@
+.bgDarker {
+  background: linear-gradient(to right bottom, #0c0d1d, #0b0b1e, #010104);
+}
+
+.bgDark {
+  background: linear-gradient(to right bottom, #121a2b, #0e162b, #050d20);
+}
+
+.bgDarkerLight {
+  background: linear-gradient(to right bottom, #0c0d1db2, #0b0b1eb2, #010104b2);
+}

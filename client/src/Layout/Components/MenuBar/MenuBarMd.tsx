@@ -1,8 +1,6 @@
-import { useNavigate, useLocation } from "react-router-dom";
 import MenuBarButton from "./Components/MenuBarButton";
 import PageButtonMd from "./Components/PageButtonMd";
 import PagesNavigateMd from "./PagesNavigateMd";
-import { useTranslation } from "react-i18next";
 
 const MenuBarMd = ({
   isMenuOpen,
@@ -13,11 +11,6 @@ const MenuBarMd = ({
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   Pages: string[];
 }) => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isSettings = location.pathname === "/settings";
-
   return (
     <div
       className={`w-full h-full flex flex-col bgDark rounded-xl overflow-x-hidden border-2 p-2

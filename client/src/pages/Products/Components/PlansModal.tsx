@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 import SuspencePage from "../../../suspence/suspence";
+import ConfigsModal from "./ConfigsModal";
 
 type Plan = {
   id: number;
@@ -38,6 +39,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [configsPlan, setConfigsPlan] = useState<Plan | null>(null);
 
   const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["plans", productId],
@@ -194,6 +196,12 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                             {t("common.edit")}
                           </button>
                           <button
+                            onClick={() => setConfigsPlan(plan)}
+                            className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
+                          >
+                            {t("products.configModal.manageConfigs")}
+                          </button>
+                          <button
                             onClick={() => {
                               if (
                                 confirm(
@@ -341,6 +349,16 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
           )}
         </div>
       </div>
+    </div>
+
+      {configsPlan && (
+        <ConfigsModal
+          productId={productId}
+          planId={configsPlan.id}
+          planName={configsPlan.name}
+          onClose={() => setConfigsPlan(null)}
+        />
+      )}
     </div>
   );
 }

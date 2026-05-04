@@ -29,6 +29,8 @@ const fa = {
     Total: "مجموع",
     active: "فعال",
     inactive: "غیرفعال",
+    copy: "کپی کن",
+    add: "افزودن",
   },
 
   // ── احراز هویت ─────────────────────────────────────────────
@@ -116,6 +118,22 @@ const fa = {
       year: "سال",
       tartib: "ترتیب",
     },
+    configModal: {
+      title: "کانفیگ‌ها",
+      addConfig: "افزودن کانفیگ",
+      bulkAdd: "افزودن چندتایی",
+      configData: "دیتای کانفیگ (لینک/کلید)",
+      configDataPlaceholder: "مثلاً لینک VPN یا کد فعال‌سازی...",
+      label: "برچسب (اختیاری)",
+      labelPlaceholder: "مثلاً Server US-1",
+      bulkPlaceholder: "هر خط یک کانفیگ...",
+      bulkHelp: "هر خط = یک کانفیگ، خطوط خالی نادیده گرفته می‌شوند",
+      available: "موجود",
+      used: "استفاده شده",
+      deleteConfirm: "حذف این کانفیگ؟",
+      manageConfigs: "کانفیگ‌ها",
+      bulkSuccess: "{count} کانفیگ اضافه شد",
+    },
   },
 
   // ── سفارشات ─────────────────────────────────────────────────
@@ -172,6 +190,11 @@ const fa = {
     walletDescDefault: "تنظیم دستی توسط ادمین",
     changeRole: "تغییر نقش",
     registeredAt: "تاریخ ثبت‌نام",
+    orderCount: "تعداد خرید",
+    referralCount: "دعوت‌شده‌ها",
+    referralLink: "لینک دعوت",
+    referralCode: "کد دعوت",
+    copied: "کپی شد!",
     roles: {
       customer: "مشتری",
       support: "پشتیبانی",

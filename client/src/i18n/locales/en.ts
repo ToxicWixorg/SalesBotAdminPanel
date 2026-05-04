@@ -30,6 +30,8 @@ const en: Translations = {
     Total: "Total",
     active: "Active",
     inactive: "Inactive",
+    copy: "Copy",
+    add: "Add",
   },
 
   auth: {
@@ -113,6 +115,22 @@ const en: Translations = {
       year: "Year",
       tartib: "Order",
     },
+    configModal: {
+      title: "Configs",
+      addConfig: "Add Config",
+      bulkAdd: "Bulk Add",
+      configData: "Config Data (link/key)",
+      configDataPlaceholder: "e.g. VPN link or activation key...",
+      label: "Label (optional)",
+      labelPlaceholder: "e.g. Server US-1",
+      bulkPlaceholder: "One config per line...",
+      bulkHelp: "Each line = one config. Empty lines are ignored.",
+      available: "Available",
+      used: "Used",
+      deleteConfirm: "Delete this config?",
+      manageConfigs: "Configs",
+      bulkSuccess: "{count} configs added",
+    },
   },
 
   orders: {
@@ -167,6 +185,11 @@ const en: Translations = {
     walletDescDefault: "Manual adjustment by admin",
     changeRole: "Change Role",
     registeredAt: "Registered At",
+    orderCount: "Total Orders",
+    referralCount: "Referred Users",
+    referralLink: "Referral Link",
+    referralCode: "Referral Code",
+    copied: "Copied!",
     roles: {
       customer: "Customer",
       support: "Support",

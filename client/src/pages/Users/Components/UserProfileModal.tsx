@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 
@@ -13,6 +13,12 @@ type User = {
   createdAt: string;
 };
 
+type UserStats = {
+  user: User;
+  orderCount: number;
+  referralCount: number;
+  referralLink: string | null;
+};
 
 type Props = {
   user: User;
@@ -22,6 +28,23 @@ type Props = {
 export default function UserProfileModal({ user, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [copied, setCopied] = useState(false);
+
+  const { data: stats } = useQuery<UserStats>({
+    queryKey: ["user-stats", user.id],
+    queryFn: () => api.get(`/api/admin/users/${user.id}`).then((r) => r.data),
+  });
+
+  const orderCount = stats?.orderCount ?? 0;
+  const referralCount = stats?.referralCount ?? 0;
+  const referralLink = stats?.referralLink ?? null;
+
+  const handleCopy = () => {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const [walletForm, setWalletForm] = useState({
     amount: "",
@@ -46,7 +69,6 @@ export default function UserProfileModal({ user, onClose }: Props) {
       onClose();
     },
   });
-
 
   const walletMutation = useMutation({
     mutationFn: () =>
@@ -132,7 +154,36 @@ export default function UserProfileModal({ user, onClose }: Props) {
                 {new Date(user.createdAt).toLocaleDateString("fa-IR")}
               </p>
             </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="text-white/50 text-xs mb-1">
+                {t("users.orderCount")}
+              </p>
+              <p className="font-medium">{orderCount}</p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-3">
+              <p className="text-white/50 text-xs mb-1">
+                {t("users.referralCount")}
+              </p>
+              <p className="font-medium">{referralCount}</p>
+            </div>
           </div>
+
+          {referralLink && (
+            <div className="bg-white/5 rounded-lg p-3 flex flex-col gap-1">
+              <p className="text-white/50 text-xs">{t("users.referralLink")}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-white/80 truncate flex-1 select-all">
+                  {referralLink}
+                </span>
+                <button
+                  onClick={handleCopy}
+                  className="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition-all shrink-0"
+                >
+                  {copied ? t("users.copied") : t("common.copy")}
+                </button>
+              </div>
+            </div>
+          )}
 
           {showWallet ? (
             <div className="border border-white/10 rounded-xl p-3 flex flex-col gap-2">

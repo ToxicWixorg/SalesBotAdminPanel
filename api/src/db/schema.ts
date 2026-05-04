@@ -126,7 +126,37 @@ export const productPlansTable = pgTable(
 export type ProductPlan = typeof productPlansTable.$inferSelect;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 📦 ORDERS
+// � PRODUCT CONFIGS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const productConfigsTable = pgTable(
+  "product_configs",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    planId: integer("plan_id").references(() => productPlansTable.id, {
+      onDelete: "set null",
+    }),
+    configData: text("config_data").notNull(),
+    label: text("label"),
+    isUsed: boolean("is_used").default(false),
+    orderId: integer("order_id"),
+    assignedAt: timestamp("assigned_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    productIdIdx: index("product_configs_product_id_idx").on(table.productId),
+    planIdIdx: index("product_configs_plan_id_idx").on(table.planId),
+    isUsedIdx: index("product_configs_is_used_idx").on(table.isUsed),
+  }),
+);
+
+export type ProductConfig = typeof productConfigsTable.$inferSelect;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// �📦 ORDERS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const ordersTable = pgTable(

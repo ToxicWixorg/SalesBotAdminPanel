@@ -26,6 +26,7 @@ import { db } from "../db/index.ts";
 import {
   productsTable,
   productPlansTable,
+  productConfigsTable,
   categoriesTable,
 } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
@@ -278,5 +279,117 @@ categoriesRouter.put("/:id", async (c) => {
 categoriesRouter.delete("/:id", async (c) => {
   const id = parseInt(c.req.param("id"));
   await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
+  return c.json({ success: true });
+});
+
+// ─── CONFIGS ─────────────────────────────────────────────────────────────────
+// GET    /api/admin/products/:id/configs               - لیست کانفیگ‌های یک محصول
+// POST   /api/admin/products/:id/configs               - افزودن کانفیگ جدید
+// POST   /api/admin/products/:id/configs/bulk          - افزودن چند کانفیگ همزمان
+// DELETE /api/admin/products/:id/configs/:configId     - حذف کانفیگ
+
+productsRouter.get("/:id/configs", async (c) => {
+  const productId = parseInt(c.req.param("id"));
+  const { planId } = c.req.query();
+
+  const conditions = [eq(productConfigsTable.productId, productId)];
+  if (planId) conditions.push(eq(productConfigsTable.planId, parseInt(planId)));
+
+  const configs = await db
+    .select()
+    .from(productConfigsTable)
+    .where(and(...conditions))
+    .orderBy(productConfigsTable.createdAt);
+
+  return c.json(configs);
+});
+
+productsRouter.post("/:id/configs", async (c) => {
+  const productId = parseInt(c.req.param("id"));
+  const body = await c.req.json<{
+    configData: string;
+    label?: string;
+    planId?: number | null;
+  }>();
+
+  const [config] = await db
+    .insert(productConfigsTable)
+    .values({
+      productId,
+      configData: body.configData,
+      label: body.label ?? null,
+      planId: body.planId ?? null,
+    })
+    .returning();
+
+  await logAdminAction(c, {
+    action: "create",
+    entityType: "product_config",
+    entityId: config.id,
+    description: `Added config for product ${productId}${
+      body.planId ? ` plan ${body.planId}` : ""
+    }`,
+  });
+
+  return c.json(config, 201);
+});
+
+productsRouter.post("/:id/configs/bulk", async (c) => {
+  const productId = parseInt(c.req.param("id"));
+  const body = await c.req.json<{
+    configs: { configData: string; label?: string }[];
+    planId?: number | null;
+  }>();
+
+  if (!Array.isArray(body.configs) || body.configs.length === 0) {
+    return c.json({ error: "No configs provided" }, 400);
+  }
+
+  const rows = body.configs.map((cfg) => ({
+    productId,
+    configData: cfg.configData,
+    label: cfg.label ?? null,
+    planId: body.planId ?? null,
+  }));
+
+  const inserted = await db
+    .insert(productConfigsTable)
+    .values(rows)
+    .returning();
+
+  await logAdminAction(c, {
+    action: "create",
+    entityType: "product_config",
+    entityId: productId,
+    description: `Bulk added ${inserted.length} configs for product ${productId}`,
+  });
+
+  return c.json({ inserted: inserted.length }, 201);
+});
+
+productsRouter.delete("/:id/configs/:configId", async (c) => {
+  const configId = parseInt(c.req.param("configId"));
+
+  const existing = await db
+    .select()
+    .from(productConfigsTable)
+    .where(eq(productConfigsTable.id, configId))
+    .limit(1);
+
+  if (!existing[0]) return c.json({ error: "Config not found" }, 404);
+  if (existing[0].isUsed)
+    return c.json({ error: "Cannot delete a used config" }, 400);
+
+  await db
+    .delete(productConfigsTable)
+    .where(eq(productConfigsTable.id, configId));
+
+  await logAdminAction(c, {
+    action: "delete",
+    entityType: "product_config",
+    entityId: configId,
+    severity: "warning",
+  });
+
   return c.json({ success: true });
 });

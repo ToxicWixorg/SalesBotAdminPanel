@@ -79,22 +79,32 @@ usersRouter.get("/:id", async (c) => {
 
   if (!user) return c.json({ error: "User not found" }, 404);
 
-  // آمار خلاصه
-  const [orderStats, referralStats] = await Promise.all([
+  const [orders, referrals] = await Promise.all([
     db
-      .select({
-        status: ordersTable.status,
-        count: eq(ordersTable.status, ordersTable.status),
-      })
+      .select({ id: ordersTable.id })
       .from(ordersTable)
       .where(eq(ordersTable.userId, id)),
 
-    db.query.referralRewardsTable.findMany({
-      where: eq(referralRewardsTable.referrerId, id),
-    }),
+    db
+      .select({ id: referralRewardsTable.id })
+      .from(referralRewardsTable)
+      .where(eq(referralRewardsTable.referrerId, id)),
   ]);
 
-  return c.json({ user, orderStats, referralCount: referralStats.length });
+  const botUsername = process.env.BOT_USERNAME ?? "";
+  const referralLink =
+    user.referralCode && botUsername
+      ? `https://t.me/${botUsername}?start=ref_${user.referralCode}`
+      : user.referralCode
+        ? `ref_${user.referralCode}`
+        : null;
+
+  return c.json({
+    user,
+    orderCount: orders.length,
+    referralCount: referrals.length,
+    referralLink,
+  });
 });
 
 // ── PATCH /api/admin/users/:id/block ─────────────────────────────────────────

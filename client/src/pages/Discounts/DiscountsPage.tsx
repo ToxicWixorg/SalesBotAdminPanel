@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
+import { useTranslation } from "react-i18next";
 
 type DiscountCode = {
   id: number;
@@ -63,6 +64,7 @@ function formFromDiscount(d: DiscountCode): DiscountFormData {
 }
 
 export default function DiscountsPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     type: "",
     isActive: "",
@@ -120,12 +122,12 @@ export default function DiscountsPage() {
     <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
-        <h1 className="text-xl font-bold">کدهای تخفیف</h1>
+        <h1 className="text-xl font-bold">{t("discounts.title")}</h1>
         <button
           onClick={() => setShowForm(true)}
           className="bg-white text-black rounded-lg px-3 py-1 text-sm hover:opacity-80 transition-all"
         >
-          + کد جدید
+          {t("discounts.newCode")}
         </button>
       </div>
       {/* Filters */}
@@ -136,13 +138,13 @@ export default function DiscountsPage() {
           onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
         >
           <option value="" className="bg-slate-900">
-            همه — نوع
+            {t("discounts.filterAllType")}
           </option>
           <option value="percentage" className="bg-slate-900">
-            درصدی
+            {t("discounts.typePercentage")}
           </option>
           <option value="fixed" className="bg-slate-900">
-            مبلغی
+            {t("discounts.typeFixed")}
           </option>
         </select>
 
@@ -154,13 +156,13 @@ export default function DiscountsPage() {
           }
         >
           <option value="" className="bg-slate-900">
-            همه — وضعیت
+            {t("discounts.filterAllStatus")}
           </option>
           <option value="true" className="bg-slate-900">
-            فعال
+            {t("common.active")}
           </option>
           <option value="false" className="bg-slate-900">
-            غیرفعال
+            {t("common.inactive")}
           </option>
         </select>
 
@@ -172,10 +174,10 @@ export default function DiscountsPage() {
           }
         >
           <option value="" className="bg-slate-900">
-            همه — انقضا
+            {t("discounts.filterAllExpiry")}
           </option>
           <option value="true" className="bg-slate-900">
-            منقضی‌شده
+            {t("discounts.expired")}
           </option>
         </select>
       </div>
@@ -206,15 +208,18 @@ export default function DiscountsPage() {
                         : "bg-yellow-500/20 text-yellow-400"
                     }`}
                   >
-                    {d.type === "percentage" ? "درصدی" : "مبلغی"}
+                    {d.type === "percentage"
+                      ? t("discounts.typePercentage")
+                      : t("discounts.typeFixed")}
                   </span>
                   <span className="text-sm font-medium text-white/80">
                     {d.type === "percentage"
                       ? `${d.value}٪`
-                      : `${Number(d.value).toLocaleString()} تومان`}
+                      : `${Number(d.value).toLocaleString()} ${t("common.toman")}`}
                     {d.maxDiscount && (
                       <span className="text-white/40 text-xs mr-1">
-                        (سقف: {Number(d.maxDiscount).toLocaleString()})
+                        ({t("discounts.cap")}:{" "}
+                        {Number(d.maxDiscount).toLocaleString()})
                       </span>
                     )}
                   </span>
@@ -228,7 +233,7 @@ export default function DiscountsPage() {
                       : "bg-white/10 text-white/40 hover:bg-white/20"
                   }`}
                 >
-                  {d.isActive ? "فعال" : "غیرفعال"}
+                  {d.isActive ? t("common.active") : t("common.inactive")}
                 </button>
               </div>
 
@@ -236,7 +241,9 @@ export default function DiscountsPage() {
               <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
                 <div className="flex items-center gap-4 flex-wrap">
                   <span>
-                    <span className="text-white/30 mr-1">استفاده:</span>
+                    <span className="text-white/30 mr-1">
+                      {t("discounts.uses")}:
+                    </span>
                     <span
                       className={
                         d.maxUses != null && d.currentUses >= d.maxUses
@@ -249,8 +256,11 @@ export default function DiscountsPage() {
                   </span>
                   {d.minOrderAmount && (
                     <span>
-                      <span className="text-white/30 mr-1">حداقل:</span>
-                      {Number(d.minOrderAmount).toLocaleString()} تومان
+                      <span className="text-white/30 mr-1">
+                        {t("discounts.minLabel")}:
+                      </span>
+                      {Number(d.minOrderAmount).toLocaleString()}{" "}
+                      {t("common.toman")}
                     </span>
                   )}
                   {d.expiresAt && (
@@ -259,7 +269,9 @@ export default function DiscountsPage() {
                         new Date(d.expiresAt) < new Date() ? "text-red-400" : ""
                       }
                     >
-                      <span className="text-white/30 mr-1">انقضا:</span>
+                      <span className="text-white/30 mr-1">
+                        {t("discounts.expiresLabel")}:
+                      </span>
                       {new Date(d.expiresAt).toLocaleDateString("fa-IR")}
                     </span>
                   )}
@@ -272,16 +284,17 @@ export default function DiscountsPage() {
                     onClick={() => setEditDiscount(d)}
                     className="bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
                   >
-                    ویرایش
+                    {t("common.edit")}
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm("حذف شود؟")) deleteMutation.mutate(d.id);
+                      if (confirm(t("discounts.confirmDelete")))
+                        deleteMutation.mutate(d.id);
                     }}
                     disabled={deleteMutation.isPending}
                     className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all"
                   >
-                    حذف
+                    {t("common.delete")}
                   </button>
                 </div>
               </div>
@@ -289,14 +302,14 @@ export default function DiscountsPage() {
           ))}
         </ul>
         {(!discounts || discounts.length === 0) && (
-          <p className="text-center text-white/40 py-8">داده‌ای وجود ندارد</p>
+          <p className="text-center text-white/40 py-8">{t("common.noData")}</p>
         )}
       </div>
 
       {/* Create Modal */}
       {showForm && (
         <DiscountFormModal
-          title="کد تخفیف جدید"
+          title={t("discounts.newCodeTitle")}
           initialData={emptyForm}
           isPending={createMutation.isPending}
           onSubmit={(data) => createMutation.mutate(data)}
@@ -307,7 +320,7 @@ export default function DiscountsPage() {
       {/* Edit Modal */}
       {editDiscount && (
         <DiscountFormModal
-          title="ویرایش کد تخفیف"
+          title={t("discounts.editTitle")}
           initialData={formFromDiscount(editDiscount)}
           isPending={editMutation.isPending}
           onSubmit={(data) =>
@@ -333,6 +346,7 @@ function DiscountFormModal({
   onSubmit: (data: unknown) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<DiscountFormData>(initialData);
 
   const set = <K extends keyof DiscountFormData>(
@@ -376,7 +390,7 @@ function DiscountFormModal({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>کد تخفیف *</label>
+              <label className={labelCls}>{t("discounts.codeLabel")} *</label>
               <input
                 className={inputCls}
                 placeholder="SUMMER20"
@@ -386,27 +400,29 @@ function DiscountFormModal({
               />
             </div>
             <div>
-              <label className={labelCls}>نوع</label>
+              <label className={labelCls}>{t("discounts.typeLabel")}</label>
               <select
                 className={inputCls}
                 value={form.type}
                 onChange={(e) => set("type", e.target.value)}
               >
                 <option value="percentage" className="bg-slate-900">
-                  درصدی
+                  {t("discounts.typePercentage")}
                 </option>
                 <option value="fixed" className="bg-slate-900">
-                  مبلغی
+                  {t("discounts.typeFixed")}
                 </option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className={labelCls}>توضیحات</label>
+            <label className={labelCls}>
+              {t("discounts.descriptionLabel")}
+            </label>
             <input
               className={inputCls}
-              placeholder="توضیحات اختیاری"
+              placeholder={t("discounts.descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
             />
@@ -415,7 +431,10 @@ function DiscountFormModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>
-                {form.type === "percentage" ? "مقدار (%)" : "مقدار (تومان)"} *
+                {form.type === "percentage"
+                  ? t("discounts.valuePercent")
+                  : t("discounts.valueFixed")}{" "}
+                *
               </label>
               <input
                 className={inputCls}
@@ -429,12 +448,14 @@ function DiscountFormModal({
             </div>
             {form.type === "percentage" && (
               <div>
-                <label className={labelCls}>سقف تخفیف (تومان)</label>
+                <label className={labelCls}>
+                  {t("discounts.maxDiscountLabel")}
+                </label>
                 <input
                   className={inputCls}
                   type="number"
                   min="0"
-                  placeholder="اختیاری"
+                  placeholder={t("discounts.optional")}
                   value={form.maxDiscount}
                   onChange={(e) => set("maxDiscount", e.target.value)}
                 />
@@ -444,18 +465,20 @@ function DiscountFormModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>حداکثر استفاده کل</label>
+              <label className={labelCls}>{t("discounts.maxUsesTotal")}</label>
               <input
                 className={inputCls}
                 type="number"
                 min="1"
-                placeholder="نامحدود"
+                placeholder={t("discounts.unlimited")}
                 value={form.maxUses}
                 onChange={(e) => set("maxUses", e.target.value)}
               />
             </div>
             <div>
-              <label className={labelCls}>حداکثر استفاده هر کاربر</label>
+              <label className={labelCls}>
+                {t("discounts.maxUsesPerUserLabel")}
+              </label>
               <input
                 className={inputCls}
                 type="number"
@@ -468,18 +491,18 @@ function DiscountFormModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>حداقل مبلغ سفارش</label>
+              <label className={labelCls}>{t("discounts.minOrderLabel")}</label>
               <input
                 className={inputCls}
                 type="number"
                 min="0"
-                placeholder="اختیاری"
+                placeholder={t("discounts.optional")}
                 value={form.minOrderAmount}
                 onChange={(e) => set("minOrderAmount", e.target.value)}
               />
             </div>
             <div>
-              <label className={labelCls}>تاریخ انقضا</label>
+              <label className={labelCls}>{t("discounts.expiresAt")}</label>
               <input
                 type="datetime-local"
                 className={inputCls}
@@ -496,7 +519,7 @@ function DiscountFormModal({
               onChange={(e) => set("isActive", e.target.checked)}
               className="w-4 h-4"
             />
-            <span className="text-sm">فعال باشد</span>
+            <span className="text-sm">{t("discounts.isActiveLabel")}</span>
           </label>
 
           <div className="flex gap-2 mt-2">
@@ -505,14 +528,14 @@ function DiscountFormModal({
               disabled={isPending}
               className="flex-1 bg-white text-black rounded-lg py-2 text-sm font-medium hover:opacity-80 disabled:opacity-50 transition-all"
             >
-              {isPending ? "در حال ذخیره..." : "ذخیره"}
+              {isPending ? t("discounts.saving") : t("common.save")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="flex-1 bg-white/10 rounded-lg py-2 text-sm hover:bg-white/20 transition-all"
             >
-              انصراف
+              {t("common.cancel")}
             </button>
           </div>
         </form>

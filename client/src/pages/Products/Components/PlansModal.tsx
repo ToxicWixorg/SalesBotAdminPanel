@@ -127,7 +127,9 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
     >
       <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-4 border-b border-white/10">
-          <h2 className="font-semibold text-base">پلن‌ها — {productName}</h2>
+          <h2 className="font-semibold text-base">
+            {t("products.planModal.plansTitle")} — {productName}
+          </h2>
           <button
             onClick={onClose}
             className="text-white/50 hover:text-white transition-colors text-xl leading-none"
@@ -146,10 +148,16 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
               <table className="w-full text-sm border mb-4">
                 <thead className="bg-white/10">
                   <tr className="border-b">
-                    <th className="p-2 text-right">نام</th>
-                    <th className="p-2 text-right">قیمت</th>
-                    <th className="p-2 text-right">مدت</th>
-                    <th className="p-2 text-right">ترتیب</th>
+                    <th className="p-2 text-right">{t("common.name")}</th>
+                    <th className="p-2 text-right">
+                      {t("products.planModal.cost")}
+                    </th>
+                    <th className="p-2 text-right">
+                      {t("products.planModal.time")}
+                    </th>
+                    <th className="p-2 text-right">
+                      {t("products.planModal.tartib")}
+                    </th>
                     <th className="p-2 text-right">{t("common.status")}</th>
                     <th className="p-2 text-right">{t("common.actions")}</th>
                   </tr>
@@ -164,7 +172,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                       </td>
                       <td className="p-2">
                         {plan.duration
-                          ? `${plan.duration} ${plan.durationUnit === "month" ? "ماه" : plan.durationUnit === "year" ? "سال" : "روز"}`
+                          ? `${plan.duration} ${plan.durationUnit === "month" ? t("products.planModal.mounth") : plan.durationUnit === "year" ? t("products.planModal.year") : t("products.planModal.day")}`
                           : "—"}
                       </td>
                       <td className="p-2">{plan.order}</td>
@@ -187,7 +195,11 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm("حذف این پلن؟"))
+                              if (
+                                confirm(
+                                  t("products.planModal.deletePlanConfirm"),
+                                )
+                              )
                                 deleteMutation.mutate(plan.id);
                             }}
                             className="text-xs bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded px-2 py-0.5 transition-all"
@@ -270,7 +282,9 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                   </select>
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">{t('products.planModal.tartib')}</span>
+                  <span className="text-white/60">
+                    {t("products.planModal.tartib")}
+                  </span>
                   <input
                     type="number"
                     className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"

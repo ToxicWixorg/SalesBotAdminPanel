@@ -28,20 +28,19 @@ type Stats = {
   bySource: { source: string; total: string | null; count: number }[];
 };
 
-const SOURCES = [
-  { value: "purchase", label: "خرید" },
-  { value: "recharge", label: "شارژ کیف پول" },
-  { value: "refund", label: "بازگشت وجه" },
-  { value: "referral", label: "پاداش دعوت" },
-  { value: "perk", label: "پاداش Perk" },
-  { value: "admin_adjustment", label: "تعدیل ادمین" },
+const SOURCE_VALUES = [
+  "purchase",
+  "recharge",
+  "refund",
+  "referral",
+  "perk",
+  "admin_adjustment",
 ];
-
-const sourceLabel = (source: string) =>
-  SOURCES.find((s) => s.value === source)?.label ?? source;
 
 export default function WalletPage() {
   const { t } = useTranslation();
+  const sourceLabel = (source: string) =>
+    t(`wallet.sources.${source}`, { defaultValue: source });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
@@ -100,7 +99,7 @@ export default function WalletPage() {
         <div className="flex gap-1 items-center">
           <input
             className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white placeholder:text-white/40 outline-none"
-            placeholder="جستجو نام / یوزرنیم..."
+            placeholder={t("wallet.searchPlaceholder")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => {
@@ -123,7 +122,7 @@ export default function WalletPage() {
         <SourceFilter
           filters={filters}
           setFilters={setFilters}
-          SOURCES={SOURCES}
+          sources={SOURCE_VALUES}
         />
 
         {(filters.type || filters.source || search) && (
@@ -135,7 +134,7 @@ export default function WalletPage() {
             }}
             className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white/60 hover:text-white hover:bg-white/20 transition-all"
           >
-            پاک‌ کردن فیلتر
+            {t("wallet.clearFilter")}
           </button>
         )}
       </div>
@@ -160,9 +159,11 @@ export default function WalletPage() {
           }
           className="px-4 py-1.5 text-sm rounded-lg bg-white/10 border border-white/20 disabled:opacity-30 hover:bg-white/20 transition-all"
         >
-          قبلی
+          {t("wallet.prevPage")}
         </button>
-        <span className="text-sm text-white/60">صفحه {filters.page}</span>
+        <span className="text-sm text-white/60">
+          {t("wallet.page")} {filters.page}
+        </span>
         <button
           disabled={(filteredTransactions?.length ?? 0) < 30}
           onClick={() =>
@@ -170,7 +171,7 @@ export default function WalletPage() {
           }
           className="px-4 py-1.5 text-sm rounded-lg bg-white/10 border border-white/20 disabled:opacity-30 hover:bg-white/20 transition-all"
         >
-          بعدی
+          {t("wallet.nextPage")}
         </button>
       </div>
     </div>

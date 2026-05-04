@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
 import SuspencePage from "../../suspence/suspence";
@@ -61,32 +62,10 @@ const ALL_SECTIONS = [
   "settings",
 ];
 
-const SECTION_LABEL: Record<string, string> = {
-  products: "محصولات",
-  orders: "سفارشات",
-  tickets: "تیکت‌ها",
-  users: "کاربران",
-  wallet: "کیف پول",
-  discounts: "تخفیف‌ها",
-  referrals: "معرفی‌ها",
-  perks: "Perks",
-  schedules: "زمان‌بندی",
-  broadcast: "پیام گروهی",
-  settings: "تنظیمات",
-};
-
 const SEVERITY_BADGE: Record<string, string> = {
   info: "bg-blue-500/20 text-blue-400",
   warning: "bg-yellow-500/20 text-yellow-400",
   critical: "bg-red-500/20 text-red-400",
-};
-
-const ROLE_LABEL: Record<string, string> = {
-  superadmin: "Super Admin",
-  admin: "ادمین",
-  manager: "مدیر",
-  support: "پشتیبانی",
-  operator: "اپراتور",
 };
 
 const inputCls =
@@ -102,6 +81,7 @@ function AddAdminModal({
   onSave: (data: AdminFormData) => void;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<AdminFormData>({
     userId: "",
     displayName: "",
@@ -120,11 +100,13 @@ function AddAdminModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-slate-900 border border-white/20 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg font-bold mb-4">افزودن ادمین جدید</h2>
+        <h2 className="text-lg font-bold mb-4">
+          {t("settings.addAdminTitle")}
+        </h2>
         <div className="flex flex-col gap-3">
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              Telegram User ID
+              {t("settings.telegramId")}
             </label>
             <input
               className={inputCls}
@@ -133,12 +115,12 @@ function AddAdminModal({
               onChange={(e) =>
                 setForm((f) => ({ ...f, userId: e.target.value }))
               }
-              placeholder="مثلاً 123456789"
+              placeholder={t("settings.telegramIdPlaceholder")}
             />
           </div>
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              نام نمایشی
+              {t("settings.displayName")}
             </label>
             <input
               className={inputCls}
@@ -146,28 +128,33 @@ function AddAdminModal({
               onChange={(e) =>
                 setForm((f) => ({ ...f, displayName: e.target.value }))
               }
-              placeholder="نام نمایشی در پنل"
+              placeholder={t("settings.displayNamePlaceholder")}
             />
           </div>
           <div>
-            <label className="text-xs text-white/50 mb-1 block">نقش</label>
+            <label className="text-xs text-white/50 mb-1 block">
+              {t("settings.roleLabel")}
+            </label>
             <select
               className={inputCls}
               value={form.role}
               onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
             >
-              {Object.entries(ROLE_LABEL)
-                .filter(([k]) => k !== "superadmin")
-                .map(([v, l]) => (
+              {(["admin", "manager", "support", "operator"] as const).map(
+                (v) => (
                   <option key={v} value={v} className="bg-slate-900">
-                    {l}
+                    {t(`settings.roles.${v}`)}
                   </option>
-                ))}
+                ),
+              )}
             </select>
           </div>
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              بخش‌های دسترسی <span className="text-white/30">(خالی = همه)</span>
+              {t("settings.allowedSections")}{" "}
+              <span className="text-white/30">
+                ({t("settings.allSectionsHint")})
+              </span>
             </label>
             <div className="flex flex-wrap gap-1.5 mt-1">
               {ALL_SECTIONS.map((s) => (
@@ -181,7 +168,9 @@ function AddAdminModal({
                       : "bg-white/10 text-white/50 hover:bg-white/20"
                   }`}
                 >
-                  {SECTION_LABEL[s] ?? s}
+                  {t(
+                    `settings.sectionLabels.${s}` as Parameters<typeof t>[0],
+                  ) ?? s}
                 </button>
               ))}
             </div>
@@ -193,13 +182,13 @@ function AddAdminModal({
             disabled={isLoading || !form.userId}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg py-2 text-sm font-medium transition-all"
           >
-            {isLoading ? "در حال ذخیره..." : "ذخیره"}
+            {isLoading ? (t("common.saving") ?? "...") : t("common.save")}
           </button>
           <button
             onClick={onClose}
             className="flex-1 bg-white/10 hover:bg-white/20 rounded-lg py-2 text-sm transition-all"
           >
-            انصراف
+            {t("common.cancel")}
           </button>
         </div>
       </div>
@@ -209,6 +198,7 @@ function AddAdminModal({
 
 // ── Main Page ─────────────────────────────────────────────
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { admin } = useAuth();
   const [activeTab, setActiveTab] = useState<"admins" | "logs">("admins");
   const [logFilters, setLogFilters] = useState({
@@ -277,7 +267,7 @@ export default function SettingsPage() {
     <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
-        <h1 className="text-xl font-bold">تنظیمات</h1>
+        <h1 className="text-xl font-bold">{t("settings.title")}</h1>
       </div>
 
       {/* Tabs */}
@@ -292,7 +282,7 @@ export default function SettingsPage() {
                 : "bg-white/10 hover:bg-white/20 text-white/70"
             }`}
           >
-            {tab === "admins" ? "ادمین‌ها" : "لاگ‌های سیستم"}
+            {tab === "admins" ? t("settings.adminsTab") : t("settings.logsTab")}
           </button>
         ))}
       </div>
@@ -306,7 +296,7 @@ export default function SettingsPage() {
                 onClick={() => setShowAddModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition-all"
               >
-                + افزودن ادمین
+                {t("settings.addAdmin")}
               </button>
             </div>
           )}
@@ -330,7 +320,11 @@ export default function SettingsPage() {
                         </span>
                       )}
                       <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
-                        {ROLE_LABEL[row.admin.role] ?? row.admin.role}
+                        {t(
+                          `settings.roles.${row.admin.role}` as Parameters<
+                            typeof t
+                          >[0],
+                        ) ?? row.admin.role}
                       </span>
                       {row.user ? (
                         <span className="text-xs text-white/50">
@@ -352,7 +346,9 @@ export default function SettingsPage() {
                           : "bg-white/10 text-white/40"
                       }`}
                     >
-                      {row.admin.isActive ? "فعال" : "غیرفعال"}
+                      {row.admin.isActive
+                        ? t("common.active")
+                        : t("common.inactive")}
                     </span>
                   </div>
 
@@ -366,15 +362,23 @@ export default function SettingsPage() {
                               key={s}
                               className="bg-white/10 text-white/60 px-1.5 py-0.5 rounded-md"
                             >
-                              {SECTION_LABEL[s] ?? s}
+                              {t(
+                                `settings.sectionLabels.${s}` as Parameters<
+                                  typeof t
+                                >[0],
+                              ) ?? s}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-green-400">همه بخش‌ها</span>
+                        <span className="text-green-400">
+                          {t("settings.allSections")}
+                        </span>
                       )}
                       <span>
-                        <span className="text-white/30 mr-1">آخرین ورود:</span>
+                        <span className="text-white/30 mr-1">
+                          {t("settings.colLastLogin")}:
+                        </span>
                         {row.admin.lastLoginAt
                           ? new Date(row.admin.lastLoginAt).toLocaleDateString(
                               "fa-IR",
@@ -382,7 +386,7 @@ export default function SettingsPage() {
                           : "—"}
                       </span>
                       <span className="text-white/30">
-                        {row.admin.loginCount} بار
+                        {row.admin.loginCount} {t("settings.colLoginCount")}
                       </span>
                     </div>
                     {admin?.isSuperAdmin && !row.admin.isSuperAdmin && (
@@ -394,13 +398,17 @@ export default function SettingsPage() {
                           disabled={toggleAdminMutation.isPending}
                           className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                         >
-                          {row.admin.isActive ? "غیرفعال" : "فعال"}
+                          {row.admin.isActive
+                            ? t("settings.deactivate")
+                            : t("settings.activate")}
                         </button>
                         <button
                           onClick={() => {
                             if (
                               confirm(
-                                `حذف ${row.admin.displayName ?? "این ادمین"}؟`,
+                                t("settings.deleteAdminConfirm", {
+                                  name: row.admin.displayName ?? "",
+                                }),
                               )
                             )
                               deleteAdminMutation.mutate(row.admin.id);
@@ -408,7 +416,7 @@ export default function SettingsPage() {
                           disabled={deleteAdminMutation.isPending}
                           className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                         >
-                          حذف
+                          {t("common.delete")}
                         </button>
                       </div>
                     )}
@@ -418,7 +426,7 @@ export default function SettingsPage() {
             </ul>
             {(!admins || admins.length === 0) && (
               <p className="text-center text-white/40 py-8">
-                هیچ ادمینی وجود ندارد
+                {t("settings.noAdmins")}
               </p>
             )}
           </div>
@@ -442,7 +450,7 @@ export default function SettingsPage() {
               }
             >
               <option value="" className="bg-slate-900">
-                همه شدت‌ها
+                {t("settings.allSeverities")}
               </option>
               <option value="info" className="bg-slate-900">
                 info
@@ -466,7 +474,7 @@ export default function SettingsPage() {
               }
             >
               <option value="" className="bg-slate-900">
-                همه موجودیت‌ها
+                {t("settings.allEntities")}
               </option>
               {[
                 "product",
@@ -536,7 +544,9 @@ export default function SettingsPage() {
                 ))}
               </ul>
               {(!logs || logs.length === 0) && (
-                <p className="text-center text-white/40 py-8">لاگی یافت نشد</p>
+                <p className="text-center text-white/40 py-8">
+                  {t("settings.noLogs")}
+                </p>
               )}
             </div>
           )}
@@ -553,10 +563,10 @@ export default function SettingsPage() {
               disabled={logFilters.page === "1"}
               className="text-sm bg-white/10 hover:bg-white/20 rounded px-3 py-1 disabled:opacity-30 transition-all"
             >
-              قبلی
+              {t("settings.prev")}
             </button>
             <span className="text-sm px-3 py-1 text-white/60">
-              صفحه {logFilters.page}
+              {t("settings.page")} {logFilters.page}
             </span>
             <button
               onClick={() =>
@@ -568,7 +578,7 @@ export default function SettingsPage() {
               disabled={(logs?.length ?? 0) === 0}
               className="text-sm bg-white/10 hover:bg-white/20 rounded px-3 py-1 disabled:opacity-30 transition-all"
             >
-              بعدی
+              {t("settings.next")}
             </button>
           </div>
         </>

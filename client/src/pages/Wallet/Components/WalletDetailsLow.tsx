@@ -16,7 +16,7 @@ const WalletDetailsLow = ({
   return (
     <div className="mb-6">
       <h2 className="text-sm font-semibold text-white/60 mb-2">
-        خلاصه بر اساس منبع
+        {t("wallet.bySourceTitle")}
       </h2>
       <div className="flex flex-wrap gap-2">
         {stats.bySource.map((s) => (

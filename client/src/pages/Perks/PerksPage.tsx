@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
+import { useTranslation } from "react-i18next";
 
 // ── Types ────────────────────────────────────────────────
 type PerksTask = {
@@ -47,29 +48,7 @@ type TaskFormData = {
 };
 
 // ── Lookup tables ─────────────────────────────────────────
-const TASK_TYPE_LABEL: Record<string, string> = {
-  join_channel: "عضویت در کانال",
-  invite_friend: "دعوت دوستان",
-  instagram_story: "استوری اینستاگرام",
-  tweet: "توییت",
-  review: "ثبت نظر",
-  first_purchase: "اولین خرید",
-  renew_subscription: "تجدید اشتراک",
-  complete_profile: "تکمیل پروفایل",
-};
-
-const REWARD_TYPE_LABEL: Record<string, string> = {
-  wallet_credit: "شارژ کیف پول",
-  discount: "کد تخفیف",
-  free_product: "محصول رایگان",
-};
-
-const REQUEST_STATUS_LABEL: Record<string, string> = {
-  pending: "در انتظار",
-  verified: "تأیید شده",
-  completed: "رد شده",
-  claimed: "دریافت شده",
-};
+// (labels resolved via t() at runtime)
 
 const REQUEST_STATUS_BADGE: Record<string, string> = {
   pending: "bg-yellow-500/20 text-yellow-400",
@@ -78,7 +57,7 @@ const REQUEST_STATUS_BADGE: Record<string, string> = {
   claimed: "bg-blue-500/20 text-blue-400",
 };
 
-const EMPTY_FORM: TaskFormData = {
+const EMPTY_FORM = {
   title: "",
   description: "",
   type: "join_channel",
@@ -104,54 +83,75 @@ function TaskFormModal({
   onSave: (data: TaskFormData) => void;
   isLoading: boolean;
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState<TaskFormData>(initial);
   const set = (k: keyof TaskFormData, v: unknown) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const TASK_TYPE_OPTIONS = Object.keys({
+    join_channel: 1,
+    invite_friend: 1,
+    instagram_story: 1,
+    tweet: 1,
+    review: 1,
+    first_purchase: 1,
+    renew_subscription: 1,
+    complete_profile: 1,
+  });
+  const REWARD_TYPE_OPTIONS = Object.keys({
+    wallet_credit: 1,
+    discount: 1,
+    free_product: 1,
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 ">
       <div className="bg-slate-900 border border-white/20 rounded-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <h2 className="text-lg font-bold mb-4">
-          {initial.id ? "ویرایش وظیفه" : "وظیفه جدید"}
+          {initial.id ? t("perks.editTask") : t("perks.createTask")}
         </h2>
 
         <div className="flex flex-col gap-3">
           {/* Title */}
           <div>
-            <label className="text-xs text-white/50 mb-1 block">عنوان</label>
+            <label className="text-xs text-white/50 mb-1 block">
+              {t("perks.taskTitleLabel")}
+            </label>
             <input
               className={inputCls}
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
-              placeholder="عنوان وظیفه"
+              placeholder={t("perks.taskTitlePlaceholder")}
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-xs text-white/50 mb-1 block">توضیحات</label>
+            <label className="text-xs text-white/50 mb-1 block">
+              {t("perks.taskDescLabel")}
+            </label>
             <textarea
               className={inputCls}
               rows={2}
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
-              placeholder="توضیحات اختیاری"
+              placeholder={t("perks.taskDescPlaceholder")}
             />
           </div>
 
           {/* Type */}
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              نوع وظیفه
+              {t("perks.taskTypeLabel")}
             </label>
             <select
               className={inputCls}
               value={form.type}
               onChange={(e) => set("type", e.target.value)}
             >
-              {Object.entries(TASK_TYPE_LABEL).map(([v, l]) => (
+              {TASK_TYPE_OPTIONS.map((v) => (
                 <option key={v} value={v} className="bg-slate-900">
-                  {l}
+                  {t(`perks.taskTypes.${v}` as Parameters<typeof t>[0])}
                 </option>
               ))}
             </select>
@@ -160,16 +160,16 @@ function TaskFormModal({
           {/* Reward Type */}
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              نوع پاداش
+              {t("perks.rewardTypeLabel")}
             </label>
             <select
               className={inputCls}
               value={form.rewardType}
               onChange={(e) => set("rewardType", e.target.value)}
             >
-              {Object.entries(REWARD_TYPE_LABEL).map(([v, l]) => (
+              {REWARD_TYPE_OPTIONS.map((v) => (
                 <option key={v} value={v} className="bg-slate-900">
-                  {l}
+                  {t(`perks.rewardTypes.${v}` as Parameters<typeof t>[0])}
                 </option>
               ))}
             </select>
@@ -178,36 +178,39 @@ function TaskFormModal({
           {/* Reward Value */}
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              مقدار پاداش (تومان)
+              {t("perks.rewardValueLabel")}
             </label>
             <input
               className={inputCls}
               type="number"
               value={form.rewardValue}
               onChange={(e) => set("rewardValue", e.target.value)}
-              placeholder="مثلاً 50000"
+              placeholder={t("perks.rewardValuePlaceholder")}
             />
           </div>
 
           {/* Max Rewards */}
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              حداکثر تعداد پاداش{" "}
-              <span className="text-white/30">(خالی = نامحدود)</span>
+              {t("perks.maxRewardsLabel")}{" "}
+              <span className="text-white/30">
+                ({t("perks.maxRewardsHint")})
+              </span>
             </label>
             <input
               className={inputCls}
               type="number"
               value={form.maxRewards}
               onChange={(e) => set("maxRewards", e.target.value)}
-              placeholder="خالی بگذارید"
+              placeholder={t("perks.maxRewardsPlaceholder")}
             />
           </div>
 
           {/* Expires At */}
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              تاریخ انقضا <span className="text-white/30">(اختیاری)</span>
+              {t("perks.expiresAtLabel")}{" "}
+              <span className="text-white/30">({t("perks.optionalHint")})</span>
             </label>
             <input
               type="datetime-local"
@@ -227,7 +230,7 @@ function TaskFormModal({
               className="w-4 h-4"
             />
             <label htmlFor="isActive" className="text-sm">
-              فعال
+              {t("perks.isActiveLabel")}
             </label>
           </div>
         </div>
@@ -238,13 +241,13 @@ function TaskFormModal({
             disabled={isLoading || !form.title}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg py-2 text-sm font-medium transition-all"
           >
-            {isLoading ? "در حال ذخیره..." : "ذخیره"}
+            {isLoading ? t("perks.saving") : t("common.save")}
           </button>
           <button
             onClick={onClose}
             className="flex-1 bg-white/10 hover:bg-white/20 rounded-lg py-2 text-sm transition-all"
           >
-            انصراف
+            {t("common.cancel")}
           </button>
         </div>
       </div>
@@ -254,6 +257,7 @@ function TaskFormModal({
 
 // ── Main Page ─────────────────────────────────────────────
 export default function PerksPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"tasks" | "requests">("requests");
   const [reqStatusFilter, setReqStatusFilter] = useState("pending");
   const [reqPage, setReqPage] = useState("1");
@@ -354,7 +358,7 @@ export default function PerksPage() {
     <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
-        <h1 className="text-xl font-bold">وظایف و پاداش‌ها (Perks)</h1>
+        <h1 className="text-xl font-bold">{t("perks.title")}</h1>
       </div>
 
       {/* Tabs */}
@@ -369,7 +373,7 @@ export default function PerksPage() {
                 : "bg-white/10 hover:bg-white/20 text-white/70"
             }`}
           >
-            {tab === "requests" ? "درخواست‌ها" : "وظایف"}
+            {tab === "requests" ? t("perks.requests") : t("perks.tasks")}
           </button>
         ))}
       </div>
@@ -382,7 +386,7 @@ export default function PerksPage() {
               onClick={() => setTaskModal({ ...EMPTY_FORM })}
               className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition-all"
             >
-              + وظیفه جدید
+              {t("perks.newTask")}
             </button>
           </div>
 
@@ -403,7 +407,11 @@ export default function PerksPage() {
                         {task.title}
                       </span>
                       <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
-                        {TASK_TYPE_LABEL[task.type] ?? task.type}
+                        {t(
+                          `perks.taskTypes.${task.type}` as Parameters<
+                            typeof t
+                          >[0],
+                        ) ?? task.type}
                       </span>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -414,11 +422,16 @@ export default function PerksPage() {
                               : "bg-orange-500/20 text-orange-400"
                         }`}
                       >
-                        {REWARD_TYPE_LABEL[task.rewardType] ?? task.rewardType}
+                        {t(
+                          `perks.rewardTypes.${task.rewardType}` as Parameters<
+                            typeof t
+                          >[0],
+                        ) ?? task.rewardType}
                       </span>
                       {task.rewardValue && (
                         <span className="text-sm text-white/80">
-                          {Number(task.rewardValue).toLocaleString()} تومان
+                          {Number(task.rewardValue).toLocaleString()}{" "}
+                          {t("common.toman")}
                         </span>
                       )}
                     </div>
@@ -429,7 +442,9 @@ export default function PerksPage() {
                           : "bg-white/10 text-white/40"
                       }`}
                     >
-                      {task.isActive ? "فعال" : "غیرفعال"}
+                      {task.isActive
+                        ? t("common.active")
+                        : t("common.inactive")}
                     </span>
                   </div>
 
@@ -437,7 +452,9 @@ export default function PerksPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
                     <div className="flex items-center gap-4 flex-wrap">
                       <span>
-                        <span className="text-white/30 mr-1">پیشرفت:</span>
+                        <span className="text-white/30 mr-1">
+                          {t("perks.progressLabel")}:
+                        </span>
                         {task.currentRewards}
                         {task.maxRewards ? ` / ${task.maxRewards}` : ""}
                       </span>
@@ -449,7 +466,9 @@ export default function PerksPage() {
                               : ""
                           }
                         >
-                          <span className="text-white/30 mr-1">انقضا:</span>
+                          <span className="text-white/30 mr-1">
+                            {t("perks.expiresLabel")}:
+                          </span>
                           {new Date(task.expiresAt).toLocaleDateString("fa-IR")}
                         </span>
                       )}
@@ -476,24 +495,26 @@ export default function PerksPage() {
                         }
                         className="bg-white/10 hover:bg-white/20 rounded-xl px-3 py-1 transition-all"
                       >
-                        ویرایش
+                        {t("common.edit")}
                       </button>
                       <button
                         onClick={() => toggleTaskMutation.mutate(task.id)}
                         disabled={toggleTaskMutation.isPending}
                         className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                       >
-                        {task.isActive ? "غیرفعال" : "فعال"}
+                        {task.isActive
+                          ? t("common.inactive")
+                          : t("common.active")}
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm("وظیفه حذف شود؟"))
+                          if (confirm(t("perks.deleteTaskConfirm")))
                             deleteTaskMutation.mutate(task.id);
                         }}
                         disabled={deleteTaskMutation.isPending}
                         className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                       >
-                        حذف
+                        {t("common.delete")}
                       </button>
                     </div>
                   </div>
@@ -502,7 +523,7 @@ export default function PerksPage() {
             </ul>
             {(!tasks || tasks.length === 0) && (
               <p className="text-center text-white/40 py-8">
-                هنوز وظیفه‌ای تعریف نشده
+                {t("perks.noTasks")}
               </p>
             )}
           </div>
@@ -523,19 +544,19 @@ export default function PerksPage() {
               }}
             >
               <option value="" className="bg-slate-900">
-                همه وضعیت‌ها
+                {t("perks.allStatuses")}
               </option>
               <option value="pending" className="bg-slate-900">
-                در انتظار
+                {t("perks.requestStatuses.pending")}
               </option>
               <option value="verified" className="bg-slate-900">
-                تأیید شده
+                {t("perks.requestStatuses.verified")}
               </option>
               <option value="completed" className="bg-slate-900">
-                رد شده
+                {t("perks.requestStatuses.completed")}
               </option>
               <option value="claimed" className="bg-slate-900">
-                دریافت شده
+                {t("perks.requestStatuses.claimed")}
               </option>
             </select>
           </div>
@@ -574,20 +595,27 @@ export default function PerksPage() {
                               : "bg-orange-500/20 text-orange-400"
                         }`}
                       >
-                        {REWARD_TYPE_LABEL[item.task.rewardType] ??
-                          item.task.rewardType}
+                        {t(
+                          `perks.rewardTypes.${item.task.rewardType}` as Parameters<
+                            typeof t
+                          >[0],
+                        ) ?? item.task.rewardType}
                       </span>
                       {item.task.rewardValue && (
                         <span className="text-sm text-white/80">
-                          {Number(item.task.rewardValue).toLocaleString()} تومان
+                          {Number(item.task.rewardValue).toLocaleString()}{" "}
+                          {t("common.toman")}
                         </span>
                       )}
                     </div>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${REQUEST_STATUS_BADGE[item.userPerk.status] ?? ""}`}
                     >
-                      {REQUEST_STATUS_LABEL[item.userPerk.status] ??
-                        item.userPerk.status}
+                      {t(
+                        `perks.requestStatuses.${item.userPerk.status}` as Parameters<
+                          typeof t
+                        >[0],
+                      ) ?? item.userPerk.status}
                     </span>
                   </div>
 
@@ -595,7 +623,11 @@ export default function PerksPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/50">
                     <div className="flex items-center gap-4">
                       <span>
-                        {TASK_TYPE_LABEL[item.task.type] ?? item.task.type}
+                        {t(
+                          `perks.taskTypes.${item.task.type}` as Parameters<
+                            typeof t
+                          >[0],
+                        ) ?? item.task.type}
                       </span>
                       <span>
                         {new Date(item.userPerk.createdAt).toLocaleDateString(
@@ -612,7 +644,7 @@ export default function PerksPage() {
                           disabled={verifyMutation.isPending}
                           className="bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                         >
-                          تأیید
+                          {t("perks.verify")}
                         </button>
                         <button
                           onClick={() =>
@@ -621,7 +653,7 @@ export default function PerksPage() {
                           disabled={rejectMutation.isPending}
                           className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                         >
-                          رد
+                          {t("perks.reject")}
                         </button>
                       </div>
                     )}
@@ -631,7 +663,7 @@ export default function PerksPage() {
             </ul>
             {(!requests || requests.length === 0) && (
               <p className="text-center text-white/40 py-8">
-                داده‌ای وجود ندارد
+                {t("common.noData")}
               </p>
             )}
           </div>
@@ -645,17 +677,17 @@ export default function PerksPage() {
               disabled={reqPage === "1"}
               className="text-sm bg-white/10 hover:bg-white/20 rounded px-3 py-1 disabled:opacity-30 transition-all"
             >
-              قبلی
+              {t("perks.prevPage")}
             </button>
             <span className="text-sm px-3 py-1 text-white/60">
-              صفحه {reqPage}
+              {t("perks.page")} {reqPage}
             </span>
             <button
               onClick={() => setReqPage((p) => String(parseInt(p) + 1))}
               disabled={(requests?.length ?? 0) === 0}
               className="text-sm bg-white/10 hover:bg-white/20 rounded px-3 py-1 disabled:opacity-30 transition-all"
             >
-              بعدی
+              {t("perks.nextPage")}
             </button>
           </div>
         </>

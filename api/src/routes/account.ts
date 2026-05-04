@@ -147,16 +147,24 @@ accountRouter.patch("/notifications", async (c) => {
 // ── PATCH /api/account/language ───────────────────────────────────────────────
 accountRouter.patch("/language", async (c) => {
   const admin = c.get("admin");
-  const body = await c.req.json<{ languageCode: string }>();
 
+  let body: { languageCode?: unknown };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+
+  const langCode =
+    typeof body.languageCode === "string" ? body.languageCode.trim() : "";
   const allowed = ["fa", "en", "ru"];
-  if (!body.languageCode || !allowed.includes(body.languageCode)) {
+  if (!allowed.includes(langCode)) {
     return c.json({ error: "Invalid language code. Allowed: fa, en, ru" }, 400);
   }
 
   await db
     .update(usersTable)
-    .set({ languageCode: body.languageCode, updatedAt: new Date() })
+    .set({ languageCode: langCode, updatedAt: new Date() })
     .where(eq(usersTable.id, admin.userId));
 
   return c.json({ success: true });

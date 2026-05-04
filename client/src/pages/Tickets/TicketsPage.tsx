@@ -110,7 +110,7 @@ export default function TicketsPage() {
           onChange={(e) => setFilters((f) => ({ ...f, type: e.target.value }))}
         >
           <option value="" className="bg-slate-900">
-            {t("common.all")} — {t("common.type")}
+            {t("tickets.filterAllType")}
           </option>
           {TYPES.map((tp) => (
             <option key={tp} value={tp} className="bg-slate-900">

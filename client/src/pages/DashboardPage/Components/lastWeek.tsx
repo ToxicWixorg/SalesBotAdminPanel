@@ -26,7 +26,7 @@ const LastWeek = ({ chart }: { chart: any }) => {
                     <div
                       className="w-full rounded-t bg-white/30 hover:bg-white/50 transition-all"
                       style={{ height: `${(d.count / maxCount) * 72}px` }}
-                      title={`${d.date}: ${Number(d.revenue).toLocaleString("fa-IR")} تومان`}
+                      title={`${d.date}: ${Number(d.revenue).toLocaleString("fa-IR")} ${t("common.toman")}`}
                     />
                   </div>
                 ),

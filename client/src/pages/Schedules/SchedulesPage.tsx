@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
 
@@ -25,13 +26,6 @@ type ScheduleRow = {
 type WeekRow = { schedule: { date: string } };
 
 // ── Lookups ───────────────────────────────────────────────
-const STATUS_LABEL: Record<string, string> = {
-  available: "آزاد",
-  full: "تکمیل‌شده",
-  in_progress: "در حال انجام",
-  completed: "تحویل داده‌شده",
-};
-
 const STATUS_BADGE: Record<string, string> = {
   available: "bg-green-500/20 text-green-400",
   full: "bg-orange-500/20 text-orange-400",
@@ -45,6 +39,7 @@ function todayStr() {
 
 // ── Page ─────────────────────────────────────────────────
 export default function SchedulesPage() {
+  const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const queryClient = useQueryClient();
 
@@ -101,7 +96,7 @@ export default function SchedulesPage() {
     <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
-        <h1 className="text-xl font-bold">زمان‌بندی سفارشات</h1>
+        <h1 className="text-xl font-bold">{t("schedules.title")}</h1>
       </div>
 
       {/* Week bar */}
@@ -153,7 +148,7 @@ export default function SchedulesPage() {
           day: "numeric",
         })}
         {" — "}
-        {slots?.length ?? 0} اسلات
+        {slots?.length ?? 0} {t("schedules.slots")}
       </p>
 
       <div
@@ -182,7 +177,11 @@ export default function SchedulesPage() {
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[item.schedule.status] ?? ""}`}
                 >
-                  {STATUS_LABEL[item.schedule.status] ?? item.schedule.status}
+                  {t(
+                    `schedules.statusLabels.${item.schedule.status}` as Parameters<
+                      typeof t
+                    >[0],
+                  ) ?? item.schedule.status}
                 </span>
               </div>
 
@@ -201,15 +200,20 @@ export default function SchedulesPage() {
                   )}
                   {item.order && (
                     <span>
-                      <span className="text-white/30 mr-1">سفارش:</span>#
-                      {item.order.id}{" "}
+                      <span className="text-white/30 mr-1">
+                        {t("schedules.colOrder")}:
+                      </span>
+                      #{item.order.id}{" "}
                       <span className="text-white/30">
-                        ({Number(item.order.finalPrice).toLocaleString()} تومان)
+                        ({Number(item.order.finalPrice).toLocaleString()}{" "}
+                        {t("common.toman")})
                       </span>
                     </span>
                   )}
                   {item.schedule.reminderSent && (
-                    <span className="text-white/30">یادآور ارسال‌شد</span>
+                    <span className="text-white/30">
+                      {t("schedules.reminderSent")}
+                    </span>
                   )}
                 </div>
                 <div className="flex gap-1.5">
@@ -221,7 +225,7 @@ export default function SchedulesPage() {
                       disabled={completeMutation.isPending}
                       className="bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                     >
-                      تکمیل
+                      {t("schedules.complete")}
                     </button>
                   )}
                   {!item.schedule.reminderSent &&
@@ -233,7 +237,7 @@ export default function SchedulesPage() {
                         disabled={reminderMutation.isPending}
                         className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50"
                       >
-                        یادآور
+                        {t("schedules.reminder")}
                       </button>
                     )}
                 </div>
@@ -243,7 +247,7 @@ export default function SchedulesPage() {
         </ul>
         {(!slots || slots.length === 0) && (
           <p className="text-center text-white/40 py-10">
-            هیچ اسلاتی برای این روز وجود ندارد
+            {t("schedules.noSlots")}
           </p>
         )}
       </div>

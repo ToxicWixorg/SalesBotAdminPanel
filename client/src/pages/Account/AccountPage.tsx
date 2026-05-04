@@ -291,7 +291,7 @@ export default function AccountPage() {
   const botUser = data?.botUser;
 
   const ROLE_LABEL: Record<string, string> = {
-    superadmin: "Super Admin",
+    superadmin: t("settings.roles.superadmin"),
     admin: t("settings.roles.admin"),
     manager: t("settings.roles.manager"),
     support: t("settings.roles.support"),
@@ -433,7 +433,11 @@ export default function AccountPage() {
                         }
                         ${loading ? "opacity-60" : ""}`}
                     >
-                      {lang === "fa" ? "فا" : lang.toUpperCase()}
+                      {t(
+                        `account.lang${lang.charAt(0).toUpperCase() + lang.slice(1)}` as Parameters<
+                          typeof t
+                        >[0],
+                      )}
                     </button>
                   );
                 })}

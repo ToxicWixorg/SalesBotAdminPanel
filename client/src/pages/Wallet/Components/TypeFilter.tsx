@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 const TypeFilter = ({
   filters,
   setFilters,
@@ -5,6 +7,7 @@ const TypeFilter = ({
   filters: any;
   setFilters: any;
 }) => {
+  const { t } = useTranslation();
   return (
     <select
       value={filters.type}
@@ -14,13 +17,13 @@ const TypeFilter = ({
       className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none cursor-pointer"
     >
       <option value="" className="bg-slate-900 cursor-pointer">
-        همه انواع
+        {t("wallet.allTypes")}
       </option>
       <option value="credit" className="bg-slate-900 cursor-pointer">
-        واریز
+        {t("wallet.deposit")}
       </option>
       <option value="debit" className="bg-slate-900 cursor-pointer">
-        برداشت
+        {t("wallet.withdraw")}
       </option>
     </select>
   );

@@ -1,12 +1,15 @@
+import { useTranslation } from "react-i18next";
+
 const SourceFilter = ({
   filters,
   setFilters,
-  SOURCES,
+  sources,
 }: {
   filters: any;
   setFilters: any;
-  SOURCES: { value: string; label: string }[];
+  sources: string[];
 }) => {
+  const { t } = useTranslation();
   return (
     <select
       value={filters.source}
@@ -16,15 +19,15 @@ const SourceFilter = ({
       className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none cursor-pointer"
     >
       <option value="" className="bg-slate-900 cursor-pointer">
-        همه منابع
+        {t("wallet.allSources")}
       </option>
-      {SOURCES.map((s) => (
+      {sources.map((value) => (
         <option
-          key={s.value}
-          value={s.value}
+          key={value}
+          value={value}
           className="bg-slate-900 cursor-pointer"
         >
-          {s.label}
+          {t(`wallet.sources.${value}`, { defaultValue: value })}
         </option>
       ))}
     </select>

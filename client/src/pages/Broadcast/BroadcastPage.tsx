@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
+import { useTranslation } from "react-i18next";
 
 type FilterType = "all" | "product" | "role" | "subscriptionExpiring";
 
@@ -36,6 +37,7 @@ const inputCls =
   "w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/50";
 
 export default function BroadcastPage() {
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterValue, setFilterValue] = useState("");
   const [message, setMessage] = useState("");
@@ -56,7 +58,8 @@ export default function BroadcastPage() {
   const previewMutation = useMutation({
     mutationFn: () => {
       const filter = buildFilter(filterType, filterValue);
-      if (!filter) return Promise.reject(new Error("فیلتر معتبر نیست"));
+      if (!filter)
+        return Promise.reject(new Error(t("broadcast.invalidFilter")));
       return api
         .post("/api/admin/broadcast/preview", { filter, message })
         .then((r) => r.data);
@@ -70,7 +73,8 @@ export default function BroadcastPage() {
   const sendMutation = useMutation({
     mutationFn: () => {
       const filter = buildFilter(filterType, filterValue);
-      if (!filter) return Promise.reject(new Error("فیلتر معتبر نیست"));
+      if (!filter)
+        return Promise.reject(new Error(t("broadcast.invalidFilter")));
       return api
         .post("/api/admin/broadcast/send", { filter, message, parseMode })
         .then((r) => r.data);
@@ -90,19 +94,19 @@ export default function BroadcastPage() {
     <div className="w-full h-full p-4 mb-20">
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
-        <h1 className="text-xl font-bold">ارسال پیام گروهی</h1>
+        <h1 className="text-xl font-bold">{t("broadcast.title")}</h1>
       </div>
 
       <div className="max-w-2xl flex flex-col gap-5">
         {/* ── Filter section ─────────────────────────────── */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
           <h2 className="text-sm font-semibold text-white/70">
-            ۱. انتخاب گیرندگان
+            ۱. {t("broadcast.recipients")}
           </h2>
 
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              ارسال به:
+              {t("broadcast.sendTo")}
             </label>
             <select
               className={inputCls}
@@ -115,23 +119,25 @@ export default function BroadcastPage() {
               }}
             >
               <option value="all" className="bg-slate-900">
-                همه کاربران
+                {t("broadcast.allUsers")}
               </option>
               <option value="product" className="bg-slate-900">
-                خریداران یک محصول
+                {t("broadcast.productBuyers")}
               </option>
               <option value="role" className="bg-slate-900">
-                نقش خاص
+                {t("broadcast.roleFilter")}
               </option>
               <option value="subscriptionExpiring" className="bg-slate-900">
-                اشتراک‌های رو به انقضا
+                {t("broadcast.expiringSubscriptions")}
               </option>
             </select>
           </div>
 
           {filterType === "product" && (
             <div>
-              <label className="text-xs text-white/50 mb-1 block">محصول:</label>
+              <label className="text-xs text-white/50 mb-1 block">
+                {t("broadcast.productLabel")}
+              </label>
               <select
                 className={inputCls}
                 value={filterValue}
@@ -141,7 +147,7 @@ export default function BroadcastPage() {
                 }}
               >
                 <option value="" className="bg-slate-900">
-                  انتخاب محصول...
+                  {t("broadcast.selectProduct")}
                 </option>
                 {products?.map((p) => (
                   <option
@@ -158,7 +164,9 @@ export default function BroadcastPage() {
 
           {filterType === "role" && (
             <div>
-              <label className="text-xs text-white/50 mb-1 block">نقش:</label>
+              <label className="text-xs text-white/50 mb-1 block">
+                {t("broadcast.roleLabel")}
+              </label>
               <select
                 className={inputCls}
                 value={filterValue}
@@ -168,16 +176,16 @@ export default function BroadcastPage() {
                 }}
               >
                 <option value="" className="bg-slate-900">
-                  انتخاب نقش...
+                  {t("broadcast.selectRole")}
                 </option>
                 <option value="customer" className="bg-slate-900">
-                  مشتری
+                  {t("users.roles.customer")}
                 </option>
                 <option value="support" className="bg-slate-900">
-                  پشتیبانی
+                  {t("users.roles.support")}
                 </option>
                 <option value="admin" className="bg-slate-900">
-                  ادمین
+                  {t("users.roles.admin")}
                 </option>
               </select>
             </div>
@@ -186,7 +194,7 @@ export default function BroadcastPage() {
           {filterType === "subscriptionExpiring" && (
             <div>
               <label className="text-xs text-white/50 mb-1 block">
-                انقضا تا:
+                {t("broadcast.expiresInLabel")}
               </label>
               <select
                 className={inputCls}
@@ -197,13 +205,13 @@ export default function BroadcastPage() {
                 }}
               >
                 <option value="1" className="bg-slate-900">
-                  فردا
+                  {t("broadcast.tomorrow")}
                 </option>
                 <option value="3" className="bg-slate-900">
-                  ۳ روز دیگر
+                  {t("broadcast.in3Days")}
                 </option>
                 <option value="7" className="bg-slate-900">
-                  ۷ روز دیگر
+                  {t("broadcast.in7Days")}
                 </option>
               </select>
             </div>
@@ -212,11 +220,13 @@ export default function BroadcastPage() {
 
         {/* ── Message section ─────────────────────────────── */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-white/70">۲. متن پیام</h2>
+          <h2 className="text-sm font-semibold text-white/70">
+            ۲. {t("broadcast.messageSection")}
+          </h2>
 
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              فرمت پیام:
+              {t("broadcast.messageFormat")}
             </label>
             <div className="flex gap-2">
               {(["HTML", "Markdown"] as const).map((m) => (
@@ -237,7 +247,7 @@ export default function BroadcastPage() {
 
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              متن پیام:
+              {t("broadcast.messageLabel")}
             </label>
             <textarea
               rows={6}
@@ -250,19 +260,21 @@ export default function BroadcastPage() {
               }}
               placeholder={
                 parseMode === "HTML"
-                  ? "سلام <b>{first_name}</b>\nپیام شما..."
-                  : "سلام *{first_name}*\nپیام شما..."
+                  ? t("broadcast.htmlPlaceholder")
+                  : t("broadcast.markdownPlaceholder")
               }
             />
             <p className="text-xs text-white/30 mt-1">
-              {message.length} کاراکتر
+              {message.length} {t("broadcast.characters")}
             </p>
           </div>
         </div>
 
         {/* ── Actions ─────────────────────────────────────── */}
         <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-white/70">۳. ارسال</h2>
+          <h2 className="text-sm font-semibold text-white/70">
+            ۳. {t("broadcast.sendSection")}
+          </h2>
 
           {/* Preview */}
           <button
@@ -271,8 +283,8 @@ export default function BroadcastPage() {
             className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-40 rounded-lg py-2.5 text-sm font-medium transition-all"
           >
             {previewMutation.isPending
-              ? "در حال محاسبه..."
-              : "پیش‌نمایش تعداد گیرندگان"}
+              ? t("broadcast.calculating")
+              : t("broadcast.previewBtn")}
           </button>
 
           {previewMutation.isError && (
@@ -283,9 +295,11 @@ export default function BroadcastPage() {
 
           {previewCount !== null && !sendResult && (
             <div className="flex items-center justify-between bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2.5">
-              <span className="text-sm text-white/70">تعداد گیرندگان:</span>
+              <span className="text-sm text-white/70">
+                {t("broadcast.recipientsCount")}
+              </span>
               <span className="text-lg font-bold text-blue-400">
-                {previewCount.toLocaleString()} نفر
+                {previewCount.toLocaleString()} {t("broadcast.people")}
               </span>
             </div>
           )}
@@ -295,9 +309,7 @@ export default function BroadcastPage() {
             onClick={() => {
               if (
                 previewCount !== null &&
-                confirm(
-                  `آیا مطمئنید؟ پیام برای ${previewCount} نفر ارسال می‌شود.`,
-                )
+                confirm(t("broadcast.confirmSend", { count: previewCount }))
               ) {
                 sendMutation.mutate();
               }
@@ -306,13 +318,17 @@ export default function BroadcastPage() {
             className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-40 rounded-lg py-2.5 text-sm font-bold transition-all"
           >
             {sendMutation.isPending
-              ? "در حال ارسال..."
-              : `ارسال پیام${previewCount !== null ? ` به ${previewCount.toLocaleString()} نفر` : ""}`}
+              ? t("broadcast.sending")
+              : previewCount !== null
+                ? t("broadcast.sendBtnTo", {
+                    count: previewCount.toLocaleString(),
+                  })
+                : t("broadcast.sendBtn")}
           </button>
 
           {!canSend && canPreview && previewCount === null && (
             <p className="text-xs text-white/40 text-center">
-              ابتدا پیش‌نمایش را بگیرید
+              {t("broadcast.takePreviewFirst")}
             </p>
           )}
         </div>
@@ -321,23 +337,29 @@ export default function BroadcastPage() {
         {sendResult && (
           <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex flex-col gap-2">
             <h2 className="text-sm font-semibold text-green-400">
-              پیام ارسال شد ✓
+              {t("broadcast.sentTitle")}
             </h2>
             <div className="grid grid-cols-3 gap-3 mt-1">
               <div className="bg-white/5 rounded-lg p-3 text-center">
-                <p className="text-xs text-white/50">کل</p>
+                <p className="text-xs text-white/50">
+                  {t("broadcast.totalLabel")}
+                </p>
                 <p className="text-lg font-bold">
                   {sendResult.total.toLocaleString()}
                 </p>
               </div>
               <div className="bg-green-500/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-green-400/70">موفق</p>
+                <p className="text-xs text-green-400/70">
+                  {t("broadcast.successLabel")}
+                </p>
                 <p className="text-lg font-bold text-green-400">
                   {sendResult.successCount.toLocaleString()}
                 </p>
               </div>
               <div className="bg-red-500/10 rounded-lg p-3 text-center">
-                <p className="text-xs text-red-400/70">خطا</p>
+                <p className="text-xs text-red-400/70">
+                  {t("broadcast.failedLabel")}
+                </p>
                 <p className="text-lg font-bold text-red-400">
                   {sendResult.failCount.toLocaleString()}
                 </p>

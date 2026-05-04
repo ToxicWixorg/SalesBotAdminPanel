@@ -121,6 +121,7 @@ const ru: Translations = {
       manageConfigs: "Конфиги",
       bulkSuccess: "Добавлено {count} конфигов",
     },
+    deliveryTypes: {
       automatic: "Автоматический",
       manual: "Ручной",
       custom_schedule: "Пользовательское расписание",

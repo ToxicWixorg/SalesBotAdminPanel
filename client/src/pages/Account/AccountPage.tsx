@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../lib/api";
 import { useAuth } from "../../hooks/useAuth";
@@ -68,11 +68,30 @@ function Section({
   );
 }
 
-function NotifyDot({ active }: { active: boolean | null }) {
+function Toggle({
+  active,
+  loading,
+  onToggle,
+}: {
+  active: boolean | null;
+  loading: boolean;
+  onToggle: () => void;
+}) {
+  const on = active ?? false;
   return (
-    <span
-      className={`inline-block w-2 h-2 rounded-full mr-1 ${active ? "bg-green-400" : "bg-white/20"}`}
-    />
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={loading}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200
+        ${on ? "bg-blue-600" : "bg-white/20"}
+        ${loading ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200
+          ${on ? "translate-x-6" : "translate-x-1"}`}
+      />
+    </button>
   );
 }
 
@@ -192,15 +211,79 @@ function ChangePasswordForm() {
   );
 }
 
+// ── Notification keys ────────────────────────────────────
+const NOTIFY_KEYS = [
+  "notifyOrders",
+  "notifyWallet",
+  "notifyPromotions",
+  "notifyReferrals",
+  "notifyStock",
+] as const;
+type NotifyKey = (typeof NOTIFY_KEYS)[number];
+
 // ── Main Page ─────────────────────────────────────────────
 export default function AccountPage() {
   const { t } = useTranslation();
   const { admin: authAdmin } = useAuth();
+  const queryClient = useQueryClient();
+  const [pendingNotify, setPendingNotify] = useState<NotifyKey | null>(null);
+  const [pendingLang, setPendingLang] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<AccountData>({
     queryKey: ["account-me"],
     queryFn: () => api.get<AccountData>("/api/account/me").then((r) => r.data),
   });
+
+  const notifyMutation = useMutation({
+    mutationFn: (payload: Partial<Record<NotifyKey, boolean>>) =>
+      api.patch("/api/account/notifications", payload),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ["account-me"] });
+      const prev = queryClient.getQueryData<AccountData>(["account-me"]);
+      queryClient.setQueryData<AccountData>(["account-me"], (old) =>
+        old ? { ...old, botUser: { ...old.botUser, ...payload } } : old,
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["account-me"], ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["account-me"] });
+      setPendingNotify(null);
+    },
+  });
+
+  const langMutation = useMutation({
+    mutationFn: (languageCode: string) =>
+      api.patch("/api/account/language", { languageCode }),
+    onMutate: async (languageCode) => {
+      await queryClient.cancelQueries({ queryKey: ["account-me"] });
+      const prev = queryClient.getQueryData<AccountData>(["account-me"]);
+      queryClient.setQueryData<AccountData>(["account-me"], (old) =>
+        old ? { ...old, botUser: { ...old.botUser, languageCode } } : old,
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(["account-me"], ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["account-me"] });
+      setPendingLang(null);
+    },
+  });
+
+  const handleNotifyToggle = (key: NotifyKey, current: boolean | null) => {
+    setPendingNotify(key);
+    notifyMutation.mutate({ [key]: !(current ?? false) });
+  };
+
+  const handleLang = (lang: string) => {
+    if (lang === data?.botUser?.languageCode) return;
+    setPendingLang(lang);
+    langMutation.mutate(lang);
+  };
 
   if (isLoading) return <SuspencePage Text={t("common.loading")} />;
 
@@ -331,7 +414,31 @@ export default function AccountPage() {
           />
           <InfoRow
             label={t("account.language")}
-            value={botUser?.languageCode?.toUpperCase() ?? "—"}
+            value={
+              <div className="flex gap-1.5">
+                {(["فا", "en", "ru"] as const).map((lang) => {
+                  const active = botUser?.languageCode === lang;
+                  const loading = pendingLang === lang;
+                  return (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => handleLang(lang)}
+                      disabled={langMutation.isPending}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all
+                        ${
+                          active
+                            ? "bg-blue-600 text-white"
+                            : "bg-white/10 text-white/60 hover:bg-white/20"
+                        }
+                        ${loading ? "opacity-60" : ""}`}
+                    >
+                      {lang.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+            }
           />
           <InfoRow
             label={t("account.registeredAt")}
@@ -345,61 +452,25 @@ export default function AccountPage() {
 
         {/* Notifications */}
         <Section title={t("account.notifications")}>
-          <InfoRow
-            label={t("account.notifyOrders")}
-            value={
-              <span>
-                <NotifyDot active={botUser?.notifyOrders ?? null} />
-                {botUser?.notifyOrders
-                  ? t("common.active")
-                  : t("common.inactive")}
-              </span>
-            }
-          />
-          <InfoRow
-            label={t("account.notifyWallet")}
-            value={
-              <span>
-                <NotifyDot active={botUser?.notifyWallet ?? null} />
-                {botUser?.notifyWallet
-                  ? t("common.active")
-                  : t("common.inactive")}
-              </span>
-            }
-          />
-          <InfoRow
-            label={t("account.notifyPromotions")}
-            value={
-              <span>
-                <NotifyDot active={botUser?.notifyPromotions ?? null} />
-                {botUser?.notifyPromotions
-                  ? t("common.active")
-                  : t("common.inactive")}
-              </span>
-            }
-          />
-          <InfoRow
-            label={t("account.notifyReferrals")}
-            value={
-              <span>
-                <NotifyDot active={botUser?.notifyReferrals ?? null} />
-                {botUser?.notifyReferrals
-                  ? t("common.active")
-                  : t("common.inactive")}
-              </span>
-            }
-          />
-          <InfoRow
-            label={t("account.notifyStock")}
-            value={
-              <span>
-                <NotifyDot active={botUser?.notifyStock ?? null} />
-                {botUser?.notifyStock
-                  ? t("common.active")
-                  : t("common.inactive")}
-              </span>
-            }
-          />
+          {NOTIFY_KEYS.map((key) => {
+            const labelKey = `account.${key}` as const;
+            const val = botUser?.[key] ?? false;
+            return (
+              <div
+                key={key}
+                className="flex items-center justify-between py-2 border-b border-white/10 last:border-b-0"
+              >
+                <span className="text-xs text-white/50">
+                  {t(labelKey as Parameters<typeof t>[0])}
+                </span>
+                <Toggle
+                  active={val}
+                  loading={pendingNotify === key && notifyMutation.isPending}
+                  onToggle={() => handleNotifyToggle(key, val)}
+                />
+              </div>
+            );
+          })}
         </Section>
 
         {/* Change Password */}

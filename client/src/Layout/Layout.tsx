@@ -45,7 +45,6 @@ const Layout = () => {
         className="relative w-full h-full flex flex-col lg:hidden gap-4 p-2 justify-center items-start 
                   text-white overflow-hidden"
       >
-        <MenuBar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
         <div
           className="w-full h-[calc(100%)] flex justify-center items-start overflow-x-hidden 
                       rounded-xl overflow-y-auto bgDark"
@@ -55,6 +54,7 @@ const Layout = () => {
             <PagesNavigate setIsMenuOpen={setIsMenuOpen} Pages={Pages} />
           )}
         </div>
+        <MenuBar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       </div>
     </div>
   );

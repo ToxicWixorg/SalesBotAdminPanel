@@ -167,6 +167,11 @@ const OrdersPage = () => {
               ),
             )}
         </ul>
+        {(!orders ||
+          orders.filter((item: { order?: unknown }) => item?.order).length ===
+            0) && (
+          <p className="text-center text-white/40 py-8">{t("common.noData")}</p>
+        )}
       </div>
     </div>
   );

@@ -1327,5 +1327,38 @@ function getDevMockData(url: string): unknown {
       },
     ];
 
+  if (url.includes("account/me"))
+    return {
+      admin: {
+        id: 1,
+        userId: 123456789,
+        role: "superadmin",
+        displayName: "ToxicWix",
+        isSuperAdmin: true,
+        allowedSections: null,
+        permissions: {},
+        lastLoginAt: new Date().toISOString(),
+        loginCount: 42,
+        createdAt: "2025-01-01T00:00:00Z",
+      },
+      botUser: {
+        id: 123456789,
+        username: "TajEzat",
+        firstName: "Toxic",
+        lastName: "Wix",
+        languageCode: "fa",
+        role: "customer",
+        isBlocked: false,
+        walletBalance: "350000",
+        referralCode: "TOXIC123",
+        notifyOrders: true,
+        notifyWallet: true,
+        notifyPromotions: false,
+        notifyReferrals: true,
+        notifyStock: false,
+        createdAt: "2025-01-01T00:00:00Z",
+      },
+    };
+
   return {};
 }

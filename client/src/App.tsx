@@ -20,6 +20,7 @@ const PerksPage = lazy(() => import("./pages/Perks/PerksPage"));
 const SchedulesPage = lazy(() => import("./pages/Schedules/SchedulesPage"));
 const BroadcastPage = lazy(() => import("./pages/Broadcast/BroadcastPage"));
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
+const AccountPage = lazy(() => import("./pages/Account/AccountPage"));
 
 function I18nInitializer() {
   const { admin } = useAuth();
@@ -137,6 +138,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <ProtectedRoute>
+                    <AccountPage />
                   </ProtectedRoute>
                 }
               />

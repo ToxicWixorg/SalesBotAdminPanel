@@ -416,7 +416,7 @@ export default function AccountPage() {
             label={t("account.language")}
             value={
               <div className="flex gap-1.5">
-                {(["فا", "en", "ru"] as const).map((lang) => {
+                {(["fa", "en", "ru"] as const).map((lang) => {
                   const active = botUser?.languageCode === lang;
                   const loading = pendingLang === lang;
                   return (
@@ -433,7 +433,7 @@ export default function AccountPage() {
                         }
                         ${loading ? "opacity-60" : ""}`}
                     >
-                      {lang.toUpperCase()}
+                      {lang === "fa" ? "فا" : lang.toUpperCase()}
                     </button>
                   );
                 })}

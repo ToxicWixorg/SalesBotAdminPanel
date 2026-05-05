@@ -141,6 +141,7 @@ export default function ProductsPage() {
         <PlansModal
           productId={plansProduct.id}
           productName={plansProduct.name}
+          deliveryType={plansProduct.deliveryType}
           onClose={() => setPlansProduct(null)}
         />
       )}

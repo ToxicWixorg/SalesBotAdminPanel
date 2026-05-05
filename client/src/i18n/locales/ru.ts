@@ -95,6 +95,8 @@ const ru: Translations = {
     requiresLogin: "Требуется вход",
     requiresRegion: "Требуется регион",
     isRenewable: "Возобновляемый",
+    planRequirementsHint:
+      "Требования каждого плана (емейл, OTP, вход) указываются в разделе Планы ниже ↓",
     plans: "Планы",
     planModal: {
       newPlan: "Новый план +",
@@ -107,6 +109,11 @@ const ru: Translations = {
       mounth: "Месяц",
       year: "Год",
       tartib: "Порядок",
+      requirements: "Требования плана",
+      requiresEmail: "Требуется Email",
+      requiresOtp: "Требуется OTP",
+      requiresLogin: "Требуется живой вход",
+      requiresRegion: "Требуется регион",
     },
     configModal: {
       title: "Конфиги",

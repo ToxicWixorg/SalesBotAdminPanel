@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
 import TicketDetailModal from "./Components/TicketDetailModal";
+import StateFilter from "./Components/StateFilter";
 
 type TicketItem = {
   ticket: {
@@ -87,22 +88,12 @@ export default function TicketsPage() {
         <h1 className="text-xl font-bold">{t("tickets.title")}</h1>
       </div>
       <div className="flex flex-wrap gap-3 mb-4">
-        <select
-          className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
-          value={filters.status}
-          onChange={(e) =>
-            setFilters((f) => ({ ...f, status: e.target.value }))
-          }
-        >
-          <option value="" className="bg-slate-900">
-            {t("tickets.allStatuses")}
-          </option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s} className="bg-slate-900">
-              {t(STATUS_LABELS[s])}
-            </option>
-          ))}
-        </select>
+        <StateFilter
+          STATUSES={STATUSES}
+          STATUS_LABELS={STATUS_LABELS}
+          filters={filters}
+          setFilters={setFilters}
+        />
 
         <select
           className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none"

@@ -96,6 +96,10 @@ const en: Translations = {
     requiresRegion: "Requires Region",
     plans: "Plans",
     isRenewable: "Renewable",
+    planRequirementsHint:
+      "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
+    planRequirementsHint:
+      "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
     deliveryTypes: {
       automatic: "Automatic",
       manual: "Manual",
@@ -117,6 +121,11 @@ const en: Translations = {
       mounth: "Mounth",
       year: "Year",
       tartib: "Order",
+      requirements: "Plan Requirements",
+      requiresEmail: "Requires Email",
+      requiresOtp: "Requires OTP",
+      requiresLogin: "Requires Live Login",
+      requiresRegion: "Requires Region",
     },
     configModal: {
       title: "Configs",

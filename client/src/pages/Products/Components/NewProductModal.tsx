@@ -16,6 +16,11 @@ const DELIVERY_TYPES = [
 
 type Category = { id: number; name: string };
 
+// Delivery types that use pre-loaded configs (VPN links, keys, etc.)
+const CONFIG_DELIVERY_TYPES = ["automatic", "code", "family_join"] as const;
+// Delivery types where email is collected at product level (invite sends to user's email)
+const INVITE_DELIVERY_TYPES = ["invite"] as const;
+
 const defaultForm = {
   name: "",
   slug: "",
@@ -26,9 +31,6 @@ const defaultForm = {
   stock: 0,
   minStock: 5,
   requiresEmail: false,
-  requiresOtp: false,
-  requiresLogin: false,
-  requiresRegion: false,
   isRenewable: false,
 };
 
@@ -206,30 +208,56 @@ export default function NewProductModal({ onClose }: Props) {
           </div>
 
           {/* چک‌باکس‌ها */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {(
-              [
-                ["requiresEmail", t("products.requiresEmail")],
-                ["requiresOtp", t("products.requiresOtp")],
-                ["requiresLogin", t("products.requiresLogin")],
-                ["requiresRegion", t("products.requiresRegion")],
-                ["isRenewable", t("products.isRenewable")],
-                ["isActive", t("products.active")],
-              ] as [keyof typeof form, string][]
-            ).map(([key, label]) => (
-              <label
-                key={key}
-                className="flex items-center gap-2 text-sm cursor-pointer select-none"
-              >
+          <div className="flex flex-col gap-2 pt-1">
+            {/* همیشه نمایش داده میشه */}
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["isRenewable", t("products.isRenewable")],
+                  ["isActive", t("products.active")],
+                ] as [keyof typeof form, string][]
+              ).map(([key, label]) => (
+                <label
+                  key={key}
+                  className="flex items-center gap-2 text-sm cursor-pointer select-none"
+                >
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-white"
+                    checked={form[key] as boolean}
+                    onChange={(e) => set(key, e.target.checked as never)}
+                  />
+                  <span className="text-white/70">{label}</span>
+                </label>
+              ))}
+            </div>
+            {/* فقط برای invite — ایمیل لازمه */}
+            {INVITE_DELIVERY_TYPES.includes(
+              form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
+            ) && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 accent-white"
-                  checked={form[key] as boolean}
-                  onChange={(e) => set(key, e.target.checked as never)}
+                  className="w-4 h-4 accent-blue-400"
+                  checked={form.requiresEmail}
+                  onChange={(e) => set("requiresEmail", e.target.checked)}
                 />
-                <span className="text-white/70">{label}</span>
+                <span className="text-white/70">
+                  {t("products.requiresEmail")}
+                </span>
               </label>
-            ))}
+            )}
+            {/* نوع‌های custom_schedule/manual: نیازمندی‌ها در پلن تنظیم میشن */}
+            {!CONFIG_DELIVERY_TYPES.includes(
+              form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
+            ) &&
+              !INVITE_DELIVERY_TYPES.includes(
+                form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
+              ) && (
+                <p className="text-xs text-blue-400/70 bg-blue-500/10 rounded-lg px-3 py-2">
+                  {t("products.planRequirementsHint")}
+                </p>
+              )}
           </div>
         </div>
 

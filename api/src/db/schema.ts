@@ -114,6 +114,11 @@ export const productPlansTable = pgTable(
     price: decimal("price", { precision: 15, scale: 2 }).notNull(),
     duration: integer("duration"),
     durationUnit: text("duration_unit"), // day | month | year
+    // Per-plan delivery requirements (override product-level defaults)
+    requiresEmail: boolean("requires_email").default(false),
+    requiresOtp: boolean("requires_otp").default(false),
+    requiresLogin: boolean("requires_login").default(false),
+    requiresRegion: boolean("requires_region").default(false),
     order: integer("order").default(0),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow(),

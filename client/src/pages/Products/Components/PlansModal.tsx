@@ -15,11 +15,26 @@ type Plan = {
   durationUnit: string | null;
   order: number;
   isActive: boolean;
+  requiresEmail: boolean;
+  requiresOtp: boolean;
+  requiresLogin: boolean;
+  requiresRegion: boolean;
 };
+
+// delivery types that use pre-loaded configs (no requirement fields needed)
+const CONFIG_TYPES = ["automatic", "code", "family_join"];
+// delivery types where requirements make sense
+const SCHEDULE_TYPES = [
+  "custom_schedule",
+  "manual",
+  "renewable",
+  "reservation",
+];
 
 type Props = {
   productId: number;
   productName: string;
+  deliveryType: string;
   onClose: () => void;
 };
 
@@ -31,9 +46,18 @@ const emptyForm = {
   durationUnit: "month",
   order: 0,
   isActive: true,
+  requiresEmail: false,
+  requiresOtp: false,
+  requiresLogin: false,
+  requiresRegion: false,
 };
 
-export default function PlansModal({ productId, productName, onClose }: Props) {
+export default function PlansModal({
+  productId,
+  productName,
+  deliveryType,
+  onClose,
+}: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -100,6 +124,10 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
       durationUnit: plan.durationUnit ?? "month",
       order: plan.order,
       isActive: plan.isActive,
+      requiresEmail: plan.requiresEmail ?? false,
+      requiresOtp: plan.requiresOtp ?? false,
+      requiresLogin: plan.requiresLogin ?? false,
+      requiresRegion: plan.requiresRegion ?? false,
     });
   };
 
@@ -187,6 +215,22 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                               ? t("products.active")
                               : t("products.inactive")}
                           </span>
+                          {/* requirement badges */}
+                          {plan.requiresOtp && (
+                            <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
+                              OTP
+                            </span>
+                          )}
+                          {plan.requiresLogin && (
+                            <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                              Login
+                            </span>
+                          )}
+                          {plan.requiresEmail && (
+                            <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300">
+                              Email
+                            </span>
+                          )}
                         </td>
                         <td className="p-2">
                           <div className="flex gap-1">
@@ -196,12 +240,15 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                             >
                               {t("common.edit")}
                             </button>
-                            <button
-                              onClick={() => setConfigsPlan(plan)}
-                              className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
-                            >
-                              {t("products.configModal.manageConfigs")}
-                            </button>
+                            {/* کانفیگ فقط برای automatic/code/family_join */}
+                            {CONFIG_TYPES.includes(deliveryType) && (
+                              <button
+                                onClick={() => setConfigsPlan(plan)}
+                                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
+                              >
+                                {t("products.configModal.manageConfigs")}
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 if (
@@ -313,6 +360,60 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                     </span>
                   </label>
                 </div>
+                {/* ── Requirements ── */}
+                {(SCHEDULE_TYPES.includes(deliveryType) ||
+                  deliveryType === "invite") &&
+                  (() => {
+                    type ReqKey =
+                      | "requiresEmail"
+                      | "requiresOtp"
+                      | "requiresLogin"
+                      | "requiresRegion";
+                    const rows: [ReqKey, string][] = [
+                      ["requiresEmail", "products.planModal.requiresEmail"],
+                      ...(SCHEDULE_TYPES.includes(deliveryType)
+                        ? [
+                            [
+                              "requiresOtp",
+                              "products.planModal.requiresOtp",
+                            ] as [ReqKey, string],
+                            [
+                              "requiresLogin",
+                              "products.planModal.requiresLogin",
+                            ] as [ReqKey, string],
+                            [
+                              "requiresRegion",
+                              "products.planModal.requiresRegion",
+                            ] as [ReqKey, string],
+                          ]
+                        : []),
+                    ];
+                    return (
+                      <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-2">
+                        <span className="text-xs text-white/50 font-medium uppercase tracking-wide">
+                          {t("products.planModal.requirements")}
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {rows.map(([key, labelKey]) => (
+                            <label
+                              key={key}
+                              className="flex items-center gap-2 text-sm cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 accent-blue-400"
+                                checked={form[key]}
+                                onChange={(e) => set(key, e.target.checked)}
+                              />
+                              <span className="text-white/70">
+                                {t(labelKey)}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-white/60">
                     {t("common.description")}

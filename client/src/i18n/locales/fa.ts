@@ -98,6 +98,8 @@ const fa = {
     requiresLogin: "نیاز به لاگین",
     requiresRegion: "نیاز به منطقه",
     isRenewable: "تمدیدپذیر",
+    planRequirementsHint:
+      "نیازمندی‌های هر پلن (ایمیل، OTP، لاگین) در بخش پلن‌ها تنظیم میشود ↓",
     plans: "پلن ها",
     deliveryTypes: {
       automatic: "خودکار",
@@ -120,6 +122,11 @@ const fa = {
       mounth: "ماه",
       year: "سال",
       tartib: "ترتیب",
+      requirements: "نیازمندی‌های پلن",
+      requiresEmail: "نیاز به ایمیل",
+      requiresOtp: "نیاز به OTP",
+      requiresLogin: "نیاز به لاگین زنده",
+      requiresRegion: "نیاز به منطقه",
     },
     configModal: {
       title: "کانفیگ‌ها",

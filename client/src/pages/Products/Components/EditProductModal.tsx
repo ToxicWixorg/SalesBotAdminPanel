@@ -25,11 +25,12 @@ type Product = {
   stock: number;
   minStock: number;
   requiresEmail: boolean;
-  requiresOtp: boolean;
-  requiresLogin: boolean;
-  requiresRegion: boolean;
   isRenewable: boolean;
 };
+
+// Delivery types that use pre-loaded configs
+const CONFIG_DELIVERY_TYPES = ["automatic", "code", "family_join"] as const;
+const INVITE_DELIVERY_TYPES = ["invite"] as const;
 
 type Category = { id: number; name: string };
 
@@ -51,19 +52,7 @@ export default function EditProductModal({ product, onClose }: Props) {
     stock: product.stock,
     minStock: product.minStock,
     requiresEmail: product.requiresEmail,
-    requiresOtp: product.requiresOtp,
-    requiresLogin: product.requiresLogin,
-    requiresRegion: product.requiresRegion,
-    isRenewable: product.isRenewable,
-  });
 
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ["categories"],
-    queryFn: () => api.get("/api/admin/categories").then((r) => r.data),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data: typeof form) =>
       api.put(`/api/admin/products/${product.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -188,30 +177,40 @@ export default function EditProductModal({ product, onClose }: Props) {
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {(
-              [
-                ["requiresEmail", t("products.requiresEmail")],
-                ["requiresOtp", t("products.requiresOtp")],
-                ["requiresLogin", t("products.requiresLogin")],
-                ["requiresRegion", t("products.requiresRegion")],
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              {([
                 ["isRenewable", t("products.isRenewable")],
                 ["isActive", t("products.active")],
-              ] as [keyof typeof form, string][]
-            ).map(([key, label]) => (
-              <label
-                key={key}
-                className="flex items-center gap-2 text-sm cursor-pointer select-none"
-              >
+              ] as [keyof typeof form, string][]).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-white"
+                    checked={form[key] as boolean}
+                    onChange={(e) => set(key, e.target.checked as never)}
+                  />
+                  <span className="text-white/70">{label}</span>
+                </label>
+              ))}
+            </div>
+            {INVITE_DELIVERY_TYPES.includes(form.deliveryType as typeof INVITE_DELIVERY_TYPES[number]) && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 accent-white"
-                  checked={form[key] as boolean}
-                  onChange={(e) => set(key, e.target.checked as never)}
+                  className="w-4 h-4 accent-blue-400"
+                  checked={form.requiresEmail}
+                  onChange={(e) => set("requiresEmail", e.target.checked)}
                 />
-                <span className="text-white/70">{label}</span>
+                <span className="text-white/70">{t("products.requiresEmail")}</span>
               </label>
-            ))}
+            )}
+            {!CONFIG_DELIVERY_TYPES.includes(form.deliveryType as typeof CONFIG_DELIVERY_TYPES[number]) &&
+             !INVITE_DELIVERY_TYPES.includes(form.deliveryType as typeof INVITE_DELIVERY_TYPES[number]) && (
+              <p className="text-xs text-blue-400/70 bg-blue-500/10 rounded-lg px-3 py-2">
+                {t("products.planRequirementsHint")}
+              </p>
+            )}
           </div>
         </div>
 

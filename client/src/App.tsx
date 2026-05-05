@@ -126,14 +126,14 @@ export default function App() {
                   </SectionRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/perks"
                 element={
                   <SectionRoute section="perks">
                     <PerksPage />
                   </SectionRoute>
                 }
-              />
+              /> */}
               <Route
                 path="/schedules"
                 element={

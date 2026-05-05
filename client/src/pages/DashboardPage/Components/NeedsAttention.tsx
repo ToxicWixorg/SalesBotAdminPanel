@@ -14,8 +14,8 @@ const NeedsAttention = ({ pending }: { pending: any }) => {
         {pending?.pendingOrders?.map(
           (order: {
             id: number;
-            productName: string;
-            userName: string;
+            productName: string | null;
+            userName: string | null;
             createdAt: string;
           }) => (
             <button
@@ -33,8 +33,8 @@ const NeedsAttention = ({ pending }: { pending: any }) => {
         {pending?.urgentTickets?.map(
           (ticket: {
             id: number;
-            subject: string;
-            userName: string;
+            title: string;
+            userName: string | null;
             priority: string;
           }) => (
             <button
@@ -42,13 +42,17 @@ const NeedsAttention = ({ pending }: { pending: any }) => {
               onClick={() => navigate("/tickets")}
               className="flex justify-between items-center w-full text-right bg-red-900/20 border border-red-700/40 rounded-lg px-3 py-2 text-xs hover:bg-red-900/40 transition-colors"
             >
-              <span className="text-red-400">🔴 {ticket.subject}</span>
+              <span className="text-red-400">🔴 {ticket.title}</span>
               <span className="text-white/50">{ticket.userName}</span>
             </button>
           ),
         )}
         {pending?.waitingInvites?.map(
-          (inv: { id: number; productName: string; userName: string }) => (
+          (inv: {
+            id: number;
+            productName: string | null;
+            userName: string | null;
+          }) => (
             <button
               key={inv.id}
               onClick={() => navigate("/orders")}

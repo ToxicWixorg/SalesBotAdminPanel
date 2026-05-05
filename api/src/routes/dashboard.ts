@@ -19,6 +19,7 @@ import {
   usersTable,
   ticketsTable,
   walletTransactionsTable,
+  productsTable,
 } from "../db/schema.ts";
 import { requireAuth } from "../middleware/auth.ts";
 
@@ -129,31 +130,53 @@ dashboardRouter.get("/orders-chart", async (c) => {
 dashboardRouter.get("/pending", async (c) => {
   const [pendingOrders, urgentTickets, waitingInvites] = await Promise.all([
     // سفارشات در انتظار ادمین - آخرین 10 تا
-    db.query.ordersTable.findMany({
-      where: eq(ordersTable.status, "pending_admin"),
-      orderBy: [desc(ordersTable.createdAt)],
-      limit: 10,
-      with: {
-        // note: برای with کار کردن، schema باید در db/index import شود (با { schema })
-      },
-    }),
+    db
+      .select({
+        id: ordersTable.id,
+        productName: productsTable.name,
+        userName: usersTable.firstName,
+        createdAt: ordersTable.createdAt,
+      })
+      .from(ordersTable)
+      .leftJoin(productsTable, eq(productsTable.id, ordersTable.productId))
+      .leftJoin(usersTable, eq(usersTable.id, ordersTable.userId))
+      .where(eq(ordersTable.status, "pending_admin"))
+      .orderBy(desc(ordersTable.createdAt))
+      .limit(10),
 
     // تیکت‌های urgent
-    db.query.ticketsTable.findMany({
-      where: and(
-        eq(ticketsTable.priority, "urgent"),
-        eq(ticketsTable.status, "open"),
-      ),
-      orderBy: [desc(ticketsTable.createdAt)],
-      limit: 10,
-    }),
+    db
+      .select({
+        id: ticketsTable.id,
+        title: ticketsTable.title,
+        priority: ticketsTable.priority,
+        userName: usersTable.firstName,
+      })
+      .from(ticketsTable)
+      .leftJoin(usersTable, eq(usersTable.id, ticketsTable.userId))
+      .where(
+        and(
+          eq(ticketsTable.priority, "urgent"),
+          eq(ticketsTable.status, "open"),
+        ),
+      )
+      .orderBy(desc(ticketsTable.createdAt))
+      .limit(10),
 
     // invite های در انتظار ارسال (سفارشات waiting_invite)
-    db.query.ordersTable.findMany({
-      where: eq(ordersTable.status, "waiting_invite"),
-      orderBy: [desc(ordersTable.createdAt)],
-      limit: 10,
-    }),
+    db
+      .select({
+        id: ordersTable.id,
+        productName: productsTable.name,
+        userName: usersTable.firstName,
+        createdAt: ordersTable.createdAt,
+      })
+      .from(ordersTable)
+      .leftJoin(productsTable, eq(productsTable.id, ordersTable.productId))
+      .leftJoin(usersTable, eq(usersTable.id, ordersTable.userId))
+      .where(eq(ordersTable.status, "waiting_invite"))
+      .orderBy(desc(ordersTable.createdAt))
+      .limit(10),
   ]);
 
   return c.json({ pendingOrders, urgentTickets, waitingInvites });

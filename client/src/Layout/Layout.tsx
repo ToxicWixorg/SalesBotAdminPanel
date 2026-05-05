@@ -16,7 +16,7 @@ const Layout = () => {
     "wallet",
     "discounts",
     "referrals",
-    "perks",
+    // "perks",
     "schedules",
     "broadcast",
     "settings",

@@ -42,6 +42,12 @@ type Props = {
 export default function EditProductModal({ product, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+
+  const { data: categories } = useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: () => api.get("/api/admin/categories").then((r) => r.data),
+  });
+
   const [form, setForm] = useState<Omit<Product, "id">>({
     name: product.name,
     slug: product.slug,

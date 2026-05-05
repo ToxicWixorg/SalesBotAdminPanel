@@ -36,7 +36,7 @@ const TicketsTable = ({
 }: {
   tickets: TicketItem[];
   STATUS_LABELS: Record<string, string>;
-  setSelectedItem: any;
+  setSelectedItem: (item: TicketItem) => void;
 }) => {
   const { t } = useTranslation();
 

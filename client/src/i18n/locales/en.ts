@@ -98,8 +98,6 @@ const en: Translations = {
     isRenewable: "Renewable",
     planRequirementsHint:
       "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
-    planRequirementsHint:
-      "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
     deliveryTypes: {
       automatic: "Automatic",
       manual: "Manual",

@@ -197,6 +197,7 @@ const en: Translations = {
       customer: "Customer",
       support: "Support",
       admin: "Admin",
+      super_admin: "Super Admin",
     },
   },
 

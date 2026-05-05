@@ -76,6 +76,15 @@ settingsRouter.post("/admins", async (c) => {
     })
     .returning();
 
+  // sync usersTable.role to reflect admin status
+  const userRole = ["admin", "super_admin"].includes(body.role)
+    ? "admin"
+    : "support";
+  await db
+    .update(usersTable)
+    .set({ role: userRole })
+    .where(eq(usersTable.id, body.userId));
+
   await logAdminAction(c, {
     action: "create",
     entityType: "admin",
@@ -109,6 +118,17 @@ settingsRouter.put("/admins/:id", async (c) => {
     .returning();
 
   if (!updated) return c.json({ error: "Admin not found" }, 404);
+
+  // sync usersTable.role if role changed
+  if (body.role) {
+    const userRole = ["admin", "super_admin"].includes(body.role)
+      ? "admin"
+      : "support";
+    await db
+      .update(usersTable)
+      .set({ role: userRole })
+      .where(eq(usersTable.id, updated.userId));
+  }
 
   await logAdminAction(c, {
     action: "update",
@@ -168,7 +188,20 @@ settingsRouter.delete("/admins/:id", async (c) => {
     return c.json({ error: "Cannot delete yourself" }, 400);
   }
 
+  // find admin before deleting to get userId
+  const adminToDelete = await db.query.adminsTable.findFirst({
+    where: eq(adminsTable.id, id),
+  });
+
   await db.delete(adminsTable).where(eq(adminsTable.id, id));
+
+  // reset usersTable.role back to customer
+  if (adminToDelete) {
+    await db
+      .update(usersTable)
+      .set({ role: "customer" })
+      .where(eq(usersTable.id, adminToDelete.userId));
+  }
 
   await logAdminAction(c, {
     action: "delete",

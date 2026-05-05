@@ -197,6 +197,7 @@ const ru: Translations = {
       customer: "Покупатель",
       support: "Поддержка",
       admin: "Администратор",
+      super_admin: "Супер Администратор",
     },
   },
 

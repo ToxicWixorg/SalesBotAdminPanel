@@ -202,6 +202,7 @@ const fa = {
       customer: "مشتری",
       support: "پشتیبانی",
       admin: "ادمین",
+      super_admin: "سوپر ادمین",
     },
   },
 

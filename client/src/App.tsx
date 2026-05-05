@@ -17,7 +17,7 @@ const TicketsPage = lazy(() => import("./pages/Tickets/TicketsPage"));
 const WalletPage = lazy(() => import("./pages/Wallet/WalletPage"));
 const DiscountsPage = lazy(() => import("./pages/Discounts/DiscountsPage"));
 const ReferralsPage = lazy(() => import("./pages/Referrals/ReferralsPage"));
-const PerksPage = lazy(() => import("./pages/Perks/PerksPage"));
+// const PerksPage = lazy(() => import("./pages/Perks/PerksPage"));
 const SchedulesPage = lazy(() => import("./pages/Schedules/SchedulesPage"));
 const BroadcastPage = lazy(() => import("./pages/Broadcast/BroadcastPage"));
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));

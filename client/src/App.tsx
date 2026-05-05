@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { useHasAccess } from "./hooks/useHasAccess";
 import { useI18n } from "./hooks/useI18n";
 import { useTranslation } from "react-i18next";
 import { lazy, Suspense } from "react";
@@ -36,6 +37,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+function SectionRoute({
+  section,
+  children,
+}: {
+  section: string;
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const hasAccess = useHasAccess(section);
+  const { t } = useTranslation();
+  if (isLoading) return <SuspencePage Text={t("common.loading")} />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!hasAccess) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -56,89 +73,89 @@ export default function App() {
               <Route
                 path="/products"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="products">
                     <ProductsPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/orders"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="orders">
                     <OrdersPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/users"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="users">
                     <UsersPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/tickets"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="tickets">
                     <TicketsPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/wallet"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="wallet">
                     <WalletPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/discounts"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="discounts">
                     <DiscountsPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/referrals"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="referrals">
                     <ReferralsPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/perks"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="perks">
                     <PerksPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/schedules"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="schedules">
                     <SchedulesPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/broadcast"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="broadcast">
                     <BroadcastPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route
                 path="/settings"
                 element={
-                  <ProtectedRoute>
+                  <SectionRoute section="settings">
                     <SettingsPage />
-                  </ProtectedRoute>
+                  </SectionRoute>
                 }
               />
               <Route

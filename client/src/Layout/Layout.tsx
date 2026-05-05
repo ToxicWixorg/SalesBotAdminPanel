@@ -3,10 +3,12 @@ import MenuBar from "./Components/MenuBar/MenuBar";
 import { useState } from "react";
 import MenuBarMd from "./Components/MenuBar/MenuBarMd";
 import PagesNavigate from "./Components/PagesNavigate/PagesNavigate";
+import { useAuth } from "../hooks/useAuth";
 
 const Layout = () => {
+  const { admin } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const Pages = [
+  const ALL_PAGES = [
     "products",
     "orders",
     "users",
@@ -19,6 +21,11 @@ const Layout = () => {
     "broadcast",
     "settings",
   ];
+
+  const Pages =
+    !admin || admin.isSuperAdmin || admin.allowedSections === null
+      ? ALL_PAGES
+      : ALL_PAGES.filter((p) => admin.allowedSections!.includes(p));
 
   return (
     <div

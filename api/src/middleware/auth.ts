@@ -195,7 +195,8 @@ export function requireSection(section: string) {
     }
 
     const allowed = admin.allowedSections as string[] | null;
-    if (!allowed || !allowed.includes(section)) {
+    // null = دسترسی به همه بخش‌ها، آرایه خالی یا آرایه‌ای که section در آن نیست = ممنوع
+    if (allowed !== null && !allowed.includes(section)) {
       return c.json({ error: "Access denied to this section" }, 403);
     }
 

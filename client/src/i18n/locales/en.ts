@@ -32,6 +32,7 @@ const en: Translations = {
     inactive: "Inactive",
     copy: "Copy",
     add: "Add",
+    saving: "Saving...",
   },
 
   auth: {
@@ -42,6 +43,8 @@ const en: Translations = {
     loggingIn: "Logging in...",
     logout: "Logout",
     notAuthorized: "You are not authorized as admin",
+    telegramIdPlaceholder: "Telegram ID",
+    passwordPlaceholder: "Password",
   },
 
   nav: {
@@ -213,6 +216,7 @@ const en: Translations = {
     messagePlaceholder: "Reply message...",
     allStatuses: "All Statuses",
     allPriorities: "All Priorities",
+    filterAllType: "All — Type",
     priority: {
       urgent: "Urgent",
       high: "High",
@@ -457,6 +461,7 @@ const en: Translations = {
     logsTab: "System Logs",
     addAdmin: "+ Add Admin",
     addAdminTitle: "Add New Admin",
+    editAdminTitle: "Edit Admin",
     telegramId: "Telegram User ID",
     telegramIdPlaceholder: "e.g. 123456789",
     displayName: "Display Name",
@@ -464,6 +469,8 @@ const en: Translations = {
     roleLabel: "Role",
     allowedSections: "Allowed Sections",
     allSectionsHint: "Empty = all",
+    notes: "Internal Notes",
+    notesPlaceholder: "Optional notes about this admin...",
     colName: "Name",
     colTelegramUser: "Telegram User",
     colRole: "Role",

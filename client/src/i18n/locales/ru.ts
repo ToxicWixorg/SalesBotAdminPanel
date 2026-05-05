@@ -32,6 +32,7 @@ const ru: Translations = {
     inactive: "Неактивный",
     copy: "Копировать",
     add: "Добавить",
+    saving: "Сохранение...",
   },
 
   auth: {
@@ -42,6 +43,8 @@ const ru: Translations = {
     loggingIn: "Вход...",
     logout: "Выйти",
     notAuthorized: "У вас нет прав администратора",
+    telegramIdPlaceholder: "Telegram ID",
+    passwordPlaceholder: "Пароль",
   },
 
   nav: {
@@ -213,6 +216,7 @@ const ru: Translations = {
     messagePlaceholder: "Текст ответа...",
     allStatuses: "Все статусы",
     allPriorities: "Все приоритеты",
+    filterAllType: "Все — Тип",
     priority: {
       urgent: "Срочный",
       high: "Высокий",
@@ -457,6 +461,7 @@ const ru: Translations = {
     logsTab: "Системные логи",
     addAdmin: "+ Добавить администратора",
     addAdminTitle: "Добавить нового администратора",
+    editAdminTitle: "Редактировать администратора",
     telegramId: "Telegram User ID",
     telegramIdPlaceholder: "Напр. 123456789",
     displayName: "Отображаемое имя",
@@ -464,6 +469,8 @@ const ru: Translations = {
     roleLabel: "Роль",
     allowedSections: "Разрешённые разделы",
     allSectionsHint: "Пусто = все",
+    notes: "Внутренние заметки",
+    notesPlaceholder: "Необязательные заметки об администраторе...",
     colName: "Имя",
     colTelegramUser: "Пользователь Telegram",
     colRole: "Роль",

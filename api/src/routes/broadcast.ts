@@ -120,7 +120,6 @@ broadcastRouter.post("/send", async (c) => {
   let successCount = 0;
   let failCount = 0;
 
-
   const batchSize = 30;
   for (let i = 0; i < userIds.length; i += batchSize) {
     const batch = userIds.slice(i, i + batchSize);

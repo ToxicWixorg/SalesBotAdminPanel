@@ -31,6 +31,7 @@ const fa = {
     inactive: "غیرفعال",
     copy: "کپی کن",
     add: "افزودن",
+    saving: "در حال ذخیره...",
   },
 
   // ── احراز هویت ─────────────────────────────────────────────
@@ -42,6 +43,8 @@ const fa = {
     loggingIn: "در حال ورود...",
     logout: "خروج",
     notAuthorized: "شما دسترسی ادمین ندارید",
+    telegramIdPlaceholder: "Telegram ID",
+    passwordPlaceholder: "رمز عبور",
   },
 
   // ── ناوبری ─────────────────────────────────────────────────
@@ -219,6 +222,7 @@ const fa = {
     messagePlaceholder: "پیام پاسخ...",
     allStatuses: "همه وضعیت‌ها",
     allPriorities: "همه اولویت‌ها",
+    filterAllType: "همه — نوع",
     priority: {
       urgent: "فوری",
       high: "بالا",
@@ -470,6 +474,7 @@ const fa = {
     logsTab: "لاگ‌های سیستم",
     addAdmin: "+ افزودن ادمین",
     addAdminTitle: "افزودن ادمین جدید",
+    editAdminTitle: "ویرایش ادمین",
     telegramId: "Telegram User ID",
     telegramIdPlaceholder: "مثلاً 123456789",
     displayName: "نام نمایشی",
@@ -477,6 +482,8 @@ const fa = {
     roleLabel: "نقش",
     allowedSections: "بخش‌های دسترسی",
     allSectionsHint: "خالی = همه",
+    notes: "یادداشت داخلی",
+    notesPlaceholder: "یادداشت اختیاری درباره این ادمین...",
     colName: "نام",
     colTelegramUser: "کاربر تلگرام",
     colRole: "نقش",

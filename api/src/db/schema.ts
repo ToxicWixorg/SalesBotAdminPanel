@@ -518,7 +518,9 @@ export const schedulesTable = pgTable(
     currentBookings: integer("current_bookings").default(0),
     reminderSent: boolean("reminder_sent").default(false),
     reminderTime: timestamp("reminder_time"),
-    status: text("status").default("available"), // available | full | in_progress | completed
+    sessionStartNotified: boolean("session_start_notified").default(false),
+    sessionTicketId: integer("session_ticket_id"),
+    status: text("status").default("available"), // available | full | in_progress | completed | cancelled
     completedAt: timestamp("completed_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),

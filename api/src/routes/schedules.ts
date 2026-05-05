@@ -6,9 +6,11 @@
 // PATCH /api/admin/schedules/templates/:id    - ویرایش قالب
 // DELETE /api/admin/schedules/templates/:id   - حذف قالب
 // GET   /api/admin/schedules/available/:date  - بازه‌های آزاد یک روز (برای ربات)
+// GET   /api/admin/schedules/active           - جلسات در حال انجام (in_progress)
 // GET   /api/admin/schedules/today            - سفارشات scheduled امروز
 // GET   /api/admin/schedules/week             - نمای هفتگی
 // GET   /api/admin/schedules/:date            - بازه‌های یک روز خاص (YYYY-MM-DD)
+// POST  /api/admin/schedules/:id/start        - شروع دستی جلسه توسط ادمین
 // PATCH /api/admin/schedules/:id/complete     - تکمیل یک بازه زمانی
 // PATCH /api/admin/schedules/:id/reminder     - ارسال reminder به کاربر
 // ─────────────────────────────────────────────────────────────────────────────
@@ -22,6 +24,7 @@ import {
   ordersTable,
   usersTable,
   productsTable,
+  ticketsTable,
 } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
 import { logAdminAction } from "../helpers/logger.ts";
@@ -182,6 +185,214 @@ schedulesRouter.get("/available/:date", async (c) => {
   });
 
   return c.json(slots);
+});
+
+// ── GET /api/admin/schedules/active ───────────────────────────────────────────
+// جلسات در حال انجام (in_progress) — برای پنل ادمین
+schedulesRouter.get("/active", async (c) => {
+  const sessions = await db
+    .select({
+      schedule: schedulesTable,
+      order: {
+        id: ordersTable.id,
+        status: ordersTable.status,
+      },
+      user: {
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+      },
+      product: {
+        id: productsTable.id,
+        name: productsTable.name,
+      },
+      template: {
+        id: timeSlotTemplatesTable.id,
+        name: timeSlotTemplatesTable.name,
+      },
+    })
+    .from(schedulesTable)
+    .leftJoin(ordersTable, eq(schedulesTable.orderId, ordersTable.id))
+    .leftJoin(usersTable, eq(schedulesTable.userId, usersTable.id))
+    .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .leftJoin(
+      timeSlotTemplatesTable,
+      eq(schedulesTable.templateId, timeSlotTemplatesTable.id),
+    )
+    .where(eq(schedulesTable.status, "in_progress"))
+    .orderBy(schedulesTable.date, schedulesTable.timeSlot);
+
+  return c.json(sessions);
+});
+
+// ── POST /api/admin/schedules/:id/start ───────────────────────────────────────
+// شروع دستی جلسه توسط ادمین (بدون انتظار برای ReminderService)
+schedulesRouter.post("/:id/start", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const adminUser = c.get("adminUser");
+
+  // ── 1. بارگذاری schedule با join ──────────────────────────────────────────
+  const rows = await db
+    .select({
+      schedule: schedulesTable,
+      user: {
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+        languageCode: usersTable.languageCode,
+      },
+      order: {
+        id: ordersTable.id,
+        productId: ordersTable.productId,
+      },
+      product: {
+        name: productsTable.name,
+      },
+    })
+    .from(schedulesTable)
+    .leftJoin(usersTable, eq(schedulesTable.userId, usersTable.id))
+    .leftJoin(ordersTable, eq(schedulesTable.orderId, ordersTable.id))
+    .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .where(eq(schedulesTable.id, id))
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return c.json({ error: "Schedule not found" }, 404);
+  if (row.schedule.sessionStartNotified) {
+    return c.json({ error: "Session already started" }, 409);
+  }
+  if (!row.user?.id || !row.order?.id) {
+    return c.json({ error: "Schedule is missing user or order" }, 422);
+  }
+
+  const userId = row.user.id;
+  const orderId = row.order.id;
+  const productName = row.product?.name ?? "Session";
+
+  // ── 2. تولید شماره تیکت ────────────────────────────────────────────────────
+  const lastTicket = await db
+    .select({ ticketNumber: ticketsTable.ticketNumber })
+    .from(ticketsTable)
+    .where(eq(ticketsTable.type, "order"))
+    .orderBy(desc(ticketsTable.id))
+    .limit(1);
+
+  const lastNum = lastTicket.length
+    ? parseInt(lastTicket[0]!.ticketNumber.split("-")[1] ?? "5000")
+    : 5000;
+  const ticketNumber = `O-${lastNum + 1}`;
+
+  // ── 3. ایجاد تیکت در دیتابیس ──────────────────────────────────────────────
+  const [ticket] = await db
+    .insert(ticketsTable)
+    .values({
+      userId,
+      orderId,
+      type: "order",
+      ticketNumber,
+      title: `Session: ${productName} — ${row.schedule.timeSlot}`,
+      description:
+        `🚀 Session started manually by admin.\n` +
+        `Time slot: ${row.schedule.timeSlot}\n` +
+        `Please send login credentials in this thread.`,
+      priority: "high",
+      status: "open",
+      messageCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .returning();
+
+  if (!ticket) return c.json({ error: "Failed to create ticket" }, 500);
+
+  // ── 4. آپدیت schedule ──────────────────────────────────────────────────────
+  await db
+    .update(schedulesTable)
+    .set({
+      sessionStartNotified: true,
+      sessionTicketId: ticket.id,
+      status: "in_progress",
+      updatedAt: new Date(),
+    })
+    .where(eq(schedulesTable.id, id));
+
+  // ── 5. آپدیت وضعیت سفارش ──────────────────────────────────────────────────
+  await db
+    .update(ordersTable)
+    .set({ status: "in_progress", updatedAt: new Date() })
+    .where(eq(ordersTable.id, orderId));
+
+  // ── 6. اطلاع‌رسانی به کاربر از طریق Telegram Bot API ─────────────────────
+  const botToken = process.env.BOT_TOKEN;
+  if (botToken) {
+    const userMsg =
+      `🚀 <b>جلسه‌ات شروع شد!</b>\n\n` +
+      `📦 محصول: <b>${productName}</b>\n` +
+      `🕐 بازه: <b>${row.schedule.timeSlot}</b>\n` +
+      `🆔 سفارش: #${orderId}\n\n` +
+      `🔑 ادمین از همین چت اطلاعات لاگین رو برات می‌فرسته.\n` +
+      `✨ آماده‌ای؟ بپر توش!`;
+
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: userId,
+          text: userMsg,
+          parse_mode: "HTML",
+        }),
+      });
+    } catch (err) {
+      console.error("[Schedules/start] Failed to notify user:", err);
+    }
+
+    // ── اطلاع‌رسانی به فروم ادمین ───────────────────────────────────────────
+    const supportGroupId = process.env.SUPPORT_GROUP_ID;
+    const ordersTopicId = process.env.ORDERS_TOPIC_ID
+      ? parseInt(process.env.ORDERS_TOPIC_ID)
+      : undefined;
+
+    if (supportGroupId) {
+      const displayName = row.user.username
+        ? `@${row.user.username}`
+        : (row.user.firstName ?? String(userId));
+      const adminMsg =
+        `🚀 <b>Session Started (Manual)</b>\n\n` +
+        `👤 User: ${displayName} (<code>${userId}</code>)\n` +
+        `📦 Product: <b>${productName}</b>\n` +
+        `⏰ Time slot: <b>${row.schedule.timeSlot}</b>\n` +
+        `🆔 Order: #${orderId}\n` +
+        `🎫 Ticket: <code>${ticketNumber}</code>\n\n` +
+        `Started by admin: ${adminUser?.username ?? "Unknown"}\n` +
+        `Send login credentials to the user now.`;
+
+      try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: Number(supportGroupId),
+            ...(ordersTopicId ? { message_thread_id: ordersTopicId } : {}),
+            text: adminMsg,
+            parse_mode: "HTML",
+          }),
+        });
+      } catch (err) {
+        console.error("[Schedules/start] Failed to notify forum:", err);
+      }
+    }
+  }
+
+  // ── 7. لاگ اکشن ادمین ─────────────────────────────────────────────────────
+  await logAdminAction(c, {
+    action: "start_session",
+    entityType: "schedule",
+    entityId: id,
+    description: `Manually started session #${id} (order #${orderId}, ticket ${ticketNumber})`,
+  });
+
+  return c.json({ success: true, ticketId: ticket.id, ticketNumber });
 });
 
 // ── GET /api/admin/schedules/today ────────────────────────────────────────────

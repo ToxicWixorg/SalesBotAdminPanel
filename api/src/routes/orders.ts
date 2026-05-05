@@ -242,15 +242,33 @@ ordersRouter.patch("/:id/deliver", async (c) => {
 
   if (!updated) return c.json({ error: "Order not found" }, 404);
 
+  // Notify user via Telegram Bot API
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  if (BOT_TOKEN && updated.userId) {
+    const deliveryText = Object.entries(delivery)
+      .map(([k, v]) => `• <b>${k}</b>: <code>${v}</code>`)
+      .join("\n");
+    const notifyText =
+      `🎉 <b>Your Order #${id} Has Been Delivered!</b>\n\n` +
+      `Your access details:\n${deliveryText || "(Check order details in bot)"}\n\n` +
+      `View full details in the bot: My Orders → Order #${id}`;
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: Number(updated.userId),
+        text: notifyText,
+        parse_mode: "HTML",
+      }),
+    }).catch((e) => console.error("[NOTIFY] Failed to notify user:", e));
+  }
+
   await logAdminAction(c, {
     action: "manual_delivery",
     entityType: "order",
     entityId: id,
     description: "Manual delivery completed",
   });
-
-  // TODO: ارسال پیام به کاربر از طریق BOT_API_URL
-  // در مرحله بعد: یک HTTP call به endpoint داخلی ربات
 
   return c.json(updated);
 });

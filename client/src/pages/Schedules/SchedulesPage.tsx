@@ -14,16 +14,169 @@ type ScheduleRow = {
     capacity: number;
     currentBookings: number;
     reminderSent: boolean;
-    status: string; // available | full | in_progress | completed
+    status: string;
     completedAt: string | null;
     createdAt: string;
   };
   order: { id: number; finalPrice: string } | null;
   user: { id: number; firstName: string; username: string } | null;
   product: { id: number; name: string } | null;
+  template: {
+    id: number;
+    name: string;
+    startTime: string;
+    endTime: string;
+    capacity: number;
+  } | null;
 };
 
 type WeekRow = { schedule: { date: string } };
+
+type SlotTemplate = {
+  id: number;
+  name: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  productIds: number[] | null;
+  daysOfWeek: number[];
+  isActive: boolean;
+};
+
+const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+// ── Template Modal ─────────────────────────────────────────
+function TemplateModal({
+  initial,
+  onClose,
+  onSave,
+}: {
+  initial?: SlotTemplate;
+  onClose: () => void;
+  onSave: (data: Omit<SlotTemplate, "id">) => void;
+}) {
+  const [name, setName] = useState(initial?.name ?? "");
+  const [startTime, setStartTime] = useState(initial?.startTime ?? "09:00");
+  const [endTime, setEndTime] = useState(initial?.endTime ?? "10:00");
+  const [capacity, setCapacity] = useState(initial?.capacity ?? 1);
+  const [daysOfWeek, setDaysOfWeek] = useState<number[]>(
+    initial?.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6],
+  );
+  const [isActive, setIsActive] = useState(initial?.isActive ?? true);
+
+  const toggleDay = (d: number) =>
+    setDaysOfWeek((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort(),
+    );
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#1a1d27] border border-white/10 rounded-2xl w-full max-w-md p-6 flex flex-col gap-4">
+        <h2 className="text-lg font-bold">
+          {initial ? "ویرایش قالب" : "قالب جدید"}
+        </h2>
+
+        <label className="flex flex-col gap-1 text-sm text-white/70">
+          نام
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
+            placeholder="e.g. Morning Session"
+          />
+        </label>
+
+        <div className="flex gap-3">
+          <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
+            شروع
+            <input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
+            پایان
+            <input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
+            />
+          </label>
+        </div>
+
+        <label className="flex flex-col gap-1 text-sm text-white/70">
+          ظرفیت
+          <input
+            type="number"
+            min={1}
+            value={capacity}
+            onChange={(e) => setCapacity(parseInt(e.target.value) || 1)}
+            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
+          />
+        </label>
+
+        <div className="flex flex-col gap-1 text-sm text-white/70">
+          روزهای هفته
+          <div className="flex gap-2 flex-wrap mt-1">
+            {DAY_LABELS.map((label, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => toggleDay(i)}
+                className={`w-9 h-9 rounded-full text-xs font-semibold border transition-all ${
+                  daysOfWeek.includes(i)
+                    ? "bg-blue-600 border-blue-500 text-white"
+                    : "bg-white/10 border-white/20 text-white/50 hover:bg-white/20"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="accent-blue-500 w-4 h-4"
+          />
+          فعال
+        </label>
+
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-white/10 hover:bg-white/20 rounded-xl py-2 text-sm transition-all"
+          >
+            لغو
+          </button>
+          <button
+            onClick={() =>
+              onSave({
+                name,
+                startTime,
+                endTime,
+                capacity,
+                productIds: initial?.productIds ?? null,
+                daysOfWeek,
+                isActive,
+              })
+            }
+            disabled={!name || !startTime || !endTime}
+            className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-xl py-2 text-sm font-semibold transition-all disabled:opacity-50"
+          >
+            ذخیره
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Lookups ───────────────────────────────────────────────
 const STATUS_BADGE: Record<string, string> = {
@@ -42,6 +195,10 @@ export default function SchedulesPage() {
   const { t } = useTranslation();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const queryClient = useQueryClient();
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [templateModal, setTemplateModal] = useState<
+    SlotTemplate | null | "new"
+  >(null);
 
   // هفتگی — برای نوار انتخاب روز
   const { data: weekRows } = useQuery<WeekRow[]>({
@@ -90,6 +247,34 @@ export default function SchedulesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["schedules"] }),
   });
 
+  // ── Template queries ────────────────────────────────────
+  const { data: templates } = useQuery<SlotTemplate[]>({
+    queryKey: ["slot-templates"],
+    queryFn: () =>
+      api.get("/api/admin/schedules/templates").then((r) => r.data),
+  });
+
+  const createTemplateMutation = useMutation({
+    mutationFn: (data: Omit<SlotTemplate, "id">) =>
+      api.post("/api/admin/schedules/templates", data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["slot-templates"] }),
+  });
+
+  const updateTemplateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<SlotTemplate> }) =>
+      api.patch(`/api/admin/schedules/templates/${id}`, data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["slot-templates"] }),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (id: number) =>
+      api.delete(`/api/admin/schedules/templates/${id}`),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["slot-templates"] }),
+  });
+
   if (isLoading) return <SuspencePage Text={null} />;
 
   return (
@@ -97,7 +282,109 @@ export default function SchedulesPage() {
       {/* Header */}
       <div className="w-full flex justify-between items-center mb-6 pb-2 border-b-2 rounded-sm border-white/30">
         <h1 className="text-xl font-bold">{t("schedules.title")}</h1>
+        <button
+          onClick={() => setShowTemplates((v) => !v)}
+          className="bg-white/10 hover:bg-white/20 text-sm px-4 py-1.5 rounded-xl transition-all"
+        >
+          {showTemplates ? "بازه‌ها" : "⚙️ قالب‌های زمانی"}
+        </button>
       </div>
+
+      {/* ── Templates Panel ─────────────────────────────────── */}
+      {showTemplates && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-white/80">قالب‌های بازه زمانی</h2>
+            <button
+              onClick={() => setTemplateModal("new")}
+              className="bg-blue-600 hover:bg-blue-500 text-sm px-3 py-1.5 rounded-xl transition-all"
+            >
+              + افزودن
+            </button>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {(templates ?? []).map((tpl) => (
+              <li
+                key={tpl.id}
+                className="rounded-2xl bg-white/5 px-5 py-3 flex items-center justify-between gap-3 flex-wrap"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-semibold text-sm">
+                    {tpl.name}
+                    {!tpl.isActive && (
+                      <span className="ml-2 text-xs text-white/30">
+                        (غیرفعال)
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs text-blue-300 font-mono">
+                    {tpl.startTime} – {tpl.endTime}
+                  </span>
+                  <span className="text-xs text-white/40">
+                    ظرفیت: {tpl.capacity} &nbsp;|&nbsp;
+                    {(tpl.daysOfWeek ?? []).map((d) => DAY_LABELS[d]).join(" ")}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      updateTemplateMutation.mutate({
+                        id: tpl.id,
+                        data: { isActive: !tpl.isActive },
+                      })
+                    }
+                    className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                      tpl.isActive
+                        ? "border-orange-400/40 text-orange-400 hover:bg-orange-400/10"
+                        : "border-green-400/40 text-green-400 hover:bg-green-400/10"
+                    }`}
+                  >
+                    {tpl.isActive ? "غیرفعال" : "فعال"}
+                  </button>
+                  <button
+                    onClick={() => setTemplateModal(tpl)}
+                    className="text-xs px-3 py-1.5 rounded-xl border border-white/20 text-white/60 hover:bg-white/10 transition-all"
+                  >
+                    ویرایش
+                  </button>
+                  <button
+                    onClick={() => deleteTemplateMutation.mutate(tpl.id)}
+                    disabled={deleteTemplateMutation.isPending}
+                    className="text-xs px-3 py-1.5 rounded-xl border border-red-400/30 text-red-400 hover:bg-red-400/10 transition-all disabled:opacity-50"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </li>
+            ))}
+            {(templates ?? []).length === 0 && (
+              <p className="text-center text-white/30 py-6 text-sm">
+                هیچ قالبی تعریف نشده
+              </p>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/* Template modal */}
+      {templateModal != null && (
+        <TemplateModal
+          initial={templateModal === "new" ? undefined : templateModal}
+          onClose={() => setTemplateModal(null)}
+          onSave={(data) => {
+            if (templateModal === "new") {
+              createTemplateMutation.mutate(data, {
+                onSuccess: () => setTemplateModal(null),
+              });
+            } else {
+              updateTemplateMutation.mutate(
+                { id: (templateModal as SlotTemplate).id, data },
+                { onSuccess: () => setTemplateModal(null) },
+              );
+            }
+          }}
+        />
+      )}
 
       {/* Week bar */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">

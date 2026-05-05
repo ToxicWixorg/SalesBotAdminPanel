@@ -26,6 +26,7 @@ const OrdersPage = () => {
     productId: "",
     page: "1",
   });
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -85,6 +86,9 @@ const OrdersPage = () => {
                   paymentMethod: string;
                   status: string;
                   createdAt: string;
+                  deliveryType?: string;
+                  delivery?: Record<string, string>;
+                  scheduledTime?: string;
                 };
                 user: { firstName: string; username: string };
                 product: { name: string };
@@ -94,7 +98,14 @@ const OrdersPage = () => {
                   className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-3 flex flex-col gap-2"
                 >
                   {/* Row 1: ID + user + product + status */}
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div
+                    className="flex items-center justify-between gap-3 flex-wrap cursor-pointer"
+                    onClick={() =>
+                      setExpandedId((prev) =>
+                        prev === item.order.id ? null : item.order.id,
+                      )
+                    }
+                  >
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-white/40 font-mono">
                         #{item.order.id}
@@ -153,7 +164,8 @@ const OrdersPage = () => {
                       </span>
                     </div>
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         const reason = prompt(t("orders.refundReason"));
                         if (reason)
                           refundMutation.mutate({ id: item.order.id, reason });
@@ -163,6 +175,51 @@ const OrdersPage = () => {
                       {t("orders.refund")}
                     </button>
                   </div>
+
+                  {/* Row 3: expandable delivery info */}
+                  {expandedId === item.order.id && (
+                    <div className="mt-1 pt-3 border-t border-white/10 flex flex-col gap-2 text-xs">
+                      {item.order.deliveryType && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/40">نوع تحویل:</span>
+                          <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
+                            {item.order.deliveryType}
+                          </span>
+                        </div>
+                      )}
+                      {item.order.scheduledTime && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/40">زمان جلسه:</span>
+                          <span className="text-yellow-300 font-mono">
+                            {item.order.scheduledTime}
+                          </span>
+                        </div>
+                      )}
+                      {item.order.delivery &&
+                        Object.keys(item.order.delivery).length > 0 && (
+                          <div className="flex flex-col gap-1 bg-white/5 rounded-xl px-4 py-2">
+                            <span className="text-white/40 mb-1">
+                              اطلاعات تحویل:
+                            </span>
+                            {Object.entries(item.order.delivery).map(
+                              ([key, val]) => (
+                                <div
+                                  key={key}
+                                  className="flex items-center gap-2 flex-wrap"
+                                >
+                                  <span className="text-white/40 w-28">
+                                    {key}:
+                                  </span>
+                                  <span className="font-mono text-white/80 break-all">
+                                    {val}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  )}
                 </li>
               ),
             )}

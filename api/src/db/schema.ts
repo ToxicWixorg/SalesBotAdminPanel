@@ -475,19 +475,46 @@ export const userPerksTable = pgTable(
 export type UserPerks = typeof userPerksTable.$inferSelect;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// ⏰ SCHEDULES
+// ⏰ TIME SLOT TEMPLATES (Admin-defined)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const timeSlotTemplatesTable = pgTable("time_slot_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  startTime: text("start_time").notNull(), // "09:00"
+  endTime: text("end_time").notNull(), // "10:00"
+  capacity: integer("capacity").notNull().default(1),
+  productIds: jsonb("product_ids"), // null = all products
+  daysOfWeek: jsonb("days_of_week").default([0, 1, 2, 3, 4, 5, 6]).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type TimeSlotTemplate = typeof timeSlotTemplatesTable.$inferSelect;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ⏰ SCHEDULES (Per-booking)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export const schedulesTable = pgTable(
   "schedules",
   {
     id: serial("id").primaryKey(),
-    orderId: integer("order_id")
-      .notNull()
-      .references(() => ordersTable.id, { onDelete: "cascade" }),
+    templateId: integer("template_id").references(
+      () => timeSlotTemplatesTable.id,
+      { onDelete: "set null" },
+    ),
+    orderId: integer("order_id").references(() => ordersTable.id, {
+      onDelete: "cascade",
+    }),
+    userId: bigint("user_id", { mode: "number" }).references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
     date: text("date").notNull(), // YYYY-MM-DD
-    timeSlot: text("time_slot").notNull(), // 09:00-10:00
-    capacity: integer("capacity").notNull(),
+    timeSlot: text("time_slot").notNull(), // "09:00-10:00"
+    capacity: integer("capacity").notNull().default(1),
     currentBookings: integer("current_bookings").default(0),
     reminderSent: boolean("reminder_sent").default(false),
     reminderTime: timestamp("reminder_time"),
@@ -498,7 +525,12 @@ export const schedulesTable = pgTable(
   },
   (table) => ({
     orderIdIdx: index("schedules_order_id_idx").on(table.orderId),
+    userIdIdx: index("schedules_user_id_idx").on(table.userId),
     dateIdx: index("schedules_date_idx").on(table.date),
+    templateDateIdx: index("schedules_template_date_idx").on(
+      table.templateId,
+      table.date,
+    ),
   }),
 );
 

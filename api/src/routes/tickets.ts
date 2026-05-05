@@ -235,6 +235,16 @@ ticketsRouter.post("/:id/reply", async (c) => {
         chat_id: ticket.userId,
         text,
         parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "💬 پاسخ به تیکت",
+                callback_data: `reply_ticket_${id}`,
+              },
+            ],
+          ],
+        },
       }),
     }).catch((err: unknown) =>
       console.error("[tickets] failed to notify user:", err),

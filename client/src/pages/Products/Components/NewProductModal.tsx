@@ -104,7 +104,6 @@ export default function NewProductModal({ onClose }: Props) {
         </div>
 
         <div className="p-4 flex flex-col gap-3">
-          {/* نام */}
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">
               {t("products.name")} <span className="text-red-400">*</span>
@@ -116,8 +115,6 @@ export default function NewProductModal({ onClose }: Props) {
               placeholder={t("products.namePlaceholder")}
             />
           </label>
-
-          {/* slug */}
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">
               Slug <span className="text-red-400">*</span>
@@ -129,8 +126,6 @@ export default function NewProductModal({ onClose }: Props) {
               placeholder="netflix-premium-1-month"
             />
           </label>
-
-          {/* توضیحات */}
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">{t("common.description")}</span>
             <textarea
@@ -141,7 +136,6 @@ export default function NewProductModal({ onClose }: Props) {
           </label>
 
           <div className="grid grid-cols-2 gap-3">
-            {/* دسته */}
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">{t("products.category")}</span>
               <select
@@ -165,7 +159,6 @@ export default function NewProductModal({ onClose }: Props) {
               </select>
             </label>
 
-            {/* نوع تحویل */}
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">
                 {t("products.deliveryType")}{" "}
@@ -183,8 +176,6 @@ export default function NewProductModal({ onClose }: Props) {
                 ))}
               </select>
             </label>
-
-            {/* موجودی اولیه */}
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">{t("products.stock")}</span>
               <input
@@ -196,7 +187,6 @@ export default function NewProductModal({ onClose }: Props) {
               />
             </label>
 
-            {/* حداقل موجودی */}
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">{t("products.minStock")}</span>
               <input
@@ -209,7 +199,6 @@ export default function NewProductModal({ onClose }: Props) {
             </label>
           </div>
 
-          {/* Custom Emoji ID */}
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-white/60">Custom Emoji ID</span>
             <input
@@ -219,13 +208,11 @@ export default function NewProductModal({ onClose }: Props) {
               placeholder="5373141891321699086"
             />
             <span className="text-xs text-white/30">
-              آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود
+              {t("products.customEmojiHint")}
             </span>
           </label>
 
-          {/* چک‌باکس‌ها */}
           <div className="flex flex-col gap-2 pt-1">
-            {/* همیشه نمایش داده میشه */}
             <div className="grid grid-cols-2 gap-2">
               {(
                 [

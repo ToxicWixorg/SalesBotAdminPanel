@@ -98,6 +98,8 @@ const en: Translations = {
     requiresRegion: "Requires Region",
     plans: "Plans",
     isRenewable: "Renewable",
+    customEmojiHint:
+      "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
     deliveryTypes: {

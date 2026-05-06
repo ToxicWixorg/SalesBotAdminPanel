@@ -100,6 +100,8 @@ const fa = {
     requiresLogin: "نیاز به لاگین",
     requiresRegion: "نیاز به منطقه",
     isRenewable: "تمدیدپذیر",
+    customEmojiHint:
+      "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "نیازمندی‌های هر پلن (ایمیل، OTP، لاگین) در بخش پلن‌ها تنظیم میشود ↓",
     plans: "پلن ها",

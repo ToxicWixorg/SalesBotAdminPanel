@@ -97,6 +97,8 @@ const ru: Translations = {
     requiresLogin: "Требуется вход",
     requiresRegion: "Требуется регион",
     isRenewable: "Возобновляемый",
+    customEmojiHint:
+      "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "Требования каждого плана (емейл, OTP, вход) указываются в разделе Планы ниже ↓",
     plans: "Планы",

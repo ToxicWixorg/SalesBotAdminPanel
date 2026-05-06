@@ -7,9 +7,7 @@ import SuspencePage from "../../../suspence/suspence";
 type InventoryItem = {
   id: number;
   productId: number;
-  email: string | null;
-  password: string | null;
-  extraData: string | null;
+  content: string | null;
   status: "available" | "reserved" | "used" | "dead";
   reservedAt: string | null;
   usedAt: string | null;
@@ -33,7 +31,7 @@ type Props = {
 
 type Tab = "available" | "used" | "dead";
 
-export default function InventoryModal({
+export default function DeliveryItemsModal({
   productId,
   productName,
   onClose,
@@ -42,16 +40,10 @@ export default function InventoryModal({
   const queryClient = useQueryClient();
 
   const [tab, setTab] = useState<Tab>("available");
-  const [mode, setMode] = useState<"single" | "bulk">("single");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [extraData, setExtraData] = useState("");
-  const [bulkText, setBulkText] = useState("");
-  const [bulkSuccess, setBulkSuccess] = useState<number | null>(null);
+  const [addText, setAddText] = useState("");
+  const [addSuccess, setAddSuccess] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
-  const [editEmail, setEditEmail] = useState("");
-  const [editPassword, setEditPassword] = useState("");
-  const [editExtraData, setEditExtraData] = useState("");
+  const [editContent, setEditContent] = useState("");
   const [deadId, setDeadId] = useState<number | null>(null);
   const [deadReason, setDeadReason] = useState("");
 
@@ -75,44 +67,30 @@ export default function InventoryModal({
   const items = (data?.items ?? []).filter((i) => i.status === tab);
 
   const addMutation = useMutation({
-    mutationFn: () =>
-      api.post(`/api/admin/inventory/${productId}`, {
-        email: email.trim() || undefined,
-        password: password.trim() || undefined,
-        extraData: extraData.trim() || undefined,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey });
-      setEmail("");
-      setPassword("");
-      setExtraData("");
-    },
-  });
-
-  const bulkMutation = useMutation({
     mutationFn: () => {
-      const lines = bulkText
+      const lines = addText
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
+      if (lines.length === 1) {
+        return api
+          .post(`/api/admin/inventory/${productId}`, { content: lines[0] })
+          .then(() => 1);
+      }
       return api
         .post(`/api/admin/inventory/${productId}/bulk`, { lines })
-        .then((r) => r.data as { inserted: number });
+        .then((r) => (r.data as { inserted: number }).inserted);
     },
-    onSuccess: (res) => {
+    onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey });
-      setBulkText("");
-      setBulkSuccess(res.inserted);
+      setAddText("");
+      setAddSuccess(count);
     },
   });
 
   const editMutation = useMutation({
     mutationFn: (id: number) =>
-      api.patch(`/api/admin/inventory/${id}`, {
-        email: editEmail.trim() || undefined,
-        password: editPassword.trim() || undefined,
-        extraData: editExtraData.trim() || undefined,
-      }),
+      api.patch(`/api/admin/inventory/${id}`, { content: editContent.trim() }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });
       setEditId(null);
@@ -136,13 +114,6 @@ export default function InventoryModal({
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  const startEdit = (item: InventoryItem) => {
-    setEditId(item.id);
-    setEditEmail(item.email ?? "");
-    setEditPassword(item.password ?? "");
-    setEditExtraData(item.extraData ?? "");
-  };
-
   const tabs: Tab[] = ["available", "used", "dead"];
 
   return (
@@ -163,7 +134,7 @@ export default function InventoryModal({
           background: "var(--bg-secondary, #1e1e2e)",
           borderRadius: 12,
           padding: 24,
-          width: "min(700px, 95vw)",
+          width: "min(680px, 95vw)",
           maxHeight: "85vh",
           overflow: "auto",
           display: "flex",
@@ -181,7 +152,7 @@ export default function InventoryModal({
         >
           <div>
             <h2 style={{ margin: 0, fontSize: 18 }}>
-              {t("products.inventory.title")} — {productName}
+              {t("products.deliveryItems.title")} — {productName}
             </h2>
             <p style={{ margin: "4px 0 0", opacity: 0.6, fontSize: 13 }}>
               {t("products.inventory.stats", summary)}
@@ -232,111 +203,38 @@ export default function InventoryModal({
               padding: 16,
             }}
           >
-            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-              <button
-                onClick={() => setMode("single")}
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  border: "none",
-                  cursor: "pointer",
-                  background:
-                    mode === "single"
-                      ? "var(--accent, #7c3aed)"
-                      : "var(--bg-tertiary, #2a2a3e)",
-                  color: mode === "single" ? "#fff" : "inherit",
-                  fontSize: 13,
-                }}
-              >
-                {t("products.inventory.addItem")}
-              </button>
-              <button
-                onClick={() => setMode("bulk")}
-                style={{
-                  padding: "4px 12px",
-                  borderRadius: 6,
-                  border: "none",
-                  cursor: "pointer",
-                  background:
-                    mode === "bulk"
-                      ? "var(--accent, #7c3aed)"
-                      : "var(--bg-tertiary, #2a2a3e)",
-                  color: mode === "bulk" ? "#fff" : "inherit",
-                  fontSize: 13,
-                }}
-              >
-                {t("products.inventory.bulkAdd")}
-              </button>
-            </div>
-
-            {mode === "single" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <input
-                  placeholder={t("products.inventory.emailLabel")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder={t("products.inventory.passwordLabel")}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={inputStyle}
-                />
-                <input
-                  placeholder={t("products.inventory.extraDataLabel")}
-                  value={extraData}
-                  onChange={(e) => setExtraData(e.target.value)}
-                  style={inputStyle}
-                />
-                <button
-                  onClick={() => addMutation.mutate()}
-                  disabled={addMutation.isPending || (!email && !password)}
-                  style={btnPrimaryStyle}
-                >
-                  {addMutation.isPending
-                    ? "..."
-                    : t("products.inventory.addItem")}
-                </button>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <textarea
-                  placeholder={t("products.inventory.bulkPlaceholder")}
-                  value={bulkText}
-                  onChange={(e) => setBulkText(e.target.value)}
-                  rows={6}
-                  style={{
-                    ...inputStyle,
-                    resize: "vertical",
-                    fontFamily: "monospace",
-                  }}
-                />
-                <p style={{ margin: 0, opacity: 0.5, fontSize: 12 }}>
-                  {t("products.inventory.bulkHelp")}
-                </p>
-                {bulkSuccess != null && (
-                  <p style={{ color: "#4ade80", fontSize: 13 }}>
-                    ✓{" "}
-                    {t("products.inventory.bulkSuccess", {
-                      count: bulkSuccess,
-                    })}
-                  </p>
-                )}
-                <button
-                  onClick={() => {
-                    setBulkSuccess(null);
-                    bulkMutation.mutate();
-                  }}
-                  disabled={bulkMutation.isPending || !bulkText.trim()}
-                  style={btnPrimaryStyle}
-                >
-                  {bulkMutation.isPending
-                    ? "..."
-                    : t("products.inventory.bulkAdd")}
-                </button>
-              </div>
+            <p style={{ margin: "0 0 8px", fontSize: 13, opacity: 0.7 }}>
+              {t("products.deliveryItems.addItems")}
+            </p>
+            <textarea
+              placeholder={t("products.deliveryItems.contentPlaceholder")}
+              value={addText}
+              onChange={(e) => {
+                setAddText(e.target.value);
+                setAddSuccess(null);
+              }}
+              rows={5}
+              style={{
+                ...inputStyle,
+                resize: "vertical",
+                fontFamily: "monospace",
+              }}
+            />
+            {addSuccess != null && (
+              <p style={{ margin: "6px 0 0", color: "#4ade80", fontSize: 13 }}>
+                ✓{" "}
+                {t("products.deliveryItems.bulkSuccess", { count: addSuccess })}
+              </p>
             )}
+            <button
+              onClick={() => addMutation.mutate()}
+              disabled={addMutation.isPending || !addText.trim()}
+              style={{ ...btnPrimaryStyle, marginTop: 10 }}
+            >
+              {addMutation.isPending
+                ? "..."
+                : t("products.deliveryItems.addItems")}
+            </button>
           </div>
         )}
 
@@ -363,23 +261,15 @@ export default function InventoryModal({
               >
                 {editId === item.id ? (
                   <>
-                    <input
-                      value={editEmail}
-                      onChange={(e) => setEditEmail(e.target.value)}
-                      placeholder={t("products.inventory.emailLabel")}
-                      style={inputStyle}
-                    />
-                    <input
-                      value={editPassword}
-                      onChange={(e) => setEditPassword(e.target.value)}
-                      placeholder={t("products.inventory.passwordLabel")}
-                      style={inputStyle}
-                    />
-                    <input
-                      value={editExtraData}
-                      onChange={(e) => setEditExtraData(e.target.value)}
-                      placeholder={t("products.inventory.extraDataLabel")}
-                      style={inputStyle}
+                    <textarea
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      rows={3}
+                      style={{
+                        ...inputStyle,
+                        resize: "vertical",
+                        fontFamily: "monospace",
+                      }}
                     />
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
@@ -405,44 +295,44 @@ export default function InventoryModal({
                         alignItems: "flex-start",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 2,
-                          fontSize: 13,
-                        }}
-                      >
-                        {item.email && <span>{item.email}</span>}
-                        {item.password && (
-                          <span
-                            style={{ opacity: 0.6, fontFamily: "monospace" }}
-                          >
-                            {"•".repeat(Math.min(item.password.length, 12))}
-                          </span>
-                        )}
-                        {item.extraData && (
-                          <span style={{ opacity: 0.5, fontSize: 12 }}>
-                            {item.extraData}
-                          </span>
-                        )}
+                      <div style={{ fontSize: 13, flex: 1, marginRight: 12 }}>
+                        <span
+                          style={{
+                            fontFamily: "monospace",
+                            wordBreak: "break-all",
+                            whiteSpace: "pre-wrap",
+                          }}
+                        >
+                          {item.content ?? "—"}
+                        </span>
                         {item.usedByOrderId && (
-                          <span style={{ opacity: 0.5, fontSize: 12 }}>
+                          <div
+                            style={{ opacity: 0.5, fontSize: 12, marginTop: 4 }}
+                          >
                             {t("products.inventory.orderId")}: #
                             {item.usedByOrderId}
-                          </span>
+                          </div>
                         )}
                         {item.deadReason && (
-                          <span style={{ color: "#f87171", fontSize: 12 }}>
+                          <div
+                            style={{
+                              color: "#f87171",
+                              fontSize: 12,
+                              marginTop: 4,
+                            }}
+                          >
                             {item.deadReason}
-                          </span>
+                          </div>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 6 }}>
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                         {item.status === "available" && (
                           <>
                             <button
-                              onClick={() => startEdit(item)}
+                              onClick={() => {
+                                setEditId(item.id);
+                                setEditContent(item.content ?? "");
+                              }}
                               style={btnSmallStyle}
                             >
                               {t("common.edit")}
@@ -482,7 +372,8 @@ export default function InventoryModal({
                         )}
                       </div>
                     </div>
-                    {/* Mark dead confirm inline */}
+
+                    {/* Mark dead inline form */}
                     {deadId === item.id && (
                       <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                         <input

@@ -100,6 +100,12 @@ const fa = {
     requiresLogin: "نیاز به لاگین",
     requiresRegion: "نیاز به منطقه",
     isRenewable: "تمدیدپذیر",
+    warrantyDays: "روزهای گارانتی",
+    warrantyDaysHint: "تعداد روزی که ادمین مسئولیت آیتم را دارد (0 = بدون گارانتی)",
+    terms: "شرایط و قوانین",
+    termsPlaceholder: "شرایط استفاده از این محصول...",
+    maxPerUser: "حداکثر خرید هر کاربر",
+    maxPerUserHint: "0 = بدون محدودیت",
     customEmojiHint:
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
@@ -169,6 +175,13 @@ const fa = {
       deadReasonPlaceholder: "دلیل مشکل...",
       orderId: "شماره سفارش",
       stats: "{available} موجود · {reserved} رزرو · {used} استفاده شده · {dead} مشکل‌دار",
+    },
+    deliveryItems: {
+      manage: "آیتم‌های تحویل",
+      title: "آیتم‌های تحویل",
+      addItems: "افزودن آیتم",
+      contentPlaceholder: "هر خط یک آیتم\nمثال: ایمیل:رمز\nیا لینک\nیا هر متنی",
+      bulkSuccess: "{count} آیتم اضافه شد",
     },
     categories: {
       title: "کتگوری‌ها",

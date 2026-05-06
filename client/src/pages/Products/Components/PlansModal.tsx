@@ -3,8 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 import SuspencePage from "../../../suspence/suspence";
-import ConfigsModal from "./ConfigsModal";
-import InventoryModal from "./InventoryModal";
+import DeliveryItemsModal from "./DeliveryItemsModal";
 
 type Plan = {
   id: number;
@@ -23,8 +22,6 @@ type Plan = {
   customEmojiId: string | null;
 };
 
-// delivery types that use pre-loaded configs (no requirement fields needed)
-const CONFIG_TYPES = ["automatic", "code", "family_join"];
 // delivery types where requirements make sense
 const SCHEDULE_TYPES = [
   "custom_schedule",
@@ -66,8 +63,7 @@ export default function PlansModal({
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [configsPlan, setConfigsPlan] = useState<Plan | null>(null);
-  const [showInventory, setShowInventory] = useState(false);
+  const [showDeliveryItems, setShowDeliveryItems] = useState(false);
 
   const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["plans", productId],
@@ -247,23 +243,13 @@ export default function PlansModal({
                             >
                               {t("common.edit")}
                             </button>
-                            {/* کانفیگ فقط برای automatic/code/family_join */}
-                            {CONFIG_TYPES.includes(deliveryType) && (
-                              <>
-                                <button
-                                  onClick={() => setConfigsPlan(plan)}
-                                  className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
-                                >
-                                  {t("products.configModal.manageConfigs")}
-                                </button>
-                                <button
-                                  onClick={() => setShowInventory(true)}
-                                  className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
-                                >
-                                  {t("products.inventory.manage")}
-                                </button>
-                              </>
-                            )}
+                            {/* آیتم‌های تحویل برای همه انواع */}
+                            <button
+                              onClick={() => setShowDeliveryItems(true)}
+                              className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
+                            >
+                              {t("products.deliveryItems.manage")}
+                            </button>
                             <button
                               onClick={() => {
                                 if (
@@ -484,19 +470,11 @@ export default function PlansModal({
         </div>
       </div>
       <div className="w-full h-full justify-center items-center">
-        {configsPlan && (
-          <ConfigsModal
-            productId={productId}
-            planId={configsPlan.id}
-            planName={configsPlan.name}
-            onClose={() => setConfigsPlan(null)}
-          />
-        )}
-        {showInventory && (
-          <InventoryModal
+        {showDeliveryItems && (
+          <DeliveryItemsModal
             productId={productId}
             productName={productName}
-            onClose={() => setShowInventory(false)}
+            onClose={() => setShowDeliveryItems(false)}
           />
         )}
       </div>

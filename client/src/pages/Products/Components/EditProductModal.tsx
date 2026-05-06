@@ -27,6 +27,9 @@ type Product = {
   requiresEmail: boolean;
   isRenewable: boolean;
   customEmojiId: string | null;
+  warrantyDays: number;
+  terms: string | null;
+  maxPerUser: number;
 };
 
 // Delivery types that use pre-loaded configs
@@ -61,6 +64,9 @@ export default function EditProductModal({ product, onClose }: Props) {
     requiresEmail: product.requiresEmail,
     isRenewable: product.isRenewable,
     customEmojiId: product.customEmojiId,
+    warrantyDays: product.warrantyDays ?? 0,
+    terms: product.terms ?? null,
+    maxPerUser: product.maxPerUser ?? 0,
   });
 
   const updateMutation = useMutation({
@@ -201,6 +207,50 @@ export default function EditProductModal({ product, onClose }: Props) {
               آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود
             </span>
           </label>
+
+          {/* ── فیلدهای Inventory ── */}
+          {CONFIG_DELIVERY_TYPES.includes(
+            form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
+          ) && (
+            <div className="flex flex-col gap-3 border border-purple-500/20 rounded-lg p-3 bg-purple-500/5">
+              <p className="text-xs text-purple-300/70 font-medium">
+                تنظیمات موجودی
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-white/60">{t("products.warrantyDays")}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                    value={form.warrantyDays}
+                    onChange={(e) => set("warrantyDays", Number(e.target.value))}
+                  />
+                  <span className="text-xs text-white/30">{t("products.warrantyDaysHint")}</span>
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-white/60">{t("products.maxPerUser")}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                    value={form.maxPerUser}
+                    onChange={(e) => set("maxPerUser", Number(e.target.value))}
+                  />
+                  <span className="text-xs text-white/30">{t("products.maxPerUserHint")}</span>
+                </label>
+              </div>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-white/60">{t("products.terms")}</span>
+                <textarea
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                  value={form.terms ?? ""}
+                  onChange={(e) => set("terms", e.target.value || null)}
+                  placeholder={t("products.termsPlaceholder")}
+                />
+              </label>
+            </div>
+          )}
 
           <div className="flex flex-col gap-2 pt-1">
             <div className="grid grid-cols-2 gap-2">

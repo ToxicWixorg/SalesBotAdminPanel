@@ -98,6 +98,12 @@ const en: Translations = {
     requiresRegion: "Requires Region",
     plans: "Plans",
     isRenewable: "Renewable",
+    warrantyDays: "Warranty Days",
+    warrantyDaysHint: "Days admin is responsible for the item (0 = no warranty)",
+    terms: "Terms & Conditions",
+    termsPlaceholder: "Usage terms for this product...",
+    maxPerUser: "Max per User",
+    maxPerUserHint: "0 = no limit",
     customEmojiHint:
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
@@ -166,6 +172,13 @@ const en: Translations = {
       deadReasonPlaceholder: "Reason...",
       orderId: "Order ID",
       stats: "{available} available · {reserved} reserved · {used} used · {dead} dead",
+    },
+    deliveryItems: {
+      manage: "Delivery Items",
+      title: "Delivery Items",
+      addItems: "Add Item",
+      contentPlaceholder: "One item per line\nemail:password\nor a link\nor any text",
+      bulkSuccess: "{count} items added",
     },
     categories: {
       title: "Categories",

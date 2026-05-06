@@ -97,6 +97,12 @@ const ru: Translations = {
     requiresLogin: "Требуется вход",
     requiresRegion: "Требуется регион",
     isRenewable: "Возобновляемый",
+    warrantyDays: "Дней гарантии",
+    warrantyDaysHint: "Дней ответственности администратора (0 = без гарантии)",
+    terms: "Условия использования",
+    termsPlaceholder: "Условия использования продукта...",
+    maxPerUser: "Макс. на пользователя",
+    maxPerUserHint: "0 = без ограничений",
     customEmojiHint:
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
@@ -156,6 +162,13 @@ const ru: Translations = {
       deadReasonPlaceholder: "Причина...",
       orderId: "ID заказа",
       stats: "{available} доступно · {reserved} зарезервировано · {used} использовано · {dead} неисправно",
+    },
+    deliveryItems: {
+      manage: "Доставляемые элементы",
+      title: "Доставляемые элементы",
+      addItems: "Добавить элемент",
+      contentPlaceholder: "Один элемент на строку\nemail:пароль\nили ссылка\nили любой текст",
+      bulkSuccess: "Добавлено {count} элементов",
     },
     categories: {
       title: "Категории",

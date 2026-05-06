@@ -16,6 +16,7 @@ import { db } from "../db/index.ts";
 import { inventoryTable, productsTable } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
 import { logAdminAction } from "../helpers/logger.ts";
+import { notifyRestockedUsersFromAdmin } from "../helpers/stockNotify.ts";
 
 export const inventoryRouter = new Hono();
 inventoryRouter.use("*", requireAuth, requireSection("products"));
@@ -54,11 +55,9 @@ inventoryRouter.get("/:productId", async (c) => {
 // ── POST /api/admin/inventory/:productId (single) ────────────────────────────
 inventoryRouter.post("/:productId", async (c) => {
   const productId = parseInt(c.req.param("productId"));
-  const body = await c.req.json<{
-    email?: string;
-    password?: string;
-    extraData?: string;
-  }>();
+  const body = await c.req.json<{ content: string }>();
+
+  if (!body.content?.trim()) return c.json({ error: "content is required" }, 400);
 
   const product = await db.query.productsTable.findFirst({
     where: eq(productsTable.id, productId),
@@ -67,7 +66,7 @@ inventoryRouter.post("/:productId", async (c) => {
 
   const [item] = await db
     .insert(inventoryTable)
-    .values({ productId, ...body })
+    .values({ productId, content: body.content.trim() })
     .returning();
 
   // keep products.stock in sync
@@ -79,9 +78,14 @@ inventoryRouter.post("/:productId", async (c) => {
   await logAdminAction(c, {
     action: "create",
     entityType: "inventory",
-    entityId: item.id,
+    entityId: item?.id,
     description: `Added inventory item for product ${productId}`,
   });
+
+  // اطلاع‌رسانی به مشترکان (async)
+  notifyRestockedUsersFromAdmin(productId).catch((err) =>
+    console.error("[notifyRestocked] error:", err),
+  );
 
   return c.json(item, 201);
 });
@@ -100,16 +104,11 @@ inventoryRouter.post("/:productId/bulk", async (c) => {
   });
   if (!product) return c.json({ error: "Product not found" }, 404);
 
-  // parse lines: each line can be "email:password" or "email:password:extraData"
-  const rows = body.lines.map((line) => {
-    const parts = line.split(":");
-    return {
-      productId,
-      email: parts[0]?.trim() || null,
-      password: parts[1]?.trim() || null,
-      extraData: parts.slice(2).join(":").trim() || null,
-    };
-  });
+  // parse lines: each line is a delivery item (content)
+  const rows = body.lines
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((content) => ({ productId, content }));
 
   const inserted = await db.insert(inventoryTable).values(rows).returning();
 
@@ -126,17 +125,18 @@ inventoryRouter.post("/:productId/bulk", async (c) => {
     description: `Bulk added ${inserted.length} inventory items for product ${productId}`,
   });
 
+  // اطلاع‌رسانی به کاربران مشترک (async — response منتظر نمی‌ماند)
+  notifyRestockedUsersFromAdmin(productId).catch((err) =>
+    console.error("[notifyRestocked] error:", err),
+  );
+
   return c.json({ inserted: inserted.length }, 201);
 });
 
 // ── PATCH /api/admin/inventory/:itemId ───────────────────────────────────────
 inventoryRouter.patch("/:itemId", async (c) => {
   const itemId = parseInt(c.req.param("itemId"));
-  const body = await c.req.json<{
-    email?: string;
-    password?: string;
-    extraData?: string;
-  }>();
+  const body = await c.req.json<{ content?: string }>();
 
   const existing = await db.query.inventoryTable.findFirst({
     where: eq(inventoryTable.id, itemId),
@@ -147,7 +147,7 @@ inventoryRouter.patch("/:itemId", async (c) => {
 
   const [updated] = await db
     .update(inventoryTable)
-    .set(body)
+    .set({ content: body.content?.trim() ?? undefined })
     .where(eq(inventoryTable.id, itemId))
     .returning();
 

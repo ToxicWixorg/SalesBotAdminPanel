@@ -721,6 +721,7 @@ export const inventoryTable = pgTable(
     email: text("email"),
     password: text("password"),
     extraData: text("extra_data"),
+    content: text("content"),
     status: text("status").notNull().default("available"),
     reservedAt: timestamp("reserved_at"),
     usedAt: timestamp("used_at"),

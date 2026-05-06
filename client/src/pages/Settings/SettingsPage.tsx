@@ -1000,7 +1000,7 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 flex-wrap">
                       <span className="font-semibold text-white/90 text-sm">
-                        {row.admin.displayName ?? "—"}
+                        {row.admin.displayName ?? "â€”"}
                       </span>
                       {row.admin.isSuperAdmin && (
                         <span className="text-xs bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-md">
@@ -1071,7 +1071,7 @@ export default function SettingsPage() {
                           ? new Date(row.admin.lastLoginAt).toLocaleDateString(
                               "fa-IR",
                             )
-                          : "—"}
+                          : "â€”"}
                       </span>
                       <span className="text-white/30">
                         {row.admin.loginCount} {t("settings.colLoginCount")}
@@ -1205,7 +1205,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-sm font-semibold text-white/90">
-                          {row.admin?.displayName ?? "—"}
+                          {row.admin?.displayName ?? "â€”"}
                         </span>
                         <span className="font-mono text-xs text-white/70 bg-white/10 px-2 py-0.5 rounded-md">
                           {row.log.action}
@@ -1229,7 +1229,7 @@ export default function SettingsPage() {
                     {/* Row 2: description + date */}
                     <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-white/40">
                       <span className="truncate max-w-md">
-                        {row.log.description ?? "—"}
+                        {row.log.description ?? "â€”"}
                       </span>
                       <span>
                         {new Date(row.log.createdAt).toLocaleString("fa-IR")}
@@ -1450,7 +1450,7 @@ export default function SettingsPage() {
                           {card.holderName}
                           {card.bankName && (
                             <span className="text-white/30 mr-2">
-                              — {card.bankName}
+                              â€” {card.bankName}
                             </span>
                           )}
                         </span>

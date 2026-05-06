@@ -86,6 +86,18 @@ function TemplateModal({
       prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort(),
     );
 
+  const timeRangeError =
+    startTime && endTime && endTime <= startTime
+      ? "ساعت پایان باید بعد از ساعت شروع باشد"
+      : null;
+
+  const isValid =
+    !!name.trim() &&
+    !!startTime &&
+    !!endTime &&
+    !timeRangeError &&
+    daysOfWeek.length > 0;
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-[#1a1d27] border border-white/10 rounded-2xl w-full max-w-md p-6 flex flex-col gap-4">
@@ -103,25 +115,34 @@ function TemplateModal({
           />
         </label>
 
-        <div className="flex gap-3">
-          <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
-            شروع
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
-            پایان
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
-            />
-          </label>
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-3">
+            <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
+              شروع
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white outline-none focus:border-white/50"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm text-white/70 flex-1">
+              پایان
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className={`bg-white/10 border rounded-lg px-3 py-2 text-white outline-none focus:border-white/50 ${
+                  timeRangeError
+                    ? "border-red-500/60 focus:border-red-400"
+                    : "border-white/20"
+                }`}
+              />
+            </label>
+          </div>
+          {timeRangeError && (
+            <p className="text-xs text-red-400 mt-0.5">{timeRangeError}</p>
+          )}
         </div>
 
         <label className="flex flex-col gap-1 text-sm text-white/70">
@@ -153,6 +174,11 @@ function TemplateModal({
               </button>
             ))}
           </div>
+          {daysOfWeek.length === 0 && (
+            <p className="text-xs text-red-400 mt-0.5">
+              حداقل یک روز انتخاب کنید
+            </p>
+          )}
         </div>
 
         <label className="flex items-center gap-2 text-sm text-white/70 cursor-pointer select-none">
@@ -184,7 +210,7 @@ function TemplateModal({
                 isActive,
               })
             }
-            disabled={!name || !startTime || !endTime}
+            disabled={!isValid}
             className="flex-1 bg-blue-600 hover:bg-blue-500 rounded-xl py-2 text-sm font-semibold transition-all disabled:opacity-50"
           >
             ذخیره

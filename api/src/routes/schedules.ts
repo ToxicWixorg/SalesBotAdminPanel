@@ -148,12 +148,20 @@ schedulesRouter.get("/available/:date", async (c) => {
     .where(eq(timeSlotTemplatesTable.isActive, true));
 
   // Filter by day of week (and optionally by productId)
+  const nowDate = new Date();
+  const isToday = date === nowDate.toISOString().split("T")[0];
+  const nowTime = isToday
+    ? `${String(nowDate.getHours()).padStart(2, "0")}:${String(nowDate.getMinutes()).padStart(2, "0")}`
+    : null;
+
   const todayTemplates = templates.filter((t) => {
     const days = (t.daysOfWeek ?? [0, 1, 2, 3, 4, 5, 6]) as number[];
     if (!days.includes(dayOfWeek)) return false;
     if (productId && t.productIds) {
-      return (t.productIds as number[]).includes(productId);
+      if (!(t.productIds as number[]).includes(productId)) return false;
     }
+    // Hide slots whose start time has already passed (only for today)
+    if (nowTime && t.startTime <= nowTime) return false;
     return true;
   });
 
@@ -543,15 +551,69 @@ schedulesRouter.patch("/:id/complete", async (c) => {
 schedulesRouter.patch("/:id/reminder", async (c) => {
   const id = parseInt(c.req.param("id"));
 
-  const [updated] = await db
+  // Fetch schedule + user + order + product in one query
+  const [row] = await db
+    .select({
+      schedule: schedulesTable,
+      user: {
+        id: usersTable.id,
+      },
+      order: { id: ordersTable.id },
+      product: { name: productsTable.name },
+    })
+    .from(schedulesTable)
+    .leftJoin(ordersTable, eq(schedulesTable.orderId, ordersTable.id))
+    .leftJoin(usersTable, eq(schedulesTable.userId, usersTable.id))
+    .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .where(eq(schedulesTable.id, id))
+    .limit(1);
+
+  if (!row) return c.json({ error: "Not found" }, 404);
+
+  const chatId = row.schedule.userId ?? row.user?.id;
+  if (!chatId)
+    return c.json({ error: "User not found for this schedule" }, 400);
+
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) return c.json({ error: "BOT_TOKEN not configured" }, 500);
+
+  const productName = row.product?.name ?? "جلسه";
+  const timeSlot = row.schedule.timeSlot;
+  const orderId = row.order?.id ?? 0;
+
+  const text =
+    `🔔 <b>یادآوری جلسه!</b>\n\n` +
+    `جلسه <b>${productName}</b> به‌زودی شروع می‌شه.\n` +
+    `⏰ ساعت: <b>${timeSlot}</b>\n` +
+    `🆔 سفارش: #${orderId}\n\n` +
+    `🚀 آماده باش — تیم ما به‌زودی با تو تماس می‌گیره.`;
+
+  const tgRes = await fetch(
+    `https://api.telegram.org/bot${botToken}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    },
+  );
+
+  if (!tgRes.ok) {
+    const err = await tgRes.text();
+    return c.json({ error: `Telegram API error: ${err}` }, 502);
+  }
+
+  // Mark as sent only after successful delivery
+  await db
     .update(schedulesTable)
     .set({ reminderSent: true, updatedAt: new Date() })
-    .where(eq(schedulesTable.id, id))
-    .returning();
+    .where(eq(schedulesTable.id, id));
 
-  if (!updated) return c.json({ error: "Not found" }, 404);
-
-  // TODO: ارسال reminder به کاربر از طریق BOT_API_URL
+  await logAdminAction(c, {
+    action: "send_reminder",
+    entityType: "schedule",
+    entityId: id,
+    description: `Manually sent reminder for schedule #${id} to user ${chatId}`,
+  });
 
   return c.json({ success: true });
 });

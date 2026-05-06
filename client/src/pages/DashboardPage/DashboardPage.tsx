@@ -13,6 +13,8 @@ interface DashboardStats {
   openTickets: number;
   pendingAdminOrders: number;
   totalUsers: number;
+  todaySchedules: number;
+  activeSchedules: number;
   ordersByStatus: Array<{ status: string; count: number }>;
 }
 
@@ -69,6 +71,15 @@ const DashboardPage = () => {
         <StatCard
           title={t("dashboard.totalUsers")}
           value={stats?.totalUsers ?? 0}
+        />
+        <StatCard
+          title={t("dashboard.todaySchedules")}
+          value={stats?.todaySchedules ?? 0}
+        />
+        <StatCard
+          title={t("dashboard.activeSchedules")}
+          value={stats?.activeSchedules ?? 0}
+          alert={(stats?.activeSchedules ?? 0) > 0}
         />
       </div>
       <div className="w-full mt-4 flex flex-col md:flex-row justify-center items-start gap-4 md:gap-8">

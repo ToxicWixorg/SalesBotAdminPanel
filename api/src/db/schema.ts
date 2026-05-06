@@ -65,6 +65,8 @@ export const categoriesTable = pgTable("categories", {
   slug: text("slug").notNull().unique(),
   description: text("description"),
   icon: text("icon"),
+  customEmojiId: text("custom_emoji_id"),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

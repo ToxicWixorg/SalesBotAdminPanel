@@ -74,6 +74,8 @@ const fa = {
     openTickets: "تیکت‌های باز",
     pendingAdmin: "در انتظار ادمین",
     totalUsers: "کل کاربران",
+    todaySchedules: "جلسات امروز",
+    activeSchedules: "جلسات فعال الان",
     needsAttention: "نیاز به توجه",
     last7Days: "فروش ۷ روز اخیر",
   },
@@ -143,6 +145,14 @@ const fa = {
       deleteConfirm: "حذف این کانفیگ؟",
       manageConfigs: "کانفیگ‌ها",
       bulkSuccess: "{count} کانفیگ اضافه شد",
+    },
+    categories: {
+      title: "کتگوری‌ها",
+      new: "+ کتگوری جدید",
+      namePlaceholder: "مثال: اشتراک ویدیویی",
+      customEmojiId: "Custom Emoji ID",
+      enable: "فعال کردن",
+      disable: "غیرفعال کردن",
     },
   },
 

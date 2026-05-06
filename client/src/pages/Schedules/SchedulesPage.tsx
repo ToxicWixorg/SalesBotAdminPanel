@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
 
@@ -17,6 +18,8 @@ type ScheduleRow = {
     status: string;
     completedAt: string | null;
     createdAt: string;
+    sessionStartNotified: boolean;
+    sessionTicketId: number | null;
   };
   order: { id: number; finalPrice: string } | null;
   user: { id: number; firstName: string; username: string } | null;
@@ -28,6 +31,20 @@ type ScheduleRow = {
     endTime: string;
     capacity: number;
   } | null;
+};
+
+type ActiveRow = {
+  schedule: {
+    id: number;
+    date: string;
+    timeSlot: string;
+    sessionTicketId: number | null;
+    status: string;
+  };
+  order: { id: number; status: string } | null;
+  user: { id: number; firstName: string; username: string } | null;
+  product: { id: number; name: string } | null;
+  template: { id: number; name: string } | null;
 };
 
 type WeekRow = { schedule: { date: string } };
@@ -193,6 +210,7 @@ function todayStr() {
 // ── Page ─────────────────────────────────────────────────
 export default function SchedulesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const queryClient = useQueryClient();
   const [showTemplates, setShowTemplates] = useState(false);
@@ -238,6 +256,7 @@ export default function SchedulesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       queryClient.invalidateQueries({ queryKey: ["schedules-week"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules-active"] });
     },
   });
 
@@ -247,11 +266,30 @@ export default function SchedulesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["schedules"] }),
   });
 
+  const startMutation = useMutation({
+    mutationFn: (id: number) =>
+      api
+        .post(`/api/admin/schedules/${id}/start`)
+        .then((r) => r.data as { ticketId: number; ticketNumber: string }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules-week"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules-active"] });
+    },
+  });
+
   // ── Template queries ────────────────────────────────────
   const { data: templates } = useQuery<SlotTemplate[]>({
     queryKey: ["slot-templates"],
     queryFn: () =>
       api.get("/api/admin/schedules/templates").then((r) => r.data),
+  });
+
+  // ── Active sessions (in_progress) ───────────────────────
+  const { data: activeSessions } = useQuery<ActiveRow[]>({
+    queryKey: ["schedules-active"],
+    queryFn: () => api.get("/api/admin/schedules/active").then((r) => r.data),
+    refetchInterval: 30_000,
   });
 
   const createTemplateMutation = useMutation({
@@ -289,6 +327,84 @@ export default function SchedulesPage() {
           {showTemplates ? "بازه‌ها" : "⚙️ قالب‌های زمانی"}
         </button>
       </div>
+
+      {/* ── Active Sessions (in_progress) ──────────────────── */}
+      {!showTemplates && activeSessions && activeSessions.length > 0 && (
+        <div className="mb-6">
+          <h2 className="font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+            <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+            جلسات فعال ({activeSessions.length})
+          </h2>
+          <ul className="flex flex-col gap-2">
+            {activeSessions.map((item) => (
+              <li
+                key={item.schedule.id}
+                className="rounded-2xl bg-yellow-500/10 border border-yellow-500/20 px-5 py-3 flex items-center justify-between gap-3 flex-wrap"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-yellow-300 font-semibold text-sm">
+                      {item.schedule.timeSlot}
+                    </span>
+                    <span className="text-sm text-white/90">
+                      {item.product?.name ?? (
+                        <span className="text-white/30">—</span>
+                      )}
+                    </span>
+                    <span className="text-xs text-white/40">
+                      {new Date(
+                        item.schedule.date + "T12:00:00",
+                      ).toLocaleDateString("fa-IR", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  <div className="text-xs text-white/50">
+                    {item.user ? (
+                      <>
+                        {item.user.firstName}{" "}
+                        <span className="text-white/30">
+                          @{item.user.username}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-white/30">—</span>
+                    )}
+                    {item.order && (
+                      <span className="mr-3">
+                        سفارش{" "}
+                        <span className="text-white/70">#{item.order.id}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {item.schedule.sessionTicketId && (
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/tickets?openTicket=${item.schedule.sessionTicketId}`,
+                        )
+                      }
+                      className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-xs px-3 py-1.5 rounded-xl border border-blue-400/30 transition-all flex items-center gap-1.5"
+                    >
+                      🎫 مشاهده تیکت
+                    </button>
+                  )}
+                  <button
+                    onClick={() => completeMutation.mutate(item.schedule.id)}
+                    disabled={completeMutation.isPending}
+                    className="bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs px-3 py-1.5 rounded-xl border border-green-400/30 transition-all disabled:opacity-50"
+                  >
+                    ✓ پایان جلسه
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* ── Templates Panel ─────────────────────────────────── */}
       {showTemplates && (
@@ -504,6 +620,30 @@ export default function SchedulesPage() {
                   )}
                 </div>
                 <div className="flex gap-1.5">
+                  {(item.schedule.status === "available" ||
+                    item.schedule.status === "full") &&
+                    !item.schedule.sessionStartNotified && (
+                      <button
+                        onClick={() => startMutation.mutate(item.schedule.id)}
+                        disabled={startMutation.isPending}
+                        className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 rounded-xl px-3 py-1 transition-all disabled:opacity-50 flex items-center gap-1"
+                      >
+                        ▶ شروع جلسه
+                      </button>
+                    )}
+                  {item.schedule.status === "in_progress" &&
+                    item.schedule.sessionTicketId && (
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/tickets?openTicket=${item.schedule.sessionTicketId}`,
+                          )
+                        }
+                        className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl px-3 py-1 transition-all flex items-center gap-1"
+                      >
+                        🎫 تیکت
+                      </button>
+                    )}
                   {(item.schedule.status === "available" ||
                     item.schedule.status === "full" ||
                     item.schedule.status === "in_progress") && (

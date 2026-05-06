@@ -32,6 +32,7 @@ const defaultForm = {
   minStock: 5,
   requiresEmail: false,
   isRenewable: false,
+  customEmojiId: "" as string,
 };
 
 type Props = {
@@ -53,6 +54,7 @@ export default function NewProductModal({ onClose }: Props) {
       api.post("/api/admin/products", {
         ...data,
         categoryId: data.categoryId === "" ? null : data.categoryId,
+        customEmojiId: data.customEmojiId || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -206,6 +208,20 @@ export default function NewProductModal({ onClose }: Props) {
               />
             </label>
           </div>
+
+          {/* Custom Emoji ID */}
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-white/60">Custom Emoji ID</span>
+            <input
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 font-mono text-xs"
+              value={form.customEmojiId}
+              onChange={(e) => set("customEmojiId", e.target.value)}
+              placeholder="5373141891321699086"
+            />
+            <span className="text-xs text-white/30">
+              آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود
+            </span>
+          </label>
 
           {/* چک‌باکس‌ها */}
           <div className="flex flex-col gap-2 pt-1">

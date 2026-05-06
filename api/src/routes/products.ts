@@ -276,6 +276,23 @@ categoriesRouter.put("/:id", async (c) => {
   return c.json(updated);
 });
 
+categoriesRouter.patch("/:id/toggle", async (c) => {
+  const id = parseInt(c.req.param("id"));
+
+  const category = await db.query.categoriesTable.findFirst({
+    where: eq(categoriesTable.id, id),
+  });
+  if (!category) return c.json({ error: "Category not found" }, 404);
+
+  const [updated] = await db
+    .update(categoriesTable)
+    .set({ isActive: !category.isActive })
+    .where(eq(categoriesTable.id, id))
+    .returning();
+
+  return c.json(updated);
+});
+
 categoriesRouter.delete("/:id", async (c) => {
   const id = parseInt(c.req.param("id"));
   await db.delete(categoriesTable).where(eq(categoriesTable.id, id));

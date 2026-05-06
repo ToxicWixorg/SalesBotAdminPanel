@@ -19,6 +19,7 @@ type Plan = {
   requiresOtp: boolean;
   requiresLogin: boolean;
   requiresRegion: boolean;
+  customEmojiId: string | null;
 };
 
 // delivery types that use pre-loaded configs (no requirement fields needed)
@@ -50,6 +51,7 @@ const emptyForm = {
   requiresOtp: false,
   requiresLogin: false,
   requiresRegion: false,
+  customEmojiId: "",
 };
 
 export default function PlansModal({
@@ -78,6 +80,7 @@ export default function PlansModal({
         price: String(data.price),
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
+        customEmojiId: data.customEmojiId || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans", productId] });
@@ -93,6 +96,7 @@ export default function PlansModal({
         price: String(data.price),
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
+        customEmojiId: data.customEmojiId || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans", productId] });
@@ -128,6 +132,7 @@ export default function PlansModal({
       requiresOtp: plan.requiresOtp ?? false,
       requiresLogin: plan.requiresLogin ?? false,
       requiresRegion: plan.requiresRegion ?? false,
+      customEmojiId: plan.customEmojiId ?? "",
     });
   };
 
@@ -423,6 +428,18 @@ export default function PlansModal({
                     value={form.description}
                     onChange={(e) => set("description", e.target.value)}
                   />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-white/60">Custom Emoji ID</span>
+                  <input
+                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 font-mono text-xs"
+                    value={form.customEmojiId}
+                    onChange={(e) => set("customEmojiId", e.target.value)}
+                    placeholder="5373141891321699086"
+                  />
+                  <span className="text-xs text-white/30">
+                    آیدی Custom Emoji دکمه تلگرام
+                  </span>
                 </label>
                 <div className="flex gap-2 justify-end">
                   <button

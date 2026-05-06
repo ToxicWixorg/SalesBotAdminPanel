@@ -20,6 +20,7 @@ import {
   ticketsTable,
   walletTransactionsTable,
   productsTable,
+  schedulesTable,
 } from "../db/schema.ts";
 import { requireAuth } from "../middleware/auth.ts";
 
@@ -31,6 +32,8 @@ dashboardRouter.get("/stats", async (c) => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  const todayStr = todayStart.toISOString().split("T")[0]!;
+
   const [
     todayOrders,
     todayRevenue,
@@ -38,6 +41,8 @@ dashboardRouter.get("/stats", async (c) => {
     openTickets,
     pendingAdminOrders,
     totalUsers,
+    todaySchedules,
+    activeSchedules,
   ] = await Promise.all([
     // سفارشات امروز
     db
@@ -76,6 +81,18 @@ dashboardRouter.get("/stats", async (c) => {
 
     // کل کاربران
     db.select({ count: count() }).from(usersTable),
+
+    // جلسات امروز
+    db
+      .select({ count: count() })
+      .from(schedulesTable)
+      .where(eq(schedulesTable.date, todayStr)),
+
+    // جلسات فعال الان
+    db
+      .select({ count: count() })
+      .from(schedulesTable)
+      .where(eq(schedulesTable.status, "in_progress")),
   ]);
 
   // تعداد سفارشات به تفکیک status
@@ -94,6 +111,8 @@ dashboardRouter.get("/stats", async (c) => {
     openTickets: openTickets[0]?.count ?? 0,
     pendingAdminOrders: pendingAdminOrders[0]?.count ?? 0,
     totalUsers: totalUsers[0]?.count ?? 0,
+    todaySchedules: todaySchedules[0]?.count ?? 0,
+    activeSchedules: activeSchedules[0]?.count ?? 0,
     ordersByStatus,
   });
 });

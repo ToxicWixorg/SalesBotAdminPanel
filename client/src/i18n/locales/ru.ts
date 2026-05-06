@@ -72,6 +72,8 @@ const ru: Translations = {
     openTickets: "Открытые тикеты",
     pendingAdmin: "Ожидают администратора",
     totalUsers: "Всего пользователей",
+    todaySchedules: "Сессии сегодня",
+    activeSchedules: "Активные сессии",
     needsAttention: "Требует внимания",
     last7Days: "Продажи за 7 дней",
   },
@@ -130,6 +132,14 @@ const ru: Translations = {
       deleteConfirm: "Удалить этот конфиг?",
       manageConfigs: "Конфиги",
       bulkSuccess: "Добавлено {count} конфигов",
+    },
+    categories: {
+      title: "Категории",
+      new: "+ Новая категория",
+      namePlaceholder: "напр. Видеоподписки",
+      customEmojiId: "Custom Emoji ID",
+      enable: "Включить",
+      disable: "Отключить",
     },
     deliveryTypes: {
       automatic: "Автоматический",

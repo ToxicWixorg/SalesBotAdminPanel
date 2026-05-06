@@ -1,6 +1,7 @@
 ﻿import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
 import TicketDetailModal from "./Components/TicketDetailModal";
@@ -45,12 +46,17 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function TicketsPage() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState({
     status: "",
     type: "",
     priority: "",
   });
   const [selectedItem, setSelectedItem] = useState<TicketItem | null>(null);
+
+  const openTicketId = searchParams.get("openTicket")
+    ? parseInt(searchParams.get("openTicket")!)
+    : null;
 
   const {
     data: tickets,
@@ -66,6 +72,21 @@ export default function TicketsPage() {
     },
     placeholderData: (prev: unknown) => prev,
   });
+
+  // Auto-open ticket when navigated here with ?openTicket=<id>
+  useEffect(() => {
+    if (!openTicketId || !tickets) return;
+    const match = (tickets as TicketItem[]).find(
+      (item) => item.ticket.id === openTicketId,
+    );
+    if (match) {
+      setSelectedItem(match);
+      setSearchParams((prev) => {
+        prev.delete("openTicket");
+        return prev;
+      });
+    }
+  }, [openTicketId, tickets, setSearchParams]);
 
   if (isLoading) return <SuspencePage Text={null} />;
 

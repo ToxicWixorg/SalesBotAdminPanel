@@ -72,6 +72,8 @@ const en: Translations = {
     openTickets: "Open Tickets",
     pendingAdmin: "Pending Admin",
     totalUsers: "Total Users",
+    todaySchedules: "Today's Sessions",
+    activeSchedules: "Active Sessions Now",
     needsAttention: "Needs Attention",
     last7Days: "Last 7 Days Sales",
   },
@@ -140,6 +142,14 @@ const en: Translations = {
       deleteConfirm: "Delete this config?",
       manageConfigs: "Configs",
       bulkSuccess: "{count} configs added",
+    },
+    categories: {
+      title: "Categories",
+      new: "+ New Category",
+      namePlaceholder: "e.g. Video Subscriptions",
+      customEmojiId: "Custom Emoji ID",
+      enable: "Enable",
+      disable: "Disable",
     },
   },
 

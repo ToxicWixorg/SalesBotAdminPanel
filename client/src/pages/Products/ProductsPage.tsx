@@ -10,6 +10,7 @@ import EditProductModal from "./Components/EditProductModal";
 import PlansModal from "./Components/PlansModal";
 import NewProductModal from "./Components/NewProductModal";
 import ProductTable from "./Components/ProductTable";
+import CategoriesSection from "./Components/CategoriesSection";
 
 type Product = {
   id: number;
@@ -28,6 +29,7 @@ type Product = {
   requiresLogin: boolean;
   requiresRegion: boolean;
   isRenewable: boolean;
+  customEmojiId: string | null;
 };
 
 export default function ProductsPage() {
@@ -145,6 +147,8 @@ export default function ProductsPage() {
           onClose={() => setPlansProduct(null)}
         />
       )}
+
+      <CategoriesSection />
     </div>
   );
 }

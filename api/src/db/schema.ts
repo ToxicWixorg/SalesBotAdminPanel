@@ -93,6 +93,9 @@ export const productsTable = pgTable(
     isActive: boolean("is_active").default(true),
     stock: integer("stock").default(0),
     minStock: integer("min_stock").default(5),
+    warrantyDays: integer("warranty_days").default(0),
+    terms: text("terms"),
+    maxPerUser: integer("max_per_user").default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
@@ -703,3 +706,32 @@ export const adminLogsTable = pgTable(
 );
 
 export type AdminLog = typeof adminLogsTable.$inferSelect;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📦 INVENTORY
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const inventoryTable = pgTable(
+  "inventory",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => productsTable.id, { onDelete: "cascade" }),
+    email: text("email"),
+    password: text("password"),
+    extraData: text("extra_data"),
+    status: text("status").notNull().default("available"),
+    reservedAt: timestamp("reserved_at"),
+    usedAt: timestamp("used_at"),
+    usedByOrderId: integer("used_by_order_id"),
+    deadReason: text("dead_reason"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    productIdIdx: index("inventory_product_id_idx").on(table.productId),
+    statusIdx: index("inventory_status_idx").on(table.status),
+  }),
+);
+
+export type Inventory = typeof inventoryTable.$inferSelect;

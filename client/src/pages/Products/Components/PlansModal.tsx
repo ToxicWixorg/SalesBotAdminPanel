@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 import SuspencePage from "../../../suspence/suspence";
 import ConfigsModal from "./ConfigsModal";
+import InventoryModal from "./InventoryModal";
 
 type Plan = {
   id: number;
@@ -66,6 +67,7 @@ export default function PlansModal({
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [configsPlan, setConfigsPlan] = useState<Plan | null>(null);
+  const [showInventory, setShowInventory] = useState(false);
 
   const { data: plans, isLoading } = useQuery<Plan[]>({
     queryKey: ["plans", productId],
@@ -247,12 +249,20 @@ export default function PlansModal({
                             </button>
                             {/* کانفیگ فقط برای automatic/code/family_join */}
                             {CONFIG_TYPES.includes(deliveryType) && (
-                              <button
-                                onClick={() => setConfigsPlan(plan)}
-                                className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
-                              >
-                                {t("products.configModal.manageConfigs")}
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => setConfigsPlan(plan)}
+                                  className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
+                                >
+                                  {t("products.configModal.manageConfigs")}
+                                </button>
+                                <button
+                                  onClick={() => setShowInventory(true)}
+                                  className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
+                                >
+                                  {t("products.inventory.manage")}
+                                </button>
+                              </>
                             )}
                             <button
                               onClick={() => {
@@ -480,6 +490,13 @@ export default function PlansModal({
             planId={configsPlan.id}
             planName={configsPlan.name}
             onClose={() => setConfigsPlan(null)}
+          />
+        )}
+        {showInventory && (
+          <InventoryModal
+            productId={productId}
+            productName={productName}
+            onClose={() => setShowInventory(false)}
           />
         )}
       </div>

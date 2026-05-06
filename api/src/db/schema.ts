@@ -736,3 +736,87 @@ export const inventoryTable = pgTable(
 );
 
 export type Inventory = typeof inventoryTable.$inferSelect;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 📢 FORCE JOIN CHANNELS ━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const forceJoinChannelsTable = pgTable("force_join_channels", {
+  id: serial("id").primaryKey(),
+  channelId: text("channel_id").notNull(),
+  channelUrl: text("channel_url").notNull(),
+  channelName: text("channel_name").notNull(),
+  isActive: boolean("is_active").default(true),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ForceJoinChannel = typeof forceJoinChannelsTable.$inferSelect;
+export type InsertForceJoinChannel = typeof forceJoinChannelsTable.$inferInsert;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 💳 PAYMENT SETTINGS ━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const paymentCardNumbersTable = pgTable("payment_card_numbers", {
+  id: serial("id").primaryKey(),
+  cardNumber: text("card_number").notNull(),
+  holderName: text("holder_name").notNull(),
+  bankName: text("bank_name"),
+  isActive: boolean("is_active").default(true),
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PaymentCardNumber = typeof paymentCardNumbersTable.$inferSelect;
+export type InsertPaymentCardNumber =
+  typeof paymentCardNumbersTable.$inferInsert;
+
+export const paymentSettingsTable = pgTable("payment_settings", {
+  id: serial("id").primaryKey(),
+  cardEnabled: boolean("card_enabled").default(true),
+  zarinpalEnabled: boolean("zarinpal_enabled").default(false),
+  zarinpalMerchantId: text("zarinpal_merchant_id"),
+  zarinpalSandbox: boolean("zarinpal_sandbox").default(true),
+  cryptoEnabled: boolean("crypto_enabled").default(false),
+  cryptoAddress: text("crypto_address"),
+  cryptoNetwork: text("crypto_network").default("TRC20"),
+  cryptoExchangeRate: integer("crypto_exchange_rate").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type PaymentSettings = typeof paymentSettingsTable.$inferSelect;
+export type InsertPaymentSettings = typeof paymentSettingsTable.$inferInsert;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 💾 BACKUP SETTINGS ━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const backupSettingsTable = pgTable("backup_settings", {
+  id: serial("id").primaryKey(),
+  isEnabled: boolean("is_enabled").default(false),
+  telegramChannelId: text("telegram_channel_id"),
+  cronSchedule: text("cron_schedule").default("0 3 * * *"),
+  lastBackupAt: timestamp("last_backup_at"),
+  lastBackupStatus: text("last_backup_status"),
+  lastBackupSize: integer("last_backup_size"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type BackupSettings = typeof backupSettingsTable.$inferSelect;
+export type InsertBackupSettings = typeof backupSettingsTable.$inferInsert;
+
+// ─── Bot Settings ─────────────────────────────────────────────────────────────
+export const botSettingsTable = pgTable("bot_settings", {
+  id: serial("id").primaryKey(),
+  maintenanceMode: boolean("maintenance_mode").default(false),
+  maintenanceMessage: text("maintenance_message"),
+  referralEnabled: boolean("referral_enabled").default(true),
+  shopEnabled: boolean("shop_enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type BotSettings = typeof botSettingsTable.$inferSelect;
+export type InsertBotSettings = typeof botSettingsTable.$inferInsert;

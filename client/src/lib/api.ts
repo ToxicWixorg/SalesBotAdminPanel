@@ -1167,6 +1167,87 @@ function getDevMockData(url: string): unknown {
   if (url.includes("broadcast/send"))
     return { successCount: 142, failCount: 3, total: 145 };
 
+  if (url.includes("settings/backup/run"))
+    return {
+      success: true,
+      fileSize: 524288,
+      sentAt: new Date().toISOString(),
+    };
+
+  if (url.includes("settings/bot-config"))
+    return {
+      id: 1,
+      maintenanceMode: false,
+      maintenanceMessage: null,
+      referralEnabled: true,
+      shopEnabled: true,
+      updatedAt: null,
+    };
+
+  if (url.includes("settings/backup"))
+    return {
+      id: 1,
+      isEnabled: false,
+      telegramChannelId: null,
+      cronSchedule: "0 3 * * *",
+      lastBackupAt: null,
+      lastBackupStatus: null,
+      lastBackupSize: null,
+      updatedAt: null,
+    };
+
+  if (url.includes("settings/payment/cards"))
+    return [
+      {
+        id: 1,
+        cardNumber: "6037-9975-1234-5678",
+        holderName: "علی محمدی",
+        bankName: "بانک ملی",
+        isActive: true,
+        order: 0,
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ];
+
+  if (url.includes("settings/payment/config"))
+    return {
+      id: 1,
+      cardEnabled: true,
+      zarinpalEnabled: false,
+      zarinpalMerchantId: null,
+      zarinpalSandbox: true,
+      cryptoEnabled: false,
+      cryptoAddress: null,
+      cryptoNetwork: "TRC20",
+      cryptoExchangeRate: 0,
+      updatedAt: null,
+    };
+
+  if (url.includes("settings/force-join"))
+    return [
+      {
+        id: 1,
+        channelId: "-1223246566",
+        channelUrl: "https://t.me/MyChannel",
+        channelName: "کانال اصلی",
+        isActive: true,
+        order: 0,
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+      {
+        id: 2,
+        channelId: "-1009876543",
+        channelUrl: "https://t.me/MyChannel2",
+        channelName: "کانال دوم",
+        isActive: false,
+        order: 1,
+        createdAt: "2026-01-01T00:00:00Z",
+        updatedAt: "2026-01-01T00:00:00Z",
+      },
+    ];
+
   if (url.includes("settings/admins"))
     return [
       {

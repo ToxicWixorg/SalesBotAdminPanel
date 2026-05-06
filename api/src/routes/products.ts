@@ -257,8 +257,18 @@ categoriesRouter.get("/", async (c) => {
 
 categoriesRouter.post("/", async (c) => {
   const body = await c.req.json();
-  const [category] = await db.insert(categoriesTable).values(body).returning();
-  return c.json(category, 201);
+  try {
+    const [category] = await db
+      .insert(categoriesTable)
+      .values(body)
+      .returning();
+    return c.json(category, 201);
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      return c.json({ error: "این دسته‌بندی قبلاً وجود دارد" }, 409);
+    }
+    throw err;
+  }
 });
 
 categoriesRouter.put("/:id", async (c) => {
@@ -266,14 +276,21 @@ categoriesRouter.put("/:id", async (c) => {
   const body = await c.req.json();
   delete body.id;
 
-  const [updated] = await db
-    .update(categoriesTable)
-    .set(body)
-    .where(eq(categoriesTable.id, id))
-    .returning();
+  try {
+    const [updated] = await db
+      .update(categoriesTable)
+      .set(body)
+      .where(eq(categoriesTable.id, id))
+      .returning();
 
-  if (!updated) return c.json({ error: "Category not found" }, 404);
-  return c.json(updated);
+    if (!updated) return c.json({ error: "Category not found" }, 404);
+    return c.json(updated);
+  } catch (err: any) {
+    if (err?.code === "23505") {
+      return c.json({ error: "این نام قبلاً استفاده شده است" }, 409);
+    }
+    throw err;
+  }
 });
 
 categoriesRouter.patch("/:id/toggle", async (c) => {

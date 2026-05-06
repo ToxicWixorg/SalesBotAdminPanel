@@ -11,11 +11,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, asc } from "drizzle-orm";
 import { db } from "../db/index.ts";
-import { adminsTable, adminLogsTable, usersTable } from "../db/schema.ts";
+import {
+  adminsTable,
+  adminLogsTable,
+  usersTable,
+  forceJoinChannelsTable,
+  paymentCardNumbersTable,
+  paymentSettingsTable,
+  backupSettingsTable,
+  botSettingsTable,
+} from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
 import { logAdminAction } from "../helpers/logger.ts";
+import { redis } from "../services/redis.ts";
 
 export const settingsRouter = new Hono();
 settingsRouter.use("*", requireAuth, requireSection("settings"));
@@ -254,4 +264,728 @@ settingsRouter.get("/logs", async (c) => {
     .offset(offset);
 
   return c.json(logs);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FORCE JOIN CHANNELS
+// GET    /api/admin/settings/force-join              - لیست کانال‌ها
+// POST   /api/admin/settings/force-join              - افزودن کانال
+// PUT    /api/admin/settings/force-join/:id          - ویرایش کانال
+// PATCH  /api/admin/settings/force-join/:id/toggle   - فعال/غیرفعال
+// DELETE /api/admin/settings/force-join/:id          - حذف کانال
+// ─────────────────────────────────────────────────────────────────────────────
+
+settingsRouter.get("/force-join", async (c) => {
+  const channels = await db
+    .select()
+    .from(forceJoinChannelsTable)
+    .orderBy(asc(forceJoinChannelsTable.order), asc(forceJoinChannelsTable.id));
+  return c.json(channels);
+});
+
+settingsRouter.post("/force-join", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin) {
+    return c.json(
+      { error: "Only super admin can manage force join channels" },
+      403,
+    );
+  }
+
+  const body = await c.req.json<{
+    channelId: string;
+    channelUrl: string;
+    channelName: string;
+    order?: number;
+  }>();
+
+  if (!body.channelId || !body.channelUrl || !body.channelName) {
+    return c.json(
+      { error: "channelId, channelUrl and channelName are required" },
+      400,
+    );
+  }
+
+  const [created] = await db
+    .insert(forceJoinChannelsTable)
+    .values({
+      channelId: body.channelId.trim(),
+      channelUrl: body.channelUrl.trim(),
+      channelName: body.channelName.trim(),
+      order: body.order ?? 0,
+    })
+    .returning();
+
+  await logAdminAction(c, {
+    action: "create",
+    entityType: "force_join_channel",
+    entityId: created.id,
+    description: `Added force join channel: ${body.channelName}`,
+    severity: "info",
+  });
+
+  return c.json(created, 201);
+});
+
+settingsRouter.put("/force-join/:id", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin) {
+    return c.json(
+      { error: "Only super admin can manage force join channels" },
+      403,
+    );
+  }
+
+  const body = await c.req.json<{
+    channelId?: string;
+    channelUrl?: string;
+    channelName?: string;
+    order?: number;
+  }>();
+
+  const updates: Record<string, unknown> = { updatedAt: new Date() };
+  if (body.channelId !== undefined) updates.channelId = body.channelId.trim();
+  if (body.channelUrl !== undefined)
+    updates.channelUrl = body.channelUrl.trim();
+  if (body.channelName !== undefined)
+    updates.channelName = body.channelName.trim();
+  if (body.order !== undefined) updates.order = body.order;
+
+  const [updated] = await db
+    .update(forceJoinChannelsTable)
+    .set(updates)
+    .where(eq(forceJoinChannelsTable.id, id))
+    .returning();
+
+  if (!updated) return c.json({ error: "Channel not found" }, 404);
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "force_join_channel",
+    entityId: id,
+    severity: "info",
+  });
+
+  return c.json(updated);
+});
+
+settingsRouter.patch("/force-join/:id/toggle", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin) {
+    return c.json(
+      { error: "Only super admin can manage force join channels" },
+      403,
+    );
+  }
+
+  const channel = await db.query.forceJoinChannelsTable.findFirst({
+    where: eq(forceJoinChannelsTable.id, id),
+  });
+  if (!channel) return c.json({ error: "Channel not found" }, 404);
+
+  const [updated] = await db
+    .update(forceJoinChannelsTable)
+    .set({ isActive: !channel.isActive, updatedAt: new Date() })
+    .where(eq(forceJoinChannelsTable.id, id))
+    .returning();
+
+  return c.json(updated);
+});
+
+settingsRouter.delete("/force-join/:id", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin) {
+    return c.json(
+      { error: "Only super admin can manage force join channels" },
+      403,
+    );
+  }
+
+  await db
+    .delete(forceJoinChannelsTable)
+    .where(eq(forceJoinChannelsTable.id, id));
+
+  await logAdminAction(c, {
+    action: "delete",
+    entityType: "force_join_channel",
+    entityId: id,
+    severity: "warning",
+  });
+
+  return c.json({ success: true });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 💳 PAYMENT CARD NUMBERS
+// GET    /api/admin/settings/payment/cards              - لیست کارت‌ها
+// POST   /api/admin/settings/payment/cards              - افزودن کارت (superAdmin)
+// PUT    /api/admin/settings/payment/cards/:id          - ویرایش کارت (superAdmin)
+// PATCH  /api/admin/settings/payment/cards/:id/toggle   - فعال/غیرفعال
+// DELETE /api/admin/settings/payment/cards/:id          - حذف (superAdmin)
+// ──────────────────────────────────────────────────────────────────────────────
+
+settingsRouter.get("/payment/cards", async (c) => {
+  const cards = await db
+    .select()
+    .from(paymentCardNumbersTable)
+    .orderBy(
+      asc(paymentCardNumbersTable.order),
+      asc(paymentCardNumbersTable.id),
+    );
+  return c.json(cards);
+});
+
+settingsRouter.post("/payment/cards", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can manage payment cards" }, 403);
+
+  const body = await c.req.json();
+  const { cardNumber, holderName, bankName, order } = body;
+  if (!cardNumber?.trim() || !holderName?.trim())
+    return c.json({ error: "cardNumber and holderName are required" }, 400);
+
+  const [card] = await db
+    .insert(paymentCardNumbersTable)
+    .values({
+      cardNumber: cardNumber.trim(),
+      holderName: holderName.trim(),
+      bankName: bankName?.trim() || null,
+      order: parseInt(order) || 0,
+    })
+    .returning();
+
+  await logAdminAction(c, {
+    action: "create",
+    entityType: "payment_card",
+    entityId: card.id,
+    description: `کارت جدید اضافه شد: ${cardNumber}`,
+    severity: "warning",
+  });
+
+  return c.json(card, 201);
+});
+
+settingsRouter.put("/payment/cards/:id", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can edit payment cards" }, 403);
+
+  const id = parseInt(c.req.param("id"));
+  const body = await c.req.json();
+  const { cardNumber, holderName, bankName, order } = body;
+  if (!cardNumber?.trim() || !holderName?.trim())
+    return c.json({ error: "cardNumber and holderName are required" }, 400);
+
+  const [card] = await db
+    .update(paymentCardNumbersTable)
+    .set({
+      cardNumber: cardNumber.trim(),
+      holderName: holderName.trim(),
+      bankName: bankName?.trim() || null,
+      order: parseInt(order) || 0,
+      updatedAt: new Date(),
+    })
+    .where(eq(paymentCardNumbersTable.id, id))
+    .returning();
+
+  if (!card) return c.json({ error: "Card not found" }, 404);
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "payment_card",
+    entityId: id,
+    severity: "warning",
+  });
+
+  return c.json(card);
+});
+
+settingsRouter.patch("/payment/cards/:id/toggle", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const [existing] = await db
+    .select()
+    .from(paymentCardNumbersTable)
+    .where(eq(paymentCardNumbersTable.id, id));
+  if (!existing) return c.json({ error: "Card not found" }, 404);
+
+  const [card] = await db
+    .update(paymentCardNumbersTable)
+    .set({ isActive: !existing.isActive, updatedAt: new Date() })
+    .where(eq(paymentCardNumbersTable.id, id))
+    .returning();
+
+  await logAdminAction(c, {
+    action: card.isActive ? "activate" : "deactivate",
+    entityType: "payment_card",
+    entityId: id,
+    severity: "info",
+  });
+
+  return c.json(card);
+});
+
+settingsRouter.delete("/payment/cards/:id", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can delete payment cards" }, 403);
+
+  const id = parseInt(c.req.param("id"));
+  await db
+    .delete(paymentCardNumbersTable)
+    .where(eq(paymentCardNumbersTable.id, id));
+
+  await logAdminAction(c, {
+    action: "delete",
+    entityType: "payment_card",
+    entityId: id,
+    severity: "warning",
+  });
+
+  return c.json({ success: true });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ⚙️ PAYMENT GATEWAY SETTINGS (Zarinpal + Crypto)
+// GET   /api/admin/settings/payment/config        - خواندن تنظیمات
+// PUT   /api/admin/settings/payment/config        - ذخیره تنظیمات (superAdmin)
+// ──────────────────────────────────────────────────────────────────────────────
+
+settingsRouter.get("/payment/config", async (c) => {
+  let [settings] = await db
+    .select()
+    .from(paymentSettingsTable)
+    .where(eq(paymentSettingsTable.id, 1));
+  if (!settings) {
+    [settings] = await db
+      .insert(paymentSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+  return c.json(settings);
+});
+
+settingsRouter.put("/payment/config", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json(
+      { error: "Only super admin can update payment settings" },
+      403,
+    );
+
+  const body = await c.req.json();
+  const {
+    cardEnabled,
+    zarinpalEnabled,
+    zarinpalMerchantId,
+    zarinpalSandbox,
+    cryptoEnabled,
+    cryptoAddress,
+    cryptoNetwork,
+    cryptoExchangeRate,
+  } = body;
+
+  let [settings] = await db
+    .select()
+    .from(paymentSettingsTable)
+    .where(eq(paymentSettingsTable.id, 1));
+  if (!settings) {
+    [settings] = await db
+      .insert(paymentSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+
+  const [updated] = await db
+    .update(paymentSettingsTable)
+    .set({
+      cardEnabled: cardEnabled ?? settings.cardEnabled,
+      zarinpalEnabled: zarinpalEnabled ?? settings.zarinpalEnabled,
+      zarinpalMerchantId: zarinpalMerchantId ?? settings.zarinpalMerchantId,
+      zarinpalSandbox: zarinpalSandbox ?? settings.zarinpalSandbox,
+      cryptoEnabled: cryptoEnabled ?? settings.cryptoEnabled,
+      cryptoAddress: cryptoAddress ?? settings.cryptoAddress,
+      cryptoNetwork: cryptoNetwork ?? settings.cryptoNetwork,
+      cryptoExchangeRate: cryptoExchangeRate ?? settings.cryptoExchangeRate,
+      updatedAt: new Date(),
+    })
+    .where(eq(paymentSettingsTable.id, 1))
+    .returning();
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "payment_settings",
+    entityId: 1,
+    severity: "warning",
+  });
+
+  return c.json(updated);
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 💾 BACKUP SETTINGS
+// GET   /api/admin/settings/backup/config         - خواندن تنظیمات بکاپ
+// PUT   /api/admin/settings/backup/config         - ذخیره تنظیمات (superAdmin)
+// POST  /api/admin/settings/backup/run            - اجرای فوری بکاپ (superAdmin)
+// ──────────────────────────────────────────────────────────────────────────────
+
+settingsRouter.get("/backup/config", async (c) => {
+  let [settings] = await db
+    .select()
+    .from(backupSettingsTable)
+    .where(eq(backupSettingsTable.id, 1));
+  if (!settings) {
+    [settings] = await db
+      .insert(backupSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+  return c.json(settings);
+});
+
+settingsRouter.put("/backup/config", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json(
+      { error: "Only super admin can update backup settings" },
+      403,
+    );
+
+  const body = await c.req.json();
+  const { isEnabled, telegramChannelId, cronSchedule } = body;
+
+  let [settings] = await db
+    .select()
+    .from(backupSettingsTable)
+    .where(eq(backupSettingsTable.id, 1));
+  if (!settings) {
+    [settings] = await db
+      .insert(backupSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+
+  const [updated] = await db
+    .update(backupSettingsTable)
+    .set({
+      isEnabled: isEnabled ?? settings.isEnabled,
+      telegramChannelId: telegramChannelId ?? settings.telegramChannelId,
+      cronSchedule: cronSchedule ?? settings.cronSchedule,
+      updatedAt: new Date(),
+    })
+    .where(eq(backupSettingsTable.id, 1))
+    .returning();
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "backup_settings",
+    entityId: 1,
+    severity: "warning",
+  });
+
+  return c.json(updated);
+});
+
+settingsRouter.post("/backup/run", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can run backup" }, 403);
+
+  let [settings] = await db
+    .select()
+    .from(backupSettingsTable)
+    .where(eq(backupSettingsTable.id, 1));
+  if (!settings) {
+    [settings] = await db
+      .insert(backupSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+
+  if (!settings.telegramChannelId) {
+    return c.json({ error: "Telegram channel ID is not configured" }, 400);
+  }
+
+  const { exec } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const execAsync = promisify(exec);
+  const { writeFile, unlink, stat } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    return c.json({ error: "DATABASE_URL not configured" }, 500);
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const fileName = `backup-${timestamp}.sql`;
+  const filePath = join(tmpdir(), fileName);
+
+  try {
+    await execAsync(`pg_dump "${databaseUrl}" -f "${filePath}"`);
+    const stats = await stat(filePath);
+    const fileSize = stats.size;
+
+    const botToken = process.env.BOT_TOKEN;
+    if (!botToken) {
+      await unlink(filePath);
+      return c.json({ error: "BOT_TOKEN not configured" }, 500);
+    }
+
+    const { readFile } = await import("node:fs/promises");
+    const fileBuffer = await readFile(filePath);
+
+    const formData = new FormData();
+    formData.append("chat_id", settings.telegramChannelId);
+    formData.append(
+      "document",
+      new Blob([fileBuffer], { type: "application/octet-stream" }),
+      fileName,
+    );
+    formData.append(
+      "caption",
+      `📦 Database Backup\n🗓 ${new Date().toLocaleString("fa-IR")}\n📦 ${(fileSize / 1024).toFixed(1)} KB`,
+    );
+
+    const tgRes = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendDocument`,
+      { method: "POST", body: formData },
+    );
+
+    await unlink(filePath);
+
+    if (!tgRes.ok) {
+      const errBody = (await tgRes.json()) as { description?: string };
+      await db
+        .update(backupSettingsTable)
+        .set({
+          lastBackupAt: new Date(),
+          lastBackupStatus: "failed",
+          updatedAt: new Date(),
+        })
+        .where(eq(backupSettingsTable.id, 1));
+      return c.json(
+        { error: errBody.description ?? "Telegram API error" },
+        502,
+      );
+    }
+
+    await db
+      .update(backupSettingsTable)
+      .set({
+        lastBackupAt: new Date(),
+        lastBackupStatus: "success",
+        lastBackupSize: fileSize,
+        updatedAt: new Date(),
+      })
+      .where(eq(backupSettingsTable.id, 1));
+
+    await logAdminAction(c, {
+      action: "create",
+      entityType: "backup",
+      entityId: 1,
+      description: `بکاپ موفق: ${(fileSize / 1024).toFixed(1)} KB`,
+      severity: "info",
+    });
+
+    return c.json({
+      success: true,
+      fileSize,
+      fileName,
+      sentAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    try {
+      await unlink(filePath);
+    } catch {}
+    await db
+      .update(backupSettingsTable)
+      .set({
+        lastBackupAt: new Date(),
+        lastBackupStatus: "failed",
+        updatedAt: new Date(),
+      })
+      .where(eq(backupSettingsTable.id, 1));
+    return c.json({ error: String(err) }, 500);
+  }
+});
+
+settingsRouter.get("/payment/config", async (c) => {
+  const [settings] = await db
+    .select()
+    .from(paymentSettingsTable)
+    .where(eq(paymentSettingsTable.id, 1));
+
+  // اگر ردیف وجود نداشت، پیش‌فرض برگردان
+  if (!settings) {
+    return c.json({
+      id: 1,
+      cardEnabled: true,
+      zarinpalEnabled: false,
+      zarinpalMerchantId: null,
+      zarinpalSandbox: true,
+      cryptoEnabled: false,
+      cryptoAddress: null,
+      cryptoNetwork: "TRC20",
+      cryptoExchangeRate: 0,
+      updatedAt: null,
+    });
+  }
+
+  return c.json(settings);
+});
+
+settingsRouter.put("/payment/config", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can update payment config" }, 403);
+
+  const body = await c.req.json();
+  const {
+    cardEnabled,
+    zarinpalEnabled,
+    zarinpalMerchantId,
+    zarinpalSandbox,
+    cryptoEnabled,
+    cryptoAddress,
+    cryptoNetwork,
+    cryptoExchangeRate,
+  } = body;
+
+  // upsert با id=1
+  const [existing] = await db
+    .select()
+    .from(paymentSettingsTable)
+    .where(eq(paymentSettingsTable.id, 1));
+
+  let config;
+  if (existing) {
+    [config] = await db
+      .update(paymentSettingsTable)
+      .set({
+        cardEnabled: cardEnabled ?? existing.cardEnabled,
+        zarinpalEnabled: zarinpalEnabled ?? existing.zarinpalEnabled,
+        zarinpalMerchantId:
+          zarinpalMerchantId?.trim() || existing.zarinpalMerchantId,
+        zarinpalSandbox: zarinpalSandbox ?? existing.zarinpalSandbox,
+        cryptoEnabled: cryptoEnabled ?? existing.cryptoEnabled,
+        cryptoAddress: cryptoAddress?.trim() || existing.cryptoAddress,
+        cryptoNetwork: cryptoNetwork?.trim() || existing.cryptoNetwork,
+        cryptoExchangeRate:
+          cryptoExchangeRate !== undefined
+            ? parseInt(cryptoExchangeRate)
+            : existing.cryptoExchangeRate,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentSettingsTable.id, 1))
+      .returning();
+  } else {
+    [config] = await db
+      .insert(paymentSettingsTable)
+      .values({
+        id: 1,
+        cardEnabled: cardEnabled ?? true,
+        zarinpalEnabled: zarinpalEnabled ?? false,
+        zarinpalMerchantId: zarinpalMerchantId?.trim() || null,
+        zarinpalSandbox: zarinpalSandbox ?? true,
+        cryptoEnabled: cryptoEnabled ?? false,
+        cryptoAddress: cryptoAddress?.trim() || null,
+        cryptoNetwork: cryptoNetwork?.trim() || "TRC20",
+        cryptoExchangeRate: parseInt(cryptoExchangeRate) || 0,
+      })
+      .returning();
+  }
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "payment_settings",
+    description: "تنظیمات درگاه پرداخت آپدیت شد",
+    severity: "warning",
+  });
+
+  return c.json(config);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bot Control Config
+// ─────────────────────────────────────────────────────────────────────────────
+
+settingsRouter.get("/bot-config", async (c) => {
+  let [settings] = await db
+    .select()
+    .from(botSettingsTable)
+    .where(eq(botSettingsTable.id, 1));
+
+  if (!settings) {
+    [settings] = await db
+      .insert(botSettingsTable)
+      .values({ id: 1 })
+      .returning();
+  }
+
+  return c.json(settings);
+});
+
+settingsRouter.put("/bot-config", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can update bot config" }, 403);
+
+  const body = await c.req.json();
+  const { maintenanceMode, maintenanceMessage, referralEnabled, shopEnabled } =
+    body;
+
+  const [existing] = await db
+    .select()
+    .from(botSettingsTable)
+    .where(eq(botSettingsTable.id, 1));
+
+  let settings;
+  if (existing) {
+    [settings] = await db
+      .update(botSettingsTable)
+      .set({
+        maintenanceMode: maintenanceMode ?? existing.maintenanceMode,
+        maintenanceMessage:
+          maintenanceMessage !== undefined
+            ? maintenanceMessage
+            : existing.maintenanceMessage,
+        referralEnabled: referralEnabled ?? existing.referralEnabled,
+        shopEnabled: shopEnabled ?? existing.shopEnabled,
+        updatedAt: new Date(),
+      })
+      .where(eq(botSettingsTable.id, 1))
+      .returning();
+  } else {
+    [settings] = await db
+      .insert(botSettingsTable)
+      .values({
+        id: 1,
+        maintenanceMode: maintenanceMode ?? false,
+        maintenanceMessage: maintenanceMessage ?? null,
+        referralEnabled: referralEnabled ?? true,
+        shopEnabled: shopEnabled ?? true,
+      })
+      .returning();
+  }
+
+  // Invalidate bot's Redis cache so changes take effect immediately
+  try {
+    await redis.del("bot:settings");
+  } catch {
+    // Non-fatal — bot cache will expire on its own (30s TTL)
+  }
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "bot_settings",
+    description: "تنظیمات کنترل ربات آپدیت شد",
+    severity: "warning",
+  });
+
+  return c.json(settings);
 });

@@ -45,6 +45,10 @@ export default function CategoriesSection() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setEditingId(null);
     },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error;
+      alert(msg || "خطا در ویرایش دسته‌بندی");
+    },
   });
 
   const toggleMutation = useMutation({
@@ -69,6 +73,10 @@ export default function CategoriesSection() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setShowAdd(false);
       setAddForm(emptyForm);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error;
+      alert(msg || "خطا در ساخت دسته‌بندی");
     },
   });
 

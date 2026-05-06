@@ -189,16 +189,28 @@ export default function EditProductModal({ product, onClose }: Props) {
             </label>
           </div>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-white/60">Custom Emoji ID</span>
-          <input
-            className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 font-mono text-xs"
-            value={form.customEmojiId ?? ""}
-            onChange={(e) => set("customEmojiId", e.target.value || null)}
-            placeholder="5373141891321699086"
-          />
-          <span className="text-xs text-white/30">آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود</span>
-        </label>
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-white/60">Custom Emoji ID</span>
+            <input
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 font-mono text-xs"
+              value={form.customEmojiId ?? ""}
+              onChange={(e) => set("customEmojiId", e.target.value || null)}
+              placeholder="5373141891321699086"
+            />
+            <span className="text-xs text-white/30">
+              آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود
+            </span>
+          </label>
+
+          <div className="flex flex-col gap-2 pt-1">
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ["isRenewable", t("products.isRenewable")],
+                  ["isActive", t("products.active")],
+                ] as [keyof typeof form, string][]
+              ).map(([key, label]) => (
+                <label
                   key={key}
                   className="flex items-center gap-2 text-sm cursor-pointer select-none"
                 >

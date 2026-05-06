@@ -13,7 +13,7 @@ const StatsFilter = ({
       className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
       value={filters.status}
       onChange={(e) =>
-        setFilters((f) => ({ ...f, status: e.target.value, page: "1" }))
+        setFilters((f: any) => ({ ...f, status: e.target.value, page: "1" }))
       }
     >
       <option value="" className="bg-slate-900">

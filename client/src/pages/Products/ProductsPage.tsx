@@ -30,6 +30,9 @@ type Product = {
   requiresRegion: boolean;
   isRenewable: boolean;
   customEmojiId: string | null;
+  warrantyDays: number;
+  terms: string | null;
+  maxPerUser: number;
 };
 
 export default function ProductsPage() {

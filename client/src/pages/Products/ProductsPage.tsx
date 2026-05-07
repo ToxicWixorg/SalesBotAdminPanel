@@ -33,6 +33,7 @@ type Product = {
   warrantyDays: number;
   terms: string | null;
   maxPerUser: number;
+  regions: Array<{ flag: string; name: string }> | null;
 };
 
 export default function ProductsPage() {

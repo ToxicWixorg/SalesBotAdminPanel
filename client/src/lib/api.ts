@@ -11,7 +11,7 @@ import axios from "axios";
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS === "true";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "/api",
+  baseURL: import.meta.env.VITE_API_URL ?? "",
   headers: { "Content-Type": "application/json" },
 });
 

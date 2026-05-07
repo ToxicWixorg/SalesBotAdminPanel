@@ -85,22 +85,6 @@ export default function NewProductModal({ onClose }: Props) {
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const addRegion = () =>
-    setForm((f) => ({ ...f, regions: [...f.regions, { flag: "", name: "" }] }));
-
-  const removeRegion = (i: number) =>
-    setForm((f) => ({
-      ...f,
-      regions: f.regions.filter((_, idx) => idx !== i),
-    }));
-
-  const updateRegion = (i: number, key: "flag" | "name", val: string) =>
-    setForm((f) => ({
-      ...f,
-      regions: f.regions.map((r, idx) =>
-        idx === i ? { ...r, [key]: val } : r,
-      ),
-    }));
 
   const isValid =
     form.name.trim() !== "" &&

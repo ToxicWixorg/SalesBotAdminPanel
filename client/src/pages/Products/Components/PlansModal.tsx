@@ -19,6 +19,7 @@ type Plan = {
   requiresOtp: boolean;
   requiresLogin: boolean;
   requiresRegion: boolean;
+  regions: Array<{ flag: string; name: string; price: string }> | null;
   customEmojiId: string | null;
 };
 
@@ -49,6 +50,7 @@ const emptyForm = {
   requiresOtp: false,
   requiresLogin: false,
   requiresRegion: false,
+  regions: [] as Array<{ flag: string; name: string; price: string }>,
   customEmojiId: "",
 };
 
@@ -130,6 +132,7 @@ export default function PlansModal({
       requiresOtp: plan.requiresOtp ?? false,
       requiresLogin: plan.requiresLogin ?? false,
       requiresRegion: plan.requiresRegion ?? false,
+      regions: plan.regions ?? [],
       customEmojiId: plan.customEmojiId ?? "",
     });
   };
@@ -415,6 +418,90 @@ export default function PlansModal({
                       </div>
                     );
                   })()}
+
+                {/* ── Region list editor (shown when requiresRegion is checked) ── */}
+                {form.requiresRegion && (
+                  <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/50 font-medium uppercase tracking-wide">
+                        ریجن‌ها
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          set("regions", [
+                            ...form.regions,
+                            { flag: "", name: "", price: "" },
+                          ])
+                        }
+                        className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
+                      >
+                        + افزودن ریجن
+                      </button>
+                    </div>
+                    {form.regions.length === 0 && (
+                      <p className="text-xs text-white/30 text-center py-1">
+                        هیچ ریجنی تعریف نشده — قیمت پلن برای همه یکسان خواهد بود
+                      </p>
+                    )}
+                    {form.regions.map((region, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-12 text-center text-base"
+                          placeholder="🏳"
+                          value={region.flag}
+                          onChange={(e) => {
+                            const updated = [...form.regions];
+                            updated[idx] = {
+                              ...updated[idx]!,
+                              flag: e.target.value,
+                            };
+                            set("regions", updated);
+                          }}
+                        />
+                        <input
+                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1"
+                          placeholder="نام ریجن (مثلاً Egypt)"
+                          value={region.name}
+                          onChange={(e) => {
+                            const updated = [...form.regions];
+                            updated[idx] = {
+                              ...updated[idx]!,
+                              name: e.target.value,
+                            };
+                            set("regions", updated);
+                          }}
+                        />
+                        <input
+                          type="number"
+                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-28"
+                          placeholder="قیمت (تومان)"
+                          value={region.price}
+                          onChange={(e) => {
+                            const updated = [...form.regions];
+                            updated[idx] = {
+                              ...updated[idx]!,
+                              price: e.target.value,
+                            };
+                            set("regions", updated);
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            set(
+                              "regions",
+                              form.regions.filter((_, i) => i !== idx),
+                            );
+                          }}
+                          className="text-red-400 hover:text-red-300 text-xs px-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-white/60">
                     {t("common.description")}

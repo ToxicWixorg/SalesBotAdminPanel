@@ -13,7 +13,7 @@ const MenuBar = ({
   const location = useLocation();
 
   const isDashboard = location.pathname === "/";
-  const isSettings = location.pathname === "/settings";
+  const isSettings = location.pathname === "/account";
 
   return (
     <div

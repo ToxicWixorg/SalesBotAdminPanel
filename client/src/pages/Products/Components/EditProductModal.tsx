@@ -30,6 +30,7 @@ type Product = {
   warrantyDays: number;
   terms: string | null;
   maxPerUser: number;
+  regions: Array<{ flag: string; name: string }> | null;
 };
 
 // Delivery types that use pre-loaded configs
@@ -67,6 +68,7 @@ export default function EditProductModal({ product, onClose }: Props) {
     warrantyDays: product.warrantyDays ?? 0,
     terms: product.terms ?? null,
     maxPerUser: product.maxPerUser ?? 0,
+    regions: product.regions ?? [],
   });
 
   const updateMutation = useMutation({
@@ -86,6 +88,26 @@ export default function EditProductModal({ product, onClose }: Props) {
 
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
+
+  const addRegion = () =>
+    setForm((f) => ({
+      ...f,
+      regions: [...(f.regions ?? []), { flag: "", name: "" }],
+    }));
+
+  const removeRegion = (i: number) =>
+    setForm((f) => ({
+      ...f,
+      regions: (f.regions ?? []).filter((_, idx) => idx !== i),
+    }));
+
+  const updateRegion = (i: number, key: "flag" | "name", val: string) =>
+    setForm((f) => ({
+      ...f,
+      regions: (f.regions ?? []).map((r, idx) =>
+        idx === i ? { ...r, [key]: val } : r,
+      ),
+    }));
 
   return (
     <div
@@ -218,18 +240,26 @@ export default function EditProductModal({ product, onClose }: Props) {
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">{t("products.warrantyDays")}</span>
+                  <span className="text-white/60">
+                    {t("products.warrantyDays")}
+                  </span>
                   <input
                     type="number"
                     min={0}
                     className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
                     value={form.warrantyDays}
-                    onChange={(e) => set("warrantyDays", Number(e.target.value))}
+                    onChange={(e) =>
+                      set("warrantyDays", Number(e.target.value))
+                    }
                   />
-                  <span className="text-xs text-white/30">{t("products.warrantyDaysHint")}</span>
+                  <span className="text-xs text-white/30">
+                    {t("products.warrantyDaysHint")}
+                  </span>
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">{t("products.maxPerUser")}</span>
+                  <span className="text-white/60">
+                    {t("products.maxPerUser")}
+                  </span>
                   <input
                     type="number"
                     min={0}
@@ -237,7 +267,9 @@ export default function EditProductModal({ product, onClose }: Props) {
                     value={form.maxPerUser}
                     onChange={(e) => set("maxPerUser", Number(e.target.value))}
                   />
-                  <span className="text-xs text-white/30">{t("products.maxPerUserHint")}</span>
+                  <span className="text-xs text-white/30">
+                    {t("products.maxPerUserHint")}
+                  </span>
                 </label>
               </div>
               <label className="flex flex-col gap-1 text-sm">
@@ -300,6 +332,58 @@ export default function EditProductModal({ product, onClose }: Props) {
                 </p>
               )}
           </div>
+
+          {/* ── مناطق (فقط برای انواع غیر خودکار) ── */}
+          {!CONFIG_DELIVERY_TYPES.includes(
+            form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
+          ) && (
+            <div className="flex flex-col gap-2 border border-green-500/20 rounded-lg p-3 bg-green-500/5">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-green-300/70 font-medium">
+                  {t("products.regions")}
+                </p>
+                <button
+                  type="button"
+                  onClick={addRegion}
+                  className="text-xs text-green-400 hover:text-green-300 transition-colors"
+                >
+                  {t("products.addRegion")}
+                </button>
+              </div>
+              <p className="text-xs text-white/30">
+                {t("products.regionsHint")}
+              </p>
+              {(form.regions ?? []).length === 0 && (
+                <p className="text-xs text-white/20 italic">
+                  {t("products.noRegions")}
+                </p>
+              )}
+              {(form.regions ?? []).map((r, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-14 text-center text-base"
+                    value={r.flag}
+                    onChange={(e) => updateRegion(i, "flag", e.target.value)}
+                    placeholder="🇪🇬"
+                    maxLength={4}
+                  />
+                  <input
+                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1 text-sm"
+                    value={r.name}
+                    onChange={(e) => updateRegion(i, "name", e.target.value)}
+                    placeholder="Egypt"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRegion(i)}
+                    className="text-red-400 hover:text-red-300 text-sm px-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 justify-end p-4 border-t border-white/10">

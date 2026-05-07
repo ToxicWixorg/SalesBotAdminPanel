@@ -111,6 +111,11 @@ const fa = {
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "نیازمندی‌های هر پلن (ایمیل، OTP، لاگین) در بخش پلن‌ها تنظیم میشود ↓",
+    regions: "مناطق",
+    regionsHint:
+      "مناطق موجود برای انتخاب توسط کاربر در ربات (مثلاً Egypt، Nigeria)",
+    addRegion: "+ افزودن منطقه",
+    noRegions: "بدون منطقه — کاربر متن آزاد وارد می‌کند",
     plans: "پلن ها",
     deliveryTypes: {
       automatic: "خودکار",
@@ -202,6 +207,18 @@ const fa = {
     scheduled: "زمان‌بندی‌شده",
     waitingInvite: "در انتظار دعوت",
     all: "همه",
+    pendingPayment: "تأیید پرداخت",
+    approvePayment: "تأیید پرداخت",
+    rejectPayment: "رد پرداخت",
+    rejectReason: "دلیل رد (اختیاری)",
+    noPendingPayments: "سفارشی در انتظار تأیید وجود ندارد",
+    collectedInfo: "اطلاعات کاربر",
+    paymentMethods: {
+      card: "کارت بانکی",
+      crypto: "کریپتو (USDT)",
+      zarinpal: "زرین‌پال",
+      wallet: "کیف پول",
+    },
     userId: "کاربر",
     product: "محصول",
     total: "مبلغ کل",

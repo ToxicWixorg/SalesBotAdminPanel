@@ -10,10 +10,13 @@
 // GET  /api/admin/orders/pending-admin         - سفارشات در انتظار ادمین
 // GET  /api/admin/orders/scheduled-today       - سفارشات scheduled امروز
 // GET  /api/admin/orders/waiting-invite        - سفارشات invite در انتظار
+// GET  /api/admin/orders/pending-payment       - سفارشات در انتظار تأیید پرداخت (card/crypto)
+// PATCH /api/admin/orders/:id/approve-payment  - تأیید پرداخت
+// PATCH /api/admin/orders/:id/reject-payment   - رد پرداخت
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sql, inArray } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
   ordersTable,
@@ -358,6 +361,128 @@ ordersRouter.patch("/:id/reschedule", async (c) => {
     entityType: "order",
     entityId: id,
     description: `Rescheduled to ${scheduledTime}`,
+  });
+
+  return c.json(updated);
+});
+
+// ── GET /api/admin/orders/pending-payment ─────────────────────────────────────
+// سفارشات در انتظار تأیید پرداخت دستی (card / crypto)
+ordersRouter.get("/pending-payment", async (c) => {
+  const orders = await db
+    .select({
+      order: ordersTable,
+      user: {
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+      },
+      product: {
+        id: productsTable.id,
+        name: productsTable.name,
+      },
+      plan: {
+        id: productPlansTable.id,
+        name: productPlansTable.name,
+      },
+    })
+    .from(ordersTable)
+    .leftJoin(usersTable, eq(ordersTable.userId, usersTable.id))
+    .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .leftJoin(productPlansTable, eq(ordersTable.planId, productPlansTable.id))
+    .where(
+      and(
+        eq(ordersTable.status, "pending_payment"),
+        inArray(ordersTable.paymentMethod, ["card", "crypto"]),
+      ),
+    )
+    .orderBy(desc(ordersTable.createdAt));
+
+  return c.json(orders);
+});
+
+// ── PATCH /api/admin/orders/:id/approve-payment ───────────────────────────────
+ordersRouter.patch("/:id/approve-payment", async (c) => {
+  const id = parseInt(c.req.param("id"));
+
+  const order = await db.query.ordersTable.findFirst({
+    where: eq(ordersTable.id, id),
+  });
+  if (!order) return c.json({ error: "Order not found" }, 404);
+  if (order.status !== "pending_payment")
+    return c.json({ error: "Order is not in pending_payment state" }, 400);
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({ status: "pending_admin", updatedAt: new Date() })
+    .where(eq(ordersTable.id, id))
+    .returning();
+
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  if (BOT_TOKEN && updated.userId) {
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: Number(updated.userId),
+        text: `✅ <b>پرداخت تأیید شد!</b>\n\nسفارش #${id} شما تأیید شد و در حال آماده‌سازی است.`,
+        parse_mode: "HTML",
+      }),
+    }).catch((e) => console.error("[NOTIFY] approve-payment:", e));
+  }
+
+  await logAdminAction(c, {
+    action: "approve_payment",
+    entityType: "order",
+    entityId: id,
+    changes: { status: { from: "pending_payment", to: "pending_admin" } },
+    description: `Payment approved for order #${id}`,
+  });
+
+  return c.json(updated);
+});
+
+// ── PATCH /api/admin/orders/:id/reject-payment ────────────────────────────────
+ordersRouter.patch("/:id/reject-payment", async (c) => {
+  const id = parseInt(c.req.param("id"));
+  const { reason } = await c.req.json<{ reason?: string }>();
+
+  const order = await db.query.ordersTable.findFirst({
+    where: eq(ordersTable.id, id),
+  });
+  if (!order) return c.json({ error: "Order not found" }, 404);
+
+  const [updated] = await db
+    .update(ordersTable)
+    .set({
+      status: "cancelled",
+      notes: reason ?? null,
+      updatedAt: new Date(),
+    })
+    .where(eq(ordersTable.id, id))
+    .returning();
+
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  if (BOT_TOKEN && updated.userId) {
+    const reasonText = reason ? `\n\nدلیل: ${reason}` : "";
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: Number(updated.userId),
+        text: `❌ <b>پرداخت تأیید نشد.</b>\n\nسفارش #${id} لغو شد.${reasonText}`,
+        parse_mode: "HTML",
+      }),
+    }).catch((e) => console.error("[NOTIFY] reject-payment:", e));
+  }
+
+  await logAdminAction(c, {
+    action: "reject_payment",
+    entityType: "order",
+    entityId: id,
+    changes: { status: { from: order.status, to: "cancelled" } },
+    description: `Payment rejected for order #${id}. Reason: ${reason ?? "none"}`,
+    severity: "warning",
   });
 
   return c.json(updated);

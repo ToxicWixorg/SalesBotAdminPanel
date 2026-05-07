@@ -96,6 +96,10 @@ export const productsTable = pgTable(
     warrantyDays: integer("warranty_days").default(0),
     terms: text("terms"),
     maxPerUser: integer("max_per_user").default(0),
+    // Regions available for this product (e.g. [{flag:"🇪🇬", name:"Egypt"}])
+    regions: jsonb("regions")
+      .$type<{ flag: string; name: string }[]>()
+      .default([]),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },

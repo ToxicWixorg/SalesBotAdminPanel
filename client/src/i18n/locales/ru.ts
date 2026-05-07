@@ -107,6 +107,11 @@ const ru: Translations = {
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "Требования каждого плана (емейл, OTP, вход) указываются в разделе Планы ниже ↓",
+    regions: "Регионы",
+    regionsHint:
+      "Доступные регионы для выбора пользователем в боте (напр. Egypt, Nigeria)",
+    addRegion: "+ Добавить регион",
+    noRegions: "Без регионов — пользователь вводит свободный текст",
     plans: "Планы",
     planModal: {
       newPlan: "Новый план +",
@@ -198,6 +203,18 @@ const ru: Translations = {
     scheduled: "Запланированные",
     waitingInvite: "Ожидают приглашения",
     all: "Все",
+    pendingPayment: "Подтверждение оплаты",
+    approvePayment: "Подтвердить оплату",
+    rejectPayment: "Отклонить оплату",
+    rejectReason: "Причина отклонения (необязательно)",
+    noPendingPayments: "Нет заказов, ожидающих подтверждения оплаты",
+    collectedInfo: "Данные пользователя",
+    paymentMethods: {
+      card: "Банковская карта",
+      crypto: "Крипто (USDT)",
+      zarinpal: "ZarinPal",
+      wallet: "Кошелёк",
+    },
     userId: "Пользователь",
     product: "Продукт",
     total: "Итого",

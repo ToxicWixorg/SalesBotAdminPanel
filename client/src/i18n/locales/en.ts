@@ -109,6 +109,11 @@ const en: Translations = {
       "آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود",
     planRequirementsHint:
       "Per-plan requirements (email, OTP, login) are set in the Plans section below ↓",
+    regions: "Regions",
+    regionsHint:
+      "Available regions for user to choose in the bot (e.g. Egypt, Nigeria)",
+    addRegion: "+ Add Region",
+    noRegions: "No regions — user enters free text",
     deliveryTypes: {
       automatic: "Automatic",
       manual: "Manual",
@@ -199,6 +204,18 @@ const en: Translations = {
     scheduled: "Scheduled",
     waitingInvite: "Waiting Invite",
     all: "All",
+    pendingPayment: "Verify Payment",
+    approvePayment: "Approve Payment",
+    rejectPayment: "Reject Payment",
+    rejectReason: "Rejection reason (optional)",
+    noPendingPayments: "No orders awaiting payment verification",
+    collectedInfo: "Customer Info",
+    paymentMethods: {
+      card: "Bank Card",
+      crypto: "Crypto (USDT)",
+      zarinpal: "ZarinPal",
+      wallet: "Wallet",
+    },
     userId: "User",
     product: "Product",
     total: "Total",

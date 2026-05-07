@@ -161,6 +161,9 @@ update_panel() {
   info "Updating API dependencies..."
   cd "$API_DIR" && bun install
 
+  info "Running database migrations..."
+  run_migrations
+
   info "Rebuilding client..."
   cd "$CLIENT_DIR" && bun install && bun run build
 
@@ -186,6 +189,100 @@ edit_env() {
     2) nano "$CLIENT_DIR/.env" ;;
     b) return ;;
   esac
+}
+
+# ─── میگریشن ──────────────────────────────────────────────────────────────────
+run_migrations() {
+  header
+
+  # خواندن DATABASE_URL از .env ادمین پنل
+  DB_URL=$(grep -E "^DATABASE_URL=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | xargs)
+  if [[ -z "$DB_URL" ]]; then
+    err "DATABASE_URL not found in $API_DIR/.env"
+    sleep 3; return 1
+  fi
+
+  info "Running migrations via psql..."
+
+  psql "$DB_URL" << 'MIGRATIONS_EOF'
+-- 0013: force_join_channels
+CREATE TABLE IF NOT EXISTS "force_join_channels" (
+  "id"           serial PRIMARY KEY,
+  "channel_id"   text NOT NULL,
+  "channel_url"  text NOT NULL,
+  "channel_name" text NOT NULL,
+  "is_active"    boolean NOT NULL DEFAULT true,
+  "order"        integer NOT NULL DEFAULT 0,
+  "created_at"   timestamp DEFAULT now(),
+  "updated_at"   timestamp DEFAULT now()
+);
+
+-- 0014: payment_card_numbers + payment_settings
+CREATE TABLE IF NOT EXISTS "payment_card_numbers" (
+  "id"           serial PRIMARY KEY,
+  "card_number"  text NOT NULL,
+  "holder_name"  text NOT NULL,
+  "bank_name"    text,
+  "is_active"    boolean NOT NULL DEFAULT true,
+  "order"        integer NOT NULL DEFAULT 0,
+  "created_at"   timestamp DEFAULT now(),
+  "updated_at"   timestamp DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS "payment_settings" (
+  "id"                   serial PRIMARY KEY,
+  "card_enabled"         boolean NOT NULL DEFAULT true,
+  "zarinpal_enabled"     boolean NOT NULL DEFAULT false,
+  "zarinpal_merchant_id" text,
+  "zarinpal_sandbox"     boolean NOT NULL DEFAULT true,
+  "crypto_enabled"       boolean NOT NULL DEFAULT false,
+  "crypto_address"       text,
+  "crypto_network"       text DEFAULT 'TRC20',
+  "crypto_exchange_rate" integer NOT NULL DEFAULT 0,
+  "updated_at"           timestamp DEFAULT now()
+);
+
+INSERT INTO "payment_settings" ("id","card_enabled","zarinpal_enabled","zarinpal_sandbox","crypto_enabled","crypto_network","crypto_exchange_rate")
+VALUES (1, true, false, true, false, 'TRC20', 0)
+ON CONFLICT ("id") DO NOTHING;
+
+-- 0015: backup_settings
+CREATE TABLE IF NOT EXISTS "backup_settings" (
+  "id"                  serial PRIMARY KEY,
+  "is_enabled"          boolean NOT NULL DEFAULT false,
+  "telegram_channel_id" text,
+  "cron_schedule"       text DEFAULT '0 3 * * *',
+  "last_backup_at"      timestamp,
+  "last_backup_status"  text,
+  "last_backup_size"    integer,
+  "updated_at"          timestamp DEFAULT now()
+);
+
+INSERT INTO "backup_settings" ("id","is_enabled","cron_schedule")
+VALUES (1, false, '0 3 * * *')
+ON CONFLICT ("id") DO NOTHING;
+
+-- 0016: bot_settings
+CREATE TABLE IF NOT EXISTS "bot_settings" (
+  "id"                  serial PRIMARY KEY,
+  "maintenance_mode"    boolean NOT NULL DEFAULT false,
+  "maintenance_message" text,
+  "referral_enabled"    boolean NOT NULL DEFAULT true,
+  "shop_enabled"        boolean NOT NULL DEFAULT true,
+  "updated_at"          timestamp DEFAULT now()
+);
+
+INSERT INTO "bot_settings" ("id","maintenance_mode","referral_enabled","shop_enabled")
+VALUES (1, false, true, true)
+ON CONFLICT ("id") DO NOTHING;
+MIGRATIONS_EOF
+
+  if [[ $? -eq 0 ]]; then
+    ok "All migrations applied successfully!"
+  else
+    err "Migration failed — check DB connection or psql installation."
+  fi
+  sleep 3
 }
 
 # ─── ۴. شروع / ری‌استارت API ──────────────────────────────────────────────────
@@ -521,6 +618,7 @@ while true; do
   echo -e "${C}│${N}  ${B}${G}7)${N} 🌐 Setup / Reload Nginx            ${C}│${N}"
   echo -e "${C}│${N}  ${B}${G}8)${N} � Setup Domain / HTTPS            ${C}│${N}"
   echo -e "${C}│${N}  ${B}${G}9)${N} 📋 Logs                            ${C}│${N}"
+  echo -e "${C}│${N}  ${B}${G}m)${N} 🗄️  Run DB Migrations              ${C}│${N}"
   echo -e "${C}│${N}  ${B}${G}s)${N} 📊 PM2 Status                      ${C}│${N}"
   echo -e "${C}│${N}  ${B}${R}d)${N} 🗑️  Remove Project                 ${C}│${N}"
   echo -e "${C}│${N}  ${B}${R}q)${N} 🚪 Exit                            ${C}│${N}"
@@ -539,6 +637,7 @@ while true; do
     7) setup_nginx; sleep 2 ;;
     8) setup_domain ;;
     9) show_logs ;;
+    m) run_migrations ;;
     s) pm2 status; read -p "Press Enter to return..." ;;
     d)
       read -p "Remove entire project? (y/n): " confirm

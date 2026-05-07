@@ -76,6 +76,27 @@ app.route("/api/admin/settings", settingsRouter);
 app.route("/api/account", accountRouter);
 app.route("/api/admin/inventory", inventoryRouter);
 
+// ─── Serve Frontend Static Files ────────────────────────────────────────────
+import { join } from "node:path";
+import { existsSync } from "node:fs";
+
+const DIST_DIR = join(import.meta.dir, "../client/dist");
+
+if (existsSync(DIST_DIR)) {
+  app.get("/assets/*", async (c) => {
+    const filePath = join(DIST_DIR, c.req.path);
+    return new Response(Bun.file(filePath));
+  });
+
+  // SPA fallback — همه route های غیر-api به index.html
+  app.get("*", async (c) => {
+    if (c.req.path.startsWith("/api")) return c.notFound();
+    return new Response(Bun.file(join(DIST_DIR, "index.html")), {
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+  });
+}
+
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.notFound((c) => c.json({ error: "Route not found" }, 404));
 

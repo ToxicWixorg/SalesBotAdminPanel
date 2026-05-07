@@ -128,6 +128,10 @@ export const productPlansTable = pgTable(
     requiresOtp: boolean("requires_otp").default(false),
     requiresLogin: boolean("requires_login").default(false),
     requiresRegion: boolean("requires_region").default(false),
+    regions: jsonb("regions")
+      .$type<{ flag: string; name: string; price: string }[]>()
+      .default([]),
+    customEmojiId: text("custom_emoji_id"),
     order: integer("order").default(0),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow(),

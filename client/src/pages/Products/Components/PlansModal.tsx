@@ -23,7 +23,6 @@ type Plan = {
   customEmojiId: string | null;
 };
 
-// delivery types where requirements make sense
 const SCHEDULE_TYPES = [
   "custom_schedule",
   "manual",
@@ -221,7 +220,6 @@ export default function PlansModal({
                               ? t("products.active")
                               : t("products.inactive")}
                           </span>
-                          {/* requirement badges */}
                           {plan.requiresOtp && (
                             <span className="ml-1 text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
                               OTP
@@ -246,13 +244,16 @@ export default function PlansModal({
                             >
                               {t("common.edit")}
                             </button>
-                            {/* آیتم‌های تحویل برای همه انواع */}
-                            <button
-                              onClick={() => setShowDeliveryItems(true)}
-                              className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
-                            >
-                              {t("products.deliveryItems.manage")}
-                            </button>
+
+                            {deliveryType === "automatic" && (
+                              <button
+                                onClick={() => setShowDeliveryItems(true)}
+                                className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
+                              >
+                                {t("products.deliveryItems.manage")}
+                              </button>
+                            )}
+
                             <button
                               onClick={() => {
                                 if (

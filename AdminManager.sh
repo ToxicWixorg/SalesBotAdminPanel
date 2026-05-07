@@ -544,6 +544,12 @@ setup_domain() {
   echo ""
   read -r -p "دامین خود را وارد کن (مثال: admin.example.com): " input_domain
   [[ -z "$input_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
+  # validate: باید حداقل یک نقطه داشته باشد و فقط حروف/عدد/خط‌تیره/نقطه باشد
+  if ! echo "$input_domain" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]+\.[a-zA-Z]{2,}$'; then
+    err "دامین نامعتبر است: '$input_domain'"
+    err "مثال صحیح: admin.example.com"
+    sleep 3; return
+  fi
 
   SERVER_DOMAIN="$input_domain"
   ORIGIN_URL="https://$input_domain"

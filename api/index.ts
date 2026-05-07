@@ -32,10 +32,18 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    // در production فقط domain ادمین پنل را بگذار
-    origin: process.env.ALLOWED_ORIGINS?.split(",") ?? [
-      "http://localhost:5173",
-    ],
+    origin: (origin) => {
+      if (!origin) return origin; // same-origin / no-cors
+      const allowed =
+        process.env.ALLOWED_ORIGINS?.split(",").map((s) => s.trim()) ?? [];
+      if (allowed.includes("*") || allowed.includes(origin)) return origin;
+      if (
+        origin.startsWith("http://localhost") ||
+        origin.startsWith("http://127.0.0.1")
+      )
+        return origin;
+      return null;
+    },
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,

@@ -38,9 +38,9 @@ type ActiveRow = {
     id: number;
     date: string;
     timeSlot: string;
-    sessionTicketId: number | null;
     status: string;
   };
+  sessionChatId: number | null;
   order: { id: number; status: string } | null;
   user: { id: number; firstName: string; username: string } | null;
   product: { id: number; name: string } | null;
@@ -296,7 +296,7 @@ export default function SchedulesPage() {
     mutationFn: (id: number) =>
       api
         .post(`/api/admin/schedules/${id}/start`)
-        .then((r) => r.data as { ticketId: number; ticketNumber: string }),
+        .then((r) => r.data as { sessionChatId: number }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["schedules"] });
       queryClient.invalidateQueries({ queryKey: ["schedules-week"] });
@@ -406,16 +406,14 @@ export default function SchedulesPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {item.schedule.sessionTicketId && (
+                  {item.sessionChatId && (
                     <button
                       onClick={() =>
-                        navigate(
-                          `/tickets?openTicket=${item.schedule.sessionTicketId}`,
-                        )
+                        navigate(`/session-chats?openChat=${item.sessionChatId}`)
                       }
                       className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-xs px-3 py-1.5 rounded-xl border border-blue-400/30 transition-all flex items-center gap-1.5"
                     >
-                      🎫 مشاهده تیکت
+                      💬 مشاهده چت
                     </button>
                   )}
                   <button
@@ -658,16 +656,16 @@ export default function SchedulesPage() {
                       </button>
                     )}
                   {item.schedule.status === "in_progress" &&
-                    item.schedule.sessionTicketId && (
+                    item.schedule.sessionStartNotified && (
                       <button
                         onClick={() =>
                           navigate(
-                            `/tickets?openTicket=${item.schedule.sessionTicketId}`,
+                            `/session-chats?openChat=${item.schedule.id}`,
                           )
                         }
                         className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-xl px-3 py-1 transition-all flex items-center gap-1"
                       >
-                        🎫 تیکت
+                        💬 چت
                       </button>
                     )}
                   {(item.schedule.status === "available" ||

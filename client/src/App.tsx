@@ -19,6 +19,9 @@ const DiscountsPage = lazy(() => import("./pages/Discounts/DiscountsPage"));
 const ReferralsPage = lazy(() => import("./pages/Referrals/ReferralsPage"));
 // const PerksPage = lazy(() => import("./pages/Perks/PerksPage"));
 const SchedulesPage = lazy(() => import("./pages/Schedules/SchedulesPage"));
+const SessionChatsPage = lazy(
+  () => import("./pages/SessionChats/SessionChatsPage"),
+);
 const BroadcastPage = lazy(() => import("./pages/Broadcast/BroadcastPage"));
 const SettingsPage = lazy(() => import("./pages/Settings/SettingsPage"));
 const AccountPage = lazy(() => import("./pages/Account/AccountPage"));
@@ -139,6 +142,14 @@ export default function App() {
                 element={
                   <SectionRoute section="schedules">
                     <SchedulesPage />
+                  </SectionRoute>
+                }
+              />
+              <Route
+                path="/session-chats"
+                element={
+                  <SectionRoute section="schedules">
+                    <SessionChatsPage />
                   </SectionRoute>
                 }
               />

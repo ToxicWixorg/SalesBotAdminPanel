@@ -828,3 +828,58 @@ export const botSettingsTable = pgTable("bot_settings", {
 
 export type BotSettings = typeof botSettingsTable.$inferSelect;
 export type InsertBotSettings = typeof botSettingsTable.$inferInsert;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 💬 SESSION CHATS ━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+export const sessionChatsTable = pgTable(
+  "session_chats",
+  {
+    id: serial("id").primaryKey(),
+    scheduleId: integer("schedule_id").references(() => schedulesTable.id, {
+      onDelete: "cascade",
+    }),
+    orderId: integer("order_id").references(() => ordersTable.id, {
+      onDelete: "cascade",
+    }),
+    userId: bigint("user_id", { mode: "number" }).references(
+      () => usersTable.id,
+      { onDelete: "set null" },
+    ),
+    status: text("status").notNull().default("open"), // open | closed
+    closedAt: timestamp("closed_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    scheduleIdIdx: index("session_chats_schedule_id_idx").on(table.scheduleId),
+    orderIdIdx: index("session_chats_order_id_idx").on(table.orderId),
+    userIdIdx: index("session_chats_user_id_idx").on(table.userId),
+  }),
+);
+
+export type SessionChat = typeof sessionChatsTable.$inferSelect;
+export type InsertSessionChat = typeof sessionChatsTable.$inferInsert;
+
+export const sessionChatMessagesTable = pgTable(
+  "session_chat_messages",
+  {
+    id: serial("id").primaryKey(),
+    sessionChatId: integer("session_chat_id")
+      .notNull()
+      .references(() => sessionChatsTable.id, { onDelete: "cascade" }),
+    senderType: text("sender_type").notNull(), // 'user' | 'admin'
+    senderId: bigint("sender_id", { mode: "number" }),
+    text: text("text").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    chatIdIdx: index("session_chat_messages_chat_id_idx").on(
+      table.sessionChatId,
+    ),
+  }),
+);
+
+export type SessionChatMessage = typeof sessionChatMessagesTable.$inferSelect;
+export type InsertSessionChatMessage =
+  typeof sessionChatMessagesTable.$inferInsert;

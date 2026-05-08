@@ -59,6 +59,7 @@ const fa = {
     referrals: "معرفی دوستان",
     perks: "امتیازات",
     schedules: "زمان‌بندی‌ها",
+    "session-chats": "چت‌های جلسه",
     broadcast: "اطلاعیه",
     settings: "تنظیمات",
     pages: "منو ها",
@@ -499,6 +500,29 @@ const fa = {
       in_progress: "در حال انجام",
       completed: "تحویل داده‌شده",
     },
+  },
+
+  // ── چت‌های جلسه ─────────────────────────────────────────────────
+  sessionChats: {
+    title: "چت‌های جلسه",
+    open: "باز",
+    closed: "بسته",
+    all: "همه",
+    allStatuses: "همه وضعیت‌ها",
+    sendMessage: "ارسال پیام",
+    closeChat: "بستن چت",
+    closeChatConfirm: "آیا مطمئنید؟ این چت بسته خواهد شد.",
+    messagePlaceholder: "پیام...",
+    noChats: "چتی یافت نشد",
+    colUser: "کاربر",
+    colProduct: "محصول",
+    colSchedule: "جلسه",
+    colStatus: "وضعیت",
+    colDate: "تاریخ",
+    viewChat: "مشاهده چت",
+    admin: "ادمین",
+    user: "کاربر",
+    noMessages: "هنوز پیامی نیست",
   },
 
   // ── اطلاعیه ─────────────────────────────────────────────────

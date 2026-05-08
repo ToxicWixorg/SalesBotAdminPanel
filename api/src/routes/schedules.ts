@@ -24,7 +24,7 @@ import {
   ordersTable,
   usersTable,
   productsTable,
-  ticketsTable,
+  sessionChatsTable,
 } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
 import { logAdminAction } from "../helpers/logger.ts";
@@ -218,6 +218,7 @@ schedulesRouter.get("/active", async (c) => {
         id: timeSlotTemplatesTable.id,
         name: timeSlotTemplatesTable.name,
       },
+      sessionChatId: sessionChatsTable.id,
     })
     .from(schedulesTable)
     .leftJoin(ordersTable, eq(schedulesTable.orderId, ordersTable.id))
@@ -226,6 +227,10 @@ schedulesRouter.get("/active", async (c) => {
     .leftJoin(
       timeSlotTemplatesTable,
       eq(schedulesTable.templateId, timeSlotTemplatesTable.id),
+    )
+    .leftJoin(
+      sessionChatsTable,
+      eq(sessionChatsTable.scheduleId, schedulesTable.id),
     )
     .where(eq(schedulesTable.status, "in_progress"))
     .orderBy(schedulesTable.date, schedulesTable.timeSlot);
@@ -277,48 +282,25 @@ schedulesRouter.post("/:id/start", async (c) => {
   const orderId = row.order.id;
   const productName = row.product?.name ?? "Session";
 
-  // ── 2. تولید شماره تیکت ────────────────────────────────────────────────────
-  const lastTicket = await db
-    .select({ ticketNumber: ticketsTable.ticketNumber })
-    .from(ticketsTable)
-    .where(eq(ticketsTable.type, "order"))
-    .orderBy(desc(ticketsTable.id))
-    .limit(1);
-
-  const lastNum = lastTicket.length
-    ? parseInt(lastTicket[0]!.ticketNumber.split("-")[1] ?? "5000")
-    : 5000;
-  const ticketNumber = `O-${lastNum + 1}`;
-
-  // ── 3. ایجاد تیکت در دیتابیس ──────────────────────────────────────────────
-  const [ticket] = await db
-    .insert(ticketsTable)
+  // ── 2. ایجاد session_chat ─────────────────────────────────────────────────
+  const [sessionChat] = await db
+    .insert(sessionChatsTable)
     .values({
-      userId,
+      scheduleId: id,
       orderId,
-      type: "order",
-      ticketNumber,
-      title: `Session: ${productName} — ${row.schedule.timeSlot}`,
-      description:
-        `🚀 Session started manually by admin.\n` +
-        `Time slot: ${row.schedule.timeSlot}\n` +
-        `Please send login credentials in this thread.`,
-      priority: "high",
+      userId,
       status: "open",
-      messageCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     })
     .returning();
 
-  if (!ticket) return c.json({ error: "Failed to create ticket" }, 500);
+  if (!sessionChat)
+    return c.json({ error: "Failed to create session chat" }, 500);
 
-  // ── 4. آپدیت schedule ──────────────────────────────────────────────────────
+  // ── 3. آپدیت schedule ──────────────────────────────────────────────────────
   await db
     .update(schedulesTable)
     .set({
       sessionStartNotified: true,
-      sessionTicketId: ticket.id,
       status: "in_progress",
       updatedAt: new Date(),
     })
@@ -371,7 +353,7 @@ schedulesRouter.post("/:id/start", async (c) => {
         `📦 Product: <b>${productName}</b>\n` +
         `⏰ Time slot: <b>${row.schedule.timeSlot}</b>\n` +
         `🆔 Order: #${orderId}\n` +
-        `🎫 Ticket: <code>${ticketNumber}</code>\n\n` +
+        `💬 Session Chat: #${sessionChat.id}\n\n` +
         `Started by admin: ${adminUser?.username ?? "Unknown"}\n` +
         `Send login credentials to the user now.`;
 
@@ -397,10 +379,10 @@ schedulesRouter.post("/:id/start", async (c) => {
     action: "start_session",
     entityType: "schedule",
     entityId: id,
-    description: `Manually started session #${id} (order #${orderId}, ticket ${ticketNumber})`,
+    description: `Manually started session #${id} (order #${orderId}, sessionChat #${sessionChat.id})`,
   });
 
-  return c.json({ success: true, ticketId: ticket.id, ticketNumber });
+  return c.json({ success: true, sessionChatId: sessionChat.id });
 });
 
 // ── GET /api/admin/schedules/today ────────────────────────────────────────────

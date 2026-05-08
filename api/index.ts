@@ -24,6 +24,7 @@ import { broadcastRouter } from "./src/routes/broadcast.ts";
 import { settingsRouter } from "./src/routes/settings.ts";
 import { accountRouter } from "./src/routes/account.ts";
 import { inventoryRouter } from "./src/routes/inventory.ts";
+import { sessionChatsRouter } from "./src/routes/session-chats.ts";
 
 const app = new Hono();
 
@@ -71,6 +72,7 @@ app.route("/api/admin/discounts", discountsRouter);
 app.route("/api/admin/referrals", referralsRouter);
 app.route("/api/admin/perks", perksRouter);
 app.route("/api/admin/schedules", schedulesRouter);
+app.route("/api/admin/session-chats", sessionChatsRouter);
 app.route("/api/admin/broadcast", broadcastRouter);
 app.route("/api/admin/settings", settingsRouter);
 app.route("/api/account", accountRouter);

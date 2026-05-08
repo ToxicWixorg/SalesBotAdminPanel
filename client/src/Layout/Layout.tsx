@@ -18,6 +18,7 @@ const Layout = () => {
     "referrals",
     // "perks",
     "schedules",
+    "session-chats",
     "broadcast",
     "settings",
   ];

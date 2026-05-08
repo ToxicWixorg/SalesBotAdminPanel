@@ -2,16 +2,16 @@
 
 R='\033[31m'; G='\033[32m'; Y='\033[33m'; C='\033[36m'; B='\033[1m'; W='\033[97m'; N='\033[0m'
 
-PROJECT_DIR="/root/admin-panel"
+PROJECT_DIR="/root/proj/admin-panel"
 API_DIR="$PROJECT_DIR/api"
 CLIENT_DIR="$PROJECT_DIR/client"
-PM2_API_NAME="admin-api"
+PM2_API_NAME="admin-api-demo"
 REPO_URL="https://github.com/ToxicWixorg/SalesBotAdminPanel.git"
-# اگر ریپوی جداگانه داری این را خالی بگذار
+
 REPO_SUBDIR=""
-# دامین سرور (خالی = فقط IP)
+
 SERVER_DOMAIN=""
-# پورت Nginx
+
 NGINX_PORT=8080
 
 header() {
@@ -162,7 +162,8 @@ update_panel() {
   cd "$API_DIR" && bun install
 
   info "Running database migrations..."
-  run_migrations
+  BOT_DIR=$(dirname "$PROJECT_DIR")/bot
+  [[ -d "$BOT_DIR" ]] && cd "$BOT_DIR" && bun run migrate && ok "Migrations applied." || info "Skipped migrations (bot dir not found)."
 
   info "Rebuilding client..."
   cd "$CLIENT_DIR" && bun install && bun run build
@@ -194,94 +195,19 @@ edit_env() {
 # ─── میگریشن ──────────────────────────────────────────────────────────────────
 run_migrations() {
   header
-
-  # خواندن DATABASE_URL از .env ادمین پنل
-  DB_URL=$(grep -E "^DATABASE_URL=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | xargs)
-  if [[ -z "$DB_URL" ]]; then
-    err "DATABASE_URL not found in $API_DIR/.env"
+  BOT_DIR=$(dirname "$PROJECT_DIR")/bot
+  if [[ ! -d "$BOT_DIR" ]]; then
+    err "Bot directory not found at $BOT_DIR"
+    err "Run migrations manually: cd /root/bot && bun run migrate"
     sleep 3; return 1
   fi
-
-  info "Running migrations via psql..."
-
-  psql "$DB_URL" << 'MIGRATIONS_EOF'
--- 0013: force_join_channels
-CREATE TABLE IF NOT EXISTS "force_join_channels" (
-  "id"           serial PRIMARY KEY,
-  "channel_id"   text NOT NULL,
-  "channel_url"  text NOT NULL,
-  "channel_name" text NOT NULL,
-  "is_active"    boolean NOT NULL DEFAULT true,
-  "order"        integer NOT NULL DEFAULT 0,
-  "created_at"   timestamp DEFAULT now(),
-  "updated_at"   timestamp DEFAULT now()
-);
-
--- 0014: payment_card_numbers + payment_settings
-CREATE TABLE IF NOT EXISTS "payment_card_numbers" (
-  "id"           serial PRIMARY KEY,
-  "card_number"  text NOT NULL,
-  "holder_name"  text NOT NULL,
-  "bank_name"    text,
-  "is_active"    boolean NOT NULL DEFAULT true,
-  "order"        integer NOT NULL DEFAULT 0,
-  "created_at"   timestamp DEFAULT now(),
-  "updated_at"   timestamp DEFAULT now()
-);
-
-CREATE TABLE IF NOT EXISTS "payment_settings" (
-  "id"                   serial PRIMARY KEY,
-  "card_enabled"         boolean NOT NULL DEFAULT true,
-  "zarinpal_enabled"     boolean NOT NULL DEFAULT false,
-  "zarinpal_merchant_id" text,
-  "zarinpal_sandbox"     boolean NOT NULL DEFAULT true,
-  "crypto_enabled"       boolean NOT NULL DEFAULT false,
-  "crypto_address"       text,
-  "crypto_network"       text DEFAULT 'TRC20',
-  "crypto_exchange_rate" integer NOT NULL DEFAULT 0,
-  "updated_at"           timestamp DEFAULT now()
-);
-
-INSERT INTO "payment_settings" ("id","card_enabled","zarinpal_enabled","zarinpal_sandbox","crypto_enabled","crypto_network","crypto_exchange_rate")
-VALUES (1, true, false, true, false, 'TRC20', 0)
-ON CONFLICT ("id") DO NOTHING;
-
--- 0015: backup_settings
-CREATE TABLE IF NOT EXISTS "backup_settings" (
-  "id"                  serial PRIMARY KEY,
-  "is_enabled"          boolean NOT NULL DEFAULT false,
-  "telegram_channel_id" text,
-  "cron_schedule"       text DEFAULT '0 3 * * *',
-  "last_backup_at"      timestamp,
-  "last_backup_status"  text,
-  "last_backup_size"    integer,
-  "updated_at"          timestamp DEFAULT now()
-);
-
-INSERT INTO "backup_settings" ("id","is_enabled","cron_schedule")
-VALUES (1, false, '0 3 * * *')
-ON CONFLICT ("id") DO NOTHING;
-
--- 0016: bot_settings
-CREATE TABLE IF NOT EXISTS "bot_settings" (
-  "id"                  serial PRIMARY KEY,
-  "maintenance_mode"    boolean NOT NULL DEFAULT false,
-  "maintenance_message" text,
-  "referral_enabled"    boolean NOT NULL DEFAULT true,
-  "shop_enabled"        boolean NOT NULL DEFAULT true,
-  "updated_at"          timestamp DEFAULT now()
-);
-
-INSERT INTO "bot_settings" ("id","maintenance_mode","referral_enabled","shop_enabled")
-VALUES (1, false, true, true)
-ON CONFLICT ("id") DO NOTHING;
-MIGRATIONS_EOF
-
-  if [[ $? -eq 0 ]]; then
-    ok "All migrations applied successfully!"
-  else
-    err "Migration failed — check DB connection or psql installation."
+  if [[ ! -f "$BOT_DIR/.env" && ! -f "$BOT_DIR/.env.production" ]]; then
+    err "No .env found in $BOT_DIR — cannot run migrations."
+    sleep 3; return 1
   fi
+  info "Running database migrations from bot directory..."
+  cd "$BOT_DIR"
+  bun run migrate && ok "Migrations applied successfully!" || err "Migration failed — check DB connection."
   sleep 3
 }
 
@@ -376,7 +302,7 @@ server {
 
     # API proxy
     location /api/ {
-        proxy_pass http://127.0.0.1:$API_PORT;
+        proxy_pass http://127.0.0.1:$API_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
@@ -544,12 +470,6 @@ setup_domain() {
   echo ""
   read -r -p "دامین خود را وارد کن (مثال: admin.example.com): " input_domain
   [[ -z "$input_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
-  # validate: باید حداقل یک نقطه داشته باشد و فقط حروف/عدد/خط‌تیره/نقطه باشد
-  if ! echo "$input_domain" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]+\.[a-zA-Z]{2,}$'; then
-    err "دامین نامعتبر است: '$input_domain'"
-    err "مثال صحیح: admin.example.com"
-    sleep 3; return
-  fi
 
   SERVER_DOMAIN="$input_domain"
   ORIGIN_URL="https://$input_domain"

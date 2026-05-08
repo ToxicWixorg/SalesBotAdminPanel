@@ -202,9 +202,19 @@ run_migrations() {
     sleep 3; return 1
   fi
 
-  info "Running migrations via psql..."
+  info "Running migrations..."
 
-  psql "$DB_URL" << 'MIGRATIONS_EOF'
+  if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "bot-postgres"; then
+    info "Using docker exec (bot-postgres container)..."
+    PSQL_CMD="docker exec -i bot-postgres psql -U bot -d bot"
+  elif command -v psql &>/dev/null; then
+    PSQL_CMD="psql $DB_URL"
+  else
+    err "Neither 'bot-postgres' docker container nor 'psql' found."
+    sleep 3; return 1
+  fi
+
+  $PSQL_CMD << 'MIGRATIONS_EOF'
 -- 0013: force_join_channels
 CREATE TABLE IF NOT EXISTS "force_join_channels" (
   "id"           serial PRIMARY KEY,
@@ -347,7 +357,7 @@ setup_nginx() {
   # server_name: دامین یا wildcard
   SNAME=${SERVER_DOMAIN:-_}
 
-  cat > /etc/nginx/sites-available/admin-panel << EOF
+  cat > /etc/nginx/sites-available/admin-panel-demo << EOF
 server {
     listen $NGINX_PORT;
     server_name $SNAME;
@@ -386,7 +396,7 @@ server {
 }
 EOF
 
-  ln -sf /etc/nginx/sites-available/admin-panel /etc/nginx/sites-enabled/admin-panel
+  ln -sf /etc/nginx/sites-available/admin-panel-demo /etc/nginx/sites-enabled/admin-panel-demo
   rm -f /etc/nginx/sites-enabled/default 2>/dev/null
   nginx -t && systemctl reload nginx
   ok "Nginx configured. Panel is available on port $NGINX_PORT."
@@ -457,7 +467,7 @@ setup_ssl() {
     HTTPS_PORT=$NGINX_PORT
   fi
 
-  cat > /etc/nginx/sites-available/admin-panel << EOF
+  cat > /etc/nginx/sites-available/admin-panel-demo << EOF
 server {
     listen $HTTPS_PORT ssl;
     server_name $ssl_domain;
@@ -494,7 +504,7 @@ server {
 }
 EOF
 
-  ln -sf /etc/nginx/sites-available/admin-panel /etc/nginx/sites-enabled/admin-panel
+  ln -sf /etc/nginx/sites-available/admin-panel-demo /etc/nginx/sites-enabled/admin-panel-demo
   nginx -t && systemctl reload nginx
 
   # آپدیت .env
@@ -650,8 +660,8 @@ while true; do
       if [[ $confirm == "y" ]]; then
         pm2 delete "$PM2_API_NAME" 2>/dev/null
         rm -rf "$PROJECT_DIR"
-        rm -f /etc/nginx/sites-enabled/admin-panel
-        rm -f /etc/nginx/sites-available/admin-panel
+        rm -f /etc/nginx/sites-enabled/admin-panel-demo
+        rm -f /etc/nginx/sites-available/admin-panel-demo
         nginx -t && systemctl reload nginx
         ok "Removed."
       fi

@@ -161,7 +161,6 @@ export default function ChatDetailModal({ item, onClose }: Props) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* باکس پاسخ */}
         {!isClosed && (
           <div className="p-3 border-t border-white/10 flex gap-2 shrink-0">
             <textarea

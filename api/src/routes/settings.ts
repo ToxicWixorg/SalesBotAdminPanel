@@ -103,6 +103,37 @@ settingsRouter.post("/admins", async (c) => {
     severity: "warning",
   });
 
+  // Notify user via Telegram that they've been added as admin and ask to set a password
+  const botToken = process.env.BOT_TOKEN;
+  if (botToken) {
+    try {
+      const displayName =
+        body.displayName ?? user.username ?? String(body.userId);
+      const msg =
+        `🎉 <b>شما به عنوان ادمین ربات اضافه شدید!</b>\n\n` +
+        `👤 نام: <b>${displayName}</b>\n` +
+        `🔑 نقش: <b>${body.role}</b>\n\n` +
+        `برای دسترسی به پنل ادمین، لطفاً یک رمز عبور برای خود تعیین کنید.\n` +
+        `رمز عبور باید حداقل ۸ کاراکتر باشد.\n\n` +
+        `<i>همین الان رمز عبور خود را ارسال کنید:</i>`;
+
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: body.userId,
+          text: msg,
+          parse_mode: "HTML",
+        }),
+      });
+    } catch (err) {
+      console.error(
+        "[Settings/admins] Failed to notify new admin via Telegram:",
+        err,
+      );
+    }
+  }
+
   return c.json(newAdmin, 201);
 });
 

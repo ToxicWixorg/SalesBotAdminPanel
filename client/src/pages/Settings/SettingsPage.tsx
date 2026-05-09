@@ -148,6 +148,48 @@ const SEVERITY_BADGE: Record<string, string> = {
 const inputCls =
   "w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/50";
 
+const parseApiError = (error: unknown) => {
+  const fallback = {
+    errorMessage: "اجرای بکاپ ناموفق بود.",
+    details: null as string | null,
+  };
+
+  if (!error || typeof error !== "object") return fallback;
+
+  const maybeAxios = error as {
+    response?: { data?: unknown };
+    message?: string;
+  };
+
+  const payload = maybeAxios.response?.data;
+  if (payload && typeof payload === "object") {
+    const maybePayload = payload as {
+      error?: unknown;
+      message?: unknown;
+      details?: unknown;
+    };
+
+    const errorMessage =
+      (typeof maybePayload.error === "string" && maybePayload.error) ||
+      (typeof maybePayload.message === "string" && maybePayload.message) ||
+      fallback.errorMessage;
+
+    const details =
+      typeof maybePayload.details === "string" && maybePayload.details
+        ? maybePayload.details
+        : null;
+
+    return { errorMessage, details };
+  }
+
+  return {
+    errorMessage:
+      (typeof maybeAxios.message === "string" && maybeAxios.message) ||
+      fallback.errorMessage,
+    details: null,
+  };
+};
+
 // -- Add Admin Modal ---------------------------------------
 function AddAdminModal({
   onClose,
@@ -657,6 +699,10 @@ export default function SettingsPage() {
   const [backupConfig, setBackupConfig] = useState<BackupSettings | null>(null);
   const [savingBackupConfig, setSavingBackupConfig] = useState(false);
   const [runningBackup, setRunningBackup] = useState(false);
+  const [backupRunError, setBackupRunError] = useState<string | null>(null);
+  const [backupRunErrorDetails, setBackupRunErrorDetails] = useState<
+    string | null
+  >(null);
   const [botConfig, setBotConfig] = useState<BotSettings | null>(null);
   const [savingBotConfig, setSavingBotConfig] = useState(false);
   const queryClient = useQueryClient();
@@ -893,10 +939,16 @@ export default function SettingsPage() {
 
   const runBackup = async () => {
     setRunningBackup(true);
+    setBackupRunError(null);
+    setBackupRunErrorDetails(null);
     try {
       await api.post("/api/admin/settings/backup/run");
       queryClient.invalidateQueries({ queryKey: ["backup-config"] });
       setBackupConfig(null); // force re-sync on next data load
+    } catch (error) {
+      const parsed = parseApiError(error);
+      setBackupRunError(parsed.errorMessage);
+      setBackupRunErrorDetails(parsed.details);
     } finally {
       setRunningBackup(false);
     }
@@ -1834,20 +1886,33 @@ export default function SettingsPage() {
             )}
 
             {admin?.isSuperAdmin && (
-              <button
-                onClick={runBackup}
-                disabled={runningBackup}
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-              >
-                {runningBackup ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    {t("settings.backup.running")}
-                  </>
-                ) : (
-                  t("settings.backup.runNow")
+              <div className="space-y-3">
+                <button
+                  onClick={runBackup}
+                  disabled={runningBackup}
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                >
+                  {runningBackup ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                      {t("settings.backup.running")}
+                    </>
+                  ) : (
+                    t("settings.backup.runNow")
+                  )}
+                </button>
+
+                {backupRunError && (
+                  <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3">
+                    <p className="text-sm text-red-300">{backupRunError}</p>
+                    {backupRunErrorDetails && (
+                      <pre className="mt-2 text-xs text-red-200/80 whitespace-pre-wrap wrap-break-word leading-5" dir="ltr">
+                        {backupRunErrorDetails}
+                      </pre>
+                    )}
+                  </div>
                 )}
-              </button>
+              </div>
             )}
           </div>
         </div>

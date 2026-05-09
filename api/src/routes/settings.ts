@@ -711,12 +711,28 @@ settingsRouter.put("/backup/config", async (c) => {
       .returning();
   }
 
+  if (!settings) {
+    return c.json({ error: "Backup settings initialization failed" }, 500);
+  }
+
+  const normalizedChannelId =
+    telegramChannelId !== undefined
+      ? typeof telegramChannelId === "string"
+        ? telegramChannelId.trim() || null
+        : null
+      : settings.telegramChannelId;
+
+  const normalizedCronSchedule =
+    cronSchedule !== undefined
+      ? String(cronSchedule).trim() || settings.cronSchedule
+      : settings.cronSchedule;
+
   const [updated] = await db
     .update(backupSettingsTable)
     .set({
       isEnabled: isEnabled ?? settings.isEnabled,
-      telegramChannelId: telegramChannelId ?? settings.telegramChannelId,
-      cronSchedule: cronSchedule ?? settings.cronSchedule,
+      telegramChannelId: normalizedChannelId,
+      cronSchedule: normalizedCronSchedule,
       updatedAt: new Date(),
     })
     .where(eq(backupSettingsTable.id, 1))
@@ -748,14 +764,16 @@ settingsRouter.post("/backup/run", async (c) => {
       .returning();
   }
 
+  if (!settings) {
+    return c.json({ error: "Backup settings initialization failed" }, 500);
+  }
+
   if (!settings.telegramChannelId) {
     return c.json({ error: "Telegram channel ID is not configured" }, 400);
   }
 
-  const { exec } = await import("node:child_process");
-  const { promisify } = await import("node:util");
-  const execAsync = promisify(exec);
-  const { writeFile, unlink, stat } = await import("node:fs/promises");
+  const { spawn } = await import("node:child_process");
+  const { unlink, stat } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
 
@@ -764,12 +782,43 @@ settingsRouter.post("/backup/run", async (c) => {
     return c.json({ error: "DATABASE_URL not configured" }, 500);
   }
 
+  const pgDumpPath = process.env.PG_DUMP_PATH?.trim() || "pg_dump";
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const fileName = `backup-${timestamp}.sql`;
   const filePath = join(tmpdir(), fileName);
 
+  const runPgDump = (command: string, args: string[]) =>
+    new Promise<void>((resolve, reject) => {
+      const child = spawn(command, args, { stdio: ["ignore", "pipe", "pipe"] });
+
+      let stderr = "";
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      child.on("error", (error) => {
+        reject(error);
+      });
+
+      child.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+          return;
+        }
+        const details = stderr.trim();
+        reject(
+          new Error(
+            details.length > 0
+              ? `pg_dump failed: ${details}`
+              : `pg_dump exited with code ${code}`,
+          ),
+        );
+      });
+    });
+
   try {
-    await execAsync(`pg_dump "${databaseUrl}" -f "${filePath}"`);
+    await runPgDump(pgDumpPath, [databaseUrl, "-f", filePath]);
     const stats = await stat(filePath);
     const fileSize = stats.size;
 
@@ -842,6 +891,8 @@ settingsRouter.post("/backup/run", async (c) => {
       sentAt: new Date().toISOString(),
     });
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+
     try {
       await unlink(filePath);
     } catch {}
@@ -853,7 +904,19 @@ settingsRouter.post("/backup/run", async (c) => {
         updatedAt: new Date(),
       })
       .where(eq(backupSettingsTable.id, 1));
-    return c.json({ error: String(err) }, 500);
+
+    if (/ENOENT|not recognized|not found/i.test(errorMessage)) {
+      return c.json(
+        {
+          error:
+            "pg_dump not found. Install PostgreSQL client tools or set PG_DUMP_PATH in environment.",
+          details: errorMessage,
+        },
+        500,
+      );
+    }
+
+    return c.json({ error: errorMessage }, 500);
   }
 });
 

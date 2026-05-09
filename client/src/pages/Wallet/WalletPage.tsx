@@ -319,18 +319,6 @@ export default function WalletPage() {
                 >
                   {t("common.view", { defaultValue: "View receipt" })}
                 </button>
-                <button
-                  onClick={() => processTopup(item.topup.id, "approve")}
-                  className="px-4 py-2 rounded-lg bg-green-500/20 border border-green-400/30 text-green-200 text-sm hover:bg-green-500/30 transition-all"
-                >
-                  {t("common.confirm", { defaultValue: "Approve" })}
-                </button>
-                <button
-                  onClick={() => processTopup(item.topup.id, "reject")}
-                  className="px-4 py-2 rounded-lg bg-red-500/20 border border-red-400/30 text-red-200 text-sm hover:bg-red-500/30 transition-all"
-                >
-                  {t("common.cancel", { defaultValue: "Reject" })}
-                </button>
               </div>
             </div>
           ))}

@@ -34,7 +34,7 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
-            type="number"
+            type="text"
             placeholder={t("auth.telegramIdPlaceholder") || "Telegram ID"}
             value={telegramId}
             onChange={(e) => setTelegramId(e.target.value)}

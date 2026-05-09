@@ -68,7 +68,6 @@ const OrdersPage = () => {
         <h1 className="text-xl font-bold">{t("orders.title")}</h1>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setActiveTab("all")}

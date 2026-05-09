@@ -6,7 +6,7 @@ import { api } from "../../../lib/api";
 const DELIVERY_TYPES = [
   "automatic",
   "manual",
-  // "custom_schedule",
+  "custom_schedule",
   // "invite",
   // "code",
   // "family_join",

@@ -773,6 +773,7 @@ settingsRouter.post("/backup/run", async (c) => {
   }
 
   const { spawn } = await import("node:child_process");
+  const { createWriteStream } = await import("node:fs");
   const { unlink, stat } = await import("node:fs/promises");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");
@@ -783,6 +784,8 @@ settingsRouter.post("/backup/run", async (c) => {
   }
 
   const pgDumpPath = process.env.PG_DUMP_PATH?.trim() || "pg_dump";
+  const pgDumpDockerContainer =
+    process.env.PG_DUMP_DOCKER_CONTAINER?.trim() || "bot-postgres";
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const fileName = `backup-${timestamp}.sql`;
@@ -817,8 +820,113 @@ settingsRouter.post("/backup/run", async (c) => {
       });
     });
 
+  const runPgDumpViaDocker = (
+    containerName: string,
+    connection: {
+      username: string;
+      password: string;
+      database: string;
+      host: string;
+      port: string;
+    },
+    outputPath: string,
+  ) =>
+    new Promise<void>((resolve, reject) => {
+      const args = [
+        "exec",
+        ...(connection.password
+          ? ["-e", `PGPASSWORD=${connection.password}`]
+          : []),
+        containerName,
+        "pg_dump",
+        "-U",
+        connection.username,
+        "-d",
+        connection.database,
+        "-h",
+        connection.host,
+        "-p",
+        connection.port,
+      ];
+
+      const child = spawn("docker", args, {
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      const writeStream = createWriteStream(outputPath, { encoding: "utf8" });
+
+      let stderr = "";
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+
+      child.on("error", (error) => {
+        writeStream.destroy();
+        reject(error);
+      });
+
+      child.stdout.pipe(writeStream);
+
+      child.on("close", (code) => {
+        writeStream.end();
+
+        if (code === 0) {
+          resolve();
+          return;
+        }
+
+        const details = stderr.trim();
+        reject(
+          new Error(
+            details.length > 0
+              ? `docker pg_dump failed: ${details}`
+              : `docker pg_dump exited with code ${code}`,
+          ),
+        );
+      });
+    });
+
   try {
-    await runPgDump(pgDumpPath, [databaseUrl, "-f", filePath]);
+    try {
+      await runPgDump(pgDumpPath, [databaseUrl, "-f", filePath]);
+    } catch (pgErr) {
+      const pgErrorMessage =
+        pgErr instanceof Error ? pgErr.message : String(pgErr);
+      const pgDumpMissing = /ENOENT|not recognized|not found/i.test(
+        pgErrorMessage,
+      );
+
+      if (!pgDumpMissing || !pgDumpDockerContainer) {
+        throw pgErr;
+      }
+
+      let parsed: URL;
+      try {
+        parsed = new URL(databaseUrl);
+      } catch {
+        throw new Error(
+          "DATABASE_URL is invalid for docker fallback. Provide a valid Postgres URL.",
+        );
+      }
+
+      const connection = {
+        username: decodeURIComponent(parsed.username || "postgres"),
+        password: decodeURIComponent(parsed.password || ""),
+        database: parsed.pathname.replace(/^\//, "") || "postgres",
+        host: parsed.hostname || "localhost",
+        port: parsed.port || "5432",
+      };
+
+      try {
+        await runPgDumpViaDocker(pgDumpDockerContainer, connection, filePath);
+      } catch (dockerErr) {
+        const dockerErrorMessage =
+          dockerErr instanceof Error ? dockerErr.message : String(dockerErr);
+        throw new Error(
+          `pg_dump failed on host (${pgErrorMessage}). Docker fallback failed (${dockerErrorMessage}).`,
+        );
+      }
+    }
+
     const stats = await stat(filePath);
     const fileSize = stats.size;
 
@@ -909,7 +1017,7 @@ settingsRouter.post("/backup/run", async (c) => {
       return c.json(
         {
           error:
-            "pg_dump not found. Install PostgreSQL client tools or set PG_DUMP_PATH in environment.",
+            "pg_dump not found. Install PostgreSQL client tools, set PG_DUMP_PATH, or configure PG_DUMP_DOCKER_CONTAINER.",
           details: errorMessage,
         },
         500,

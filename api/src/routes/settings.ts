@@ -52,7 +52,6 @@ settingsRouter.get("/admins", async (c) => {
 settingsRouter.post("/admins", async (c) => {
   const currentAdmin = c.get("admin");
 
-  // فقط superAdmin می‌تواند ادمین جدید بسازد
   if (!currentAdmin.isSuperAdmin) {
     return c.json({ error: "Only super admin can create admins" }, 403);
   }
@@ -65,14 +64,12 @@ settingsRouter.post("/admins", async (c) => {
     permissions?: Record<string, boolean>;
   }>();
 
-  // بررسی وجود کاربر
   const user = await db.query.usersTable.findFirst({
     where: eq(usersTable.id, body.userId),
   });
   if (!user)
     return c.json({ error: "User not found with this Telegram ID" }, 404);
 
-  // بررسی تکراری نبودن
   const existing = await db.query.adminsTable.findFirst({
     where: eq(adminsTable.userId, body.userId),
   });
@@ -117,6 +114,7 @@ settingsRouter.post("/admins", async (c) => {
         `رمز عبور باید حداقل ۸ کاراکتر باشد.\n\n` +
         `<i>همین الان رمز عبور خود را ارسال کنید:</i>`;
 
+      const adminPanelUrl = process.env.ADMIN_PANEL_URL ?? "";
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,6 +122,20 @@ settingsRouter.post("/admins", async (c) => {
           chat_id: body.userId,
           text: msg,
           parse_mode: "HTML",
+          ...(adminPanelUrl
+            ? {
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      {
+                        text: "🖥 ورود به پنل ادمین",
+                        url: adminPanelUrl,
+                      },
+                    ],
+                  ],
+                },
+              }
+            : {}),
         }),
       });
     } catch (err) {

@@ -81,11 +81,17 @@ type PaymentSettings = {
   cardEnabled: boolean;
   zarinpalEnabled: boolean;
   zarinpalMerchantId: string | null;
+  zarinpalCallbackUrl: string | null;
   zarinpalSandbox: boolean;
   cryptoEnabled: boolean;
   cryptoAddress: string | null;
   cryptoNetwork: string;
   cryptoExchangeRate: number;
+  nowpaymentsEnabled?: boolean;
+  nowpaymentsApiKey?: string | null;
+  nowpaymentsIpnSecret?: string | null;
+  nowpaymentsIpnCallbackUrl?: string | null;
+  nowpaymentsPayCurrency?: string | null;
   updatedAt: string | null;
 };
 
@@ -847,7 +853,15 @@ export default function SettingsPage() {
   // sync remote config ? local form state (only on first load)
   useEffect(() => {
     if (paymentConfigData && !paymentConfig) {
-      setPaymentConfig(paymentConfigData);
+      setPaymentConfig({
+        ...paymentConfigData,
+        nowpaymentsEnabled:
+          paymentConfigData.nowpaymentsEnabled ??
+          paymentConfigData.cryptoEnabled,
+        nowpaymentsIpnCallbackUrl:
+          paymentConfigData.nowpaymentsIpnCallbackUrl ??
+          paymentConfigData.cryptoAddress,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentConfigData]);
@@ -962,11 +976,20 @@ export default function SettingsPage() {
         cardEnabled: paymentConfig.cardEnabled,
         zarinpalEnabled: paymentConfig.zarinpalEnabled,
         zarinpalMerchantId: paymentConfig.zarinpalMerchantId,
+        zarinpalCallbackUrl: paymentConfig.zarinpalCallbackUrl,
         zarinpalSandbox: paymentConfig.zarinpalSandbox,
-        cryptoEnabled: paymentConfig.cryptoEnabled,
-        cryptoAddress: paymentConfig.cryptoAddress,
+        cryptoEnabled: false,
+        cryptoAddress: null,
         cryptoNetwork: paymentConfig.cryptoNetwork,
         cryptoExchangeRate: paymentConfig.cryptoExchangeRate,
+        nowpaymentsEnabled:
+          paymentConfig.nowpaymentsEnabled ?? paymentConfig.cryptoEnabled,
+        nowpaymentsIpnCallbackUrl:
+          paymentConfig.nowpaymentsIpnCallbackUrl ?? null,
+        nowpaymentsApiKey: paymentConfig.nowpaymentsApiKey ?? null,
+        nowpaymentsIpnSecret: paymentConfig.nowpaymentsIpnSecret ?? null,
+        nowpaymentsPayCurrency:
+          paymentConfig.nowpaymentsPayCurrency?.trim() || undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["payment-config"] });
     } finally {
@@ -1606,6 +1629,25 @@ export default function SettingsPage() {
                       placeholder={t("settings.payment.merchantIdPlaceholder")}
                     />
                   </div>
+                  <div>
+                    <label className="text-xs text-white/50 mb-1 block">
+                      {t("settings.payment.callbackUrl")}
+                    </label>
+                    <input
+                      className={`${inputCls} font-mono`}
+                      value={paymentConfig?.zarinpalCallbackUrl ?? ""}
+                      onChange={(e) =>
+                        setPaymentConfig((c) =>
+                          c ? { ...c, zarinpalCallbackUrl: e.target.value } : c,
+                        )
+                      }
+                      placeholder={t("settings.payment.callbackUrlPlaceholder")}
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-white/30 mt-1" dir="ltr">
+                      {t("settings.payment.callbackUrlHint")}
+                    </p>
+                  </div>
                   <label className="flex items-center gap-2 cursor-pointer text-sm text-white/70">
                     <input
                       type="checkbox"
@@ -1636,10 +1678,16 @@ export default function SettingsPage() {
                   <label className="flex items-center gap-2 cursor-pointer text-sm text-white/70">
                     <input
                       type="checkbox"
-                      checked={paymentConfig?.cryptoEnabled ?? false}
+                      checked={paymentConfig?.nowpaymentsEnabled ?? false}
                       onChange={(e) =>
                         setPaymentConfig((c) =>
-                          c ? { ...c, cryptoEnabled: e.target.checked } : c,
+                          c
+                            ? {
+                                ...c,
+                                nowpaymentsEnabled: e.target.checked,
+                                cryptoEnabled: false,
+                              }
+                            : c,
                         )
                       }
                       className="w-4 h-4 accent-blue-500"
@@ -1654,10 +1702,15 @@ export default function SettingsPage() {
                     </label>
                     <input
                       className={`${inputCls} font-mono`}
-                      value={paymentConfig?.cryptoAddress ?? ""}
+                      value={paymentConfig?.nowpaymentsIpnCallbackUrl ?? ""}
                       onChange={(e) =>
                         setPaymentConfig((c) =>
-                          c ? { ...c, cryptoAddress: e.target.value } : c,
+                          c
+                            ? {
+                                ...c,
+                                nowpaymentsIpnCallbackUrl: e.target.value,
+                              }
+                            : c,
                         )
                       }
                       placeholder={t(
@@ -1906,7 +1959,10 @@ export default function SettingsPage() {
                   <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3">
                     <p className="text-sm text-red-300">{backupRunError}</p>
                     {backupRunErrorDetails && (
-                      <pre className="mt-2 text-xs text-red-200/80 whitespace-pre-wrap wrap-break-word leading-5" dir="ltr">
+                      <pre
+                        className="mt-2 text-xs text-red-200/80 whitespace-pre-wrap wrap-break-word leading-5"
+                        dir="ltr"
+                      >
                         {backupRunErrorDetails}
                       </pre>
                     )}

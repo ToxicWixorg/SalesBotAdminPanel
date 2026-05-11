@@ -130,6 +130,12 @@ const ru: Translations = {
       requiresOtp: "Требуется OTP",
       requiresLogin: "Требуется живой вход",
       requiresRegion: "Требуется регион",
+      regions: "regions",
+      addRegion: "add region",
+      placeholder: {
+        regionName: "Region like(Egypt)",
+        price: "price",
+      },
     },
     configModal: {
       title: "Конфиги",
@@ -650,6 +656,11 @@ const ru: Translations = {
       zarinpalEnabled: "Включить Zarinpal",
       merchantId: "Merchant ID",
       merchantIdPlaceholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      callbackUrl: "Публичный Callback URL",
+      callbackUrlPlaceholder:
+        "https://example.com/api/public/payments/zarinpal/wallet/callback",
+      callbackUrlHint:
+        "Укажи этот URL в ZarinPal, чтобы система могла автоматически проверить и завершить пополнение кошелька",
       sandboxMode: "Режим песочницы (Sandbox)",
       cryptoTitle: "Крипто-оплата (USDT)",
       cryptoDesc: "Настройки оплаты через крипто-кошелёк",

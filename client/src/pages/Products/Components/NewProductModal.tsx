@@ -85,7 +85,6 @@ export default function NewProductModal({ onClose }: Props) {
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-
   const isValid =
     form.name.trim() !== "" &&
     form.slug.trim() !== "" &&
@@ -240,7 +239,6 @@ export default function NewProductModal({ onClose }: Props) {
                 </label>
               ))}
             </div>
-            {/* فقط برای invite — ایمیل لازمه */}
             {INVITE_DELIVERY_TYPES.includes(
               form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
             ) && (
@@ -256,7 +254,6 @@ export default function NewProductModal({ onClose }: Props) {
                 </span>
               </label>
             )}
-            {/* نوع‌های custom_schedule/manual: نیازمندی‌ها در پلن تنظیم میشن */}
             {!CONFIG_DELIVERY_TYPES.includes(
               form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
             ) &&

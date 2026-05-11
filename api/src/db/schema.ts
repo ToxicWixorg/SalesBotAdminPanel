@@ -815,16 +815,96 @@ export const paymentSettingsTable = pgTable("payment_settings", {
   cardEnabled: boolean("card_enabled").default(true),
   zarinpalEnabled: boolean("zarinpal_enabled").default(false),
   zarinpalMerchantId: text("zarinpal_merchant_id"),
+  zarinpalCallbackUrl: text("zarinpal_callback_url"),
   zarinpalSandbox: boolean("zarinpal_sandbox").default(true),
   cryptoEnabled: boolean("crypto_enabled").default(false),
   cryptoAddress: text("crypto_address"),
   cryptoNetwork: text("crypto_network").default("TRC20"),
   cryptoExchangeRate: integer("crypto_exchange_rate").default(0),
+  nowpaymentsEnabled: boolean("nowpayments_enabled").default(false),
+  nowpaymentsApiKey: text("nowpayments_api_key"),
+  nowpaymentsIpnSecret: text("nowpayments_ipn_secret"),
+  nowpaymentsIpnCallbackUrl: text("nowpayments_ipn_callback_url"),
+  nowpaymentsPayCurrency: text("nowpayments_pay_currency").default("usdttrc20"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type PaymentSettings = typeof paymentSettingsTable.$inferSelect;
 export type InsertPaymentSettings = typeof paymentSettingsTable.$inferInsert;
+
+export const nowpaymentsWalletPaymentsTable = pgTable(
+  "nowpayments_wallet_payments",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+    orderId: text("order_id").notNull().unique(),
+    payCurrency: text("pay_currency"),
+    payAddress: text("pay_address"),
+    payAmount: decimal("pay_amount", { precision: 24, scale: 12 }),
+    nowpaymentsPaymentId: text("nowpayments_payment_id"),
+    paymentUrl: text("payment_url"),
+    paymentStatus: text("payment_status").notNull().default("waiting"),
+    callbackPayload: jsonb("callback_payload"),
+    creditedAt: timestamp("credited_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => ({
+    userIdIdx: index("nowpayments_wallet_payments_user_id_idx").on(
+      table.userId,
+    ),
+    orderIdIdx: uniqueIndex("nowpayments_wallet_payments_order_id_idx").on(
+      table.orderId,
+    ),
+    paymentIdIdx: uniqueIndex("nowpayments_wallet_payments_payment_id_idx").on(
+      table.nowpaymentsPaymentId,
+    ),
+    statusIdx: index("nowpayments_wallet_payments_status_idx").on(
+      table.paymentStatus,
+    ),
+  }),
+);
+
+export type NowpaymentsWalletPayment =
+  typeof nowpaymentsWalletPaymentsTable.$inferSelect;
+export type InsertNowpaymentsWalletPayment =
+  typeof nowpaymentsWalletPaymentsTable.$inferInsert;
+
+export const zarinpalWalletPaymentsTable = pgTable(
+  "zarinpal_wallet_payments",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("user_id", { mode: "number" })
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+    authority: text("authority"),
+    paymentUrl: text("payment_url"),
+    callbackUrl: text("callback_url"),
+    callbackStatus: text("callback_status"),
+    status: text("status").notNull().default("pending"),
+    refId: text("ref_id"),
+    verifiedAt: timestamp("verified_at"),
+    creditedAt: timestamp("credited_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => ({
+    authorityIdx: uniqueIndex("zarinpal_wallet_payments_authority_idx").on(
+      table.authority,
+    ),
+    userIdIdx: index("zarinpal_wallet_payments_user_id_idx").on(table.userId),
+    statusIdx: index("zarinpal_wallet_payments_status_idx").on(table.status),
+  }),
+);
+
+export type ZarinpalWalletPayment =
+  typeof zarinpalWalletPaymentsTable.$inferSelect;
+export type InsertZarinpalWalletPayment =
+  typeof zarinpalWalletPaymentsTable.$inferInsert;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 💾 BACKUP SETTINGS ━━━━━━━━━━━━━━━━━━━

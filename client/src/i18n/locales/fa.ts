@@ -144,6 +144,12 @@ const fa = {
       requiresOtp: "نیاز به OTP",
       requiresLogin: "نیاز به لاگین زنده",
       requiresRegion: "نیاز به منطقه",
+      regions: "مناطق",
+      addRegion: "افزودن منطقه +",
+      placeholder: {
+        regionName: "منتطقه مثل(Egypt)",
+        price: "قیمت",
+      },
     },
     configModal: {
       title: "کانفیگ‌ها",
@@ -664,6 +670,11 @@ const fa = {
       zarinpalEnabled: "فعال‌سازی زرین‌پال",
       merchantId: "Merchant ID",
       merchantIdPlaceholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      callbackUrl: "آدرس Callback عمومی",
+      callbackUrlPlaceholder:
+        "https://example.com/api/public/payments/zarinpal/wallet/callback",
+      callbackUrlHint:
+        "همین آدرس را در زرین‌پال ثبت کن تا برگشت پرداخت و بررسی خودکار انجام شود",
       sandboxMode: "حالت آزمایشی (Sandbox)",
       cryptoTitle: "پرداخت کریپتو (USDT)",
       cryptoDesc: "تنظیمات پرداخت با کیف پول کریپتو",

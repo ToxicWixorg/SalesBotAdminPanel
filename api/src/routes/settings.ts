@@ -624,11 +624,17 @@ settingsRouter.put("/payment/config", async (c) => {
     cardEnabled,
     zarinpalEnabled,
     zarinpalMerchantId,
+    zarinpalCallbackUrl,
     zarinpalSandbox,
     cryptoEnabled,
     cryptoAddress,
     cryptoNetwork,
     cryptoExchangeRate,
+    nowpaymentsEnabled,
+    nowpaymentsApiKey,
+    nowpaymentsIpnSecret,
+    nowpaymentsIpnCallbackUrl,
+    nowpaymentsPayCurrency,
   } = body;
 
   let [settings] = await db
@@ -642,17 +648,42 @@ settingsRouter.put("/payment/config", async (c) => {
       .returning();
   }
 
+  if (!settings) {
+    return c.json({ error: "Payment settings initialization failed" }, 500);
+  }
+
   const [updated] = await db
     .update(paymentSettingsTable)
     .set({
       cardEnabled: cardEnabled ?? settings.cardEnabled,
       zarinpalEnabled: zarinpalEnabled ?? settings.zarinpalEnabled,
       zarinpalMerchantId: zarinpalMerchantId ?? settings.zarinpalMerchantId,
+      zarinpalCallbackUrl:
+        zarinpalCallbackUrl !== undefined
+          ? zarinpalCallbackUrl?.trim() || null
+          : settings.zarinpalCallbackUrl,
       zarinpalSandbox: zarinpalSandbox ?? settings.zarinpalSandbox,
       cryptoEnabled: cryptoEnabled ?? settings.cryptoEnabled,
       cryptoAddress: cryptoAddress ?? settings.cryptoAddress,
       cryptoNetwork: cryptoNetwork ?? settings.cryptoNetwork,
       cryptoExchangeRate: cryptoExchangeRate ?? settings.cryptoExchangeRate,
+      nowpaymentsEnabled: nowpaymentsEnabled ?? settings.nowpaymentsEnabled,
+      nowpaymentsApiKey:
+        nowpaymentsApiKey !== undefined
+          ? nowpaymentsApiKey?.trim() || null
+          : settings.nowpaymentsApiKey,
+      nowpaymentsIpnSecret:
+        nowpaymentsIpnSecret !== undefined
+          ? nowpaymentsIpnSecret?.trim() || null
+          : settings.nowpaymentsIpnSecret,
+      nowpaymentsIpnCallbackUrl:
+        nowpaymentsIpnCallbackUrl !== undefined
+          ? nowpaymentsIpnCallbackUrl?.trim() || null
+          : settings.nowpaymentsIpnCallbackUrl,
+      nowpaymentsPayCurrency:
+        nowpaymentsPayCurrency !== undefined
+          ? nowpaymentsPayCurrency?.trim() || null
+          : settings.nowpaymentsPayCurrency,
       updatedAt: new Date(),
     })
     .where(eq(paymentSettingsTable.id, 1))
@@ -1041,11 +1072,17 @@ settingsRouter.get("/payment/config", async (c) => {
       cardEnabled: true,
       zarinpalEnabled: false,
       zarinpalMerchantId: null,
+      zarinpalCallbackUrl: null,
       zarinpalSandbox: true,
       cryptoEnabled: false,
       cryptoAddress: null,
       cryptoNetwork: "TRC20",
       cryptoExchangeRate: 0,
+      nowpaymentsEnabled: false,
+      nowpaymentsApiKey: null,
+      nowpaymentsIpnSecret: null,
+      nowpaymentsIpnCallbackUrl: null,
+      nowpaymentsPayCurrency: "usdttrc20",
       updatedAt: null,
     });
   }
@@ -1063,11 +1100,17 @@ settingsRouter.put("/payment/config", async (c) => {
     cardEnabled,
     zarinpalEnabled,
     zarinpalMerchantId,
+    zarinpalCallbackUrl,
     zarinpalSandbox,
     cryptoEnabled,
     cryptoAddress,
     cryptoNetwork,
     cryptoExchangeRate,
+    nowpaymentsEnabled,
+    nowpaymentsApiKey,
+    nowpaymentsIpnSecret,
+    nowpaymentsIpnCallbackUrl,
+    nowpaymentsPayCurrency,
   } = body;
 
   // upsert با id=1
@@ -1085,6 +1128,10 @@ settingsRouter.put("/payment/config", async (c) => {
         zarinpalEnabled: zarinpalEnabled ?? existing.zarinpalEnabled,
         zarinpalMerchantId:
           zarinpalMerchantId?.trim() || existing.zarinpalMerchantId,
+        zarinpalCallbackUrl:
+          zarinpalCallbackUrl !== undefined
+            ? zarinpalCallbackUrl?.trim() || null
+            : existing.zarinpalCallbackUrl,
         zarinpalSandbox: zarinpalSandbox ?? existing.zarinpalSandbox,
         cryptoEnabled: cryptoEnabled ?? existing.cryptoEnabled,
         cryptoAddress: cryptoAddress?.trim() || existing.cryptoAddress,
@@ -1093,6 +1140,23 @@ settingsRouter.put("/payment/config", async (c) => {
           cryptoExchangeRate !== undefined
             ? parseInt(cryptoExchangeRate)
             : existing.cryptoExchangeRate,
+        nowpaymentsEnabled: nowpaymentsEnabled ?? existing.nowpaymentsEnabled,
+        nowpaymentsApiKey:
+          nowpaymentsApiKey !== undefined
+            ? nowpaymentsApiKey?.trim() || null
+            : existing.nowpaymentsApiKey,
+        nowpaymentsIpnSecret:
+          nowpaymentsIpnSecret !== undefined
+            ? nowpaymentsIpnSecret?.trim() || null
+            : existing.nowpaymentsIpnSecret,
+        nowpaymentsIpnCallbackUrl:
+          nowpaymentsIpnCallbackUrl !== undefined
+            ? nowpaymentsIpnCallbackUrl?.trim() || null
+            : existing.nowpaymentsIpnCallbackUrl,
+        nowpaymentsPayCurrency:
+          nowpaymentsPayCurrency !== undefined
+            ? nowpaymentsPayCurrency?.trim() || null
+            : existing.nowpaymentsPayCurrency,
         updatedAt: new Date(),
       })
       .where(eq(paymentSettingsTable.id, 1))
@@ -1105,11 +1169,17 @@ settingsRouter.put("/payment/config", async (c) => {
         cardEnabled: cardEnabled ?? true,
         zarinpalEnabled: zarinpalEnabled ?? false,
         zarinpalMerchantId: zarinpalMerchantId?.trim() || null,
+        zarinpalCallbackUrl: zarinpalCallbackUrl?.trim() || null,
         zarinpalSandbox: zarinpalSandbox ?? true,
         cryptoEnabled: cryptoEnabled ?? false,
         cryptoAddress: cryptoAddress?.trim() || null,
         cryptoNetwork: cryptoNetwork?.trim() || "TRC20",
         cryptoExchangeRate: parseInt(cryptoExchangeRate) || 0,
+        nowpaymentsEnabled: nowpaymentsEnabled ?? false,
+        nowpaymentsApiKey: nowpaymentsApiKey?.trim() || null,
+        nowpaymentsIpnSecret: nowpaymentsIpnSecret?.trim() || null,
+        nowpaymentsIpnCallbackUrl: nowpaymentsIpnCallbackUrl?.trim() || null,
+        nowpaymentsPayCurrency: nowpaymentsPayCurrency?.trim() || "usdttrc20",
       })
       .returning();
   }

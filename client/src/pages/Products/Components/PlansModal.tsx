@@ -365,7 +365,6 @@ export default function PlansModal({
                     </span>
                   </label>
                 </div>
-                {/* ── Requirements ── */}
                 {(SCHEDULE_TYPES.includes(deliveryType) ||
                   deliveryType === "invite") &&
                   (() => {
@@ -419,13 +418,11 @@ export default function PlansModal({
                       </div>
                     );
                   })()}
-
-                {/* ── Region list editor (shown when requiresRegion is checked) ── */}
                 {form.requiresRegion && (
                   <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-white/50 font-medium uppercase tracking-wide">
-                        ریجن‌ها
+                      <span className="text-sm text-white/50 font-medium uppercase tracking-wide">
+                        {t("products.planModal.regions")}
                       </span>
                       <button
                         type="button"
@@ -437,18 +434,18 @@ export default function PlansModal({
                         }
                         className="text-xs bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded px-2 py-0.5 transition-all"
                       >
-                        + افزودن ریجن
+                        {t("products.planModal.addRegion")}
                       </button>
                     </div>
                     {form.regions.length === 0 && (
                       <p className="text-xs text-white/30 text-center py-1">
-                        هیچ ریجنی تعریف نشده — قیمت پلن برای همه یکسان خواهد بود
+                        {t("products.planModal.noRegion")}
                       </p>
                     )}
                     {form.regions.map((region, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input
-                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-12 text-center text-base"
+                          className="text-sm w-8 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 text-center"
                           placeholder="🏳"
                           value={region.flag}
                           onChange={(e) => {
@@ -461,8 +458,10 @@ export default function PlansModal({
                           }}
                         />
                         <input
-                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1"
-                          placeholder="نام ریجن (مثلاً Egypt)"
+                          className="text-sm w-full min-w-1/3 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1"
+                          placeholder={t(
+                            "products.planModal.placeholder.regionName",
+                          )}
                           value={region.name}
                           onChange={(e) => {
                             const updated = [...form.regions];
@@ -475,8 +474,10 @@ export default function PlansModal({
                         />
                         <input
                           type="number"
-                          className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-28"
-                          placeholder="قیمت (تومان)"
+                          className="text-sm w-full min-w-1/3 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40"
+                          placeholder={t(
+                            "products.planModal.placeholder.price",
+                          )}
                           value={region.price}
                           onChange={(e) => {
                             const updated = [...form.regions];
@@ -495,7 +496,7 @@ export default function PlansModal({
                               form.regions.filter((_, i) => i !== idx),
                             );
                           }}
-                          className="text-red-400 hover:text-red-300 text-xs px-1"
+                          className="text-red-400 hover:text-red-300 text-sm px-1"
                         >
                           ✕
                         </button>
@@ -522,7 +523,7 @@ export default function PlansModal({
                     placeholder="5373141891321699086"
                   />
                   <span className="text-xs text-white/30">
-                    آیدی Custom Emoji دکمه تلگرام
+                    id for premium emoji
                   </span>
                 </label>
                 <div className="flex gap-2 justify-end">

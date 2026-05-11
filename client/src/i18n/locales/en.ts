@@ -141,6 +141,12 @@ const en: Translations = {
       requiresOtp: "Requires OTP",
       requiresLogin: "Requires Live Login",
       requiresRegion: "Requires Region",
+      regions: "regions",
+      addRegion: "add region",
+      placeholder: {
+        regionName: "Region like(Egypt)",
+        price: "price",
+      },
     },
     configModal: {
       title: "Configs",
@@ -650,6 +656,11 @@ const en: Translations = {
       zarinpalEnabled: "Enable Zarinpal",
       merchantId: "Merchant ID",
       merchantIdPlaceholder: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      callbackUrl: "Public Callback URL",
+      callbackUrlPlaceholder:
+        "https://example.com/api/public/payments/zarinpal/wallet/callback",
+      callbackUrlHint:
+        "Register this URL in ZarinPal so the bot can auto-check and finalize wallet payments",
       sandboxMode: "Sandbox Mode",
       cryptoTitle: "Crypto Payment (USDT)",
       cryptoDesc: "Settings for crypto wallet payment",

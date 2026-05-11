@@ -156,7 +156,7 @@ function getDevMockData(url: string): unknown {
         id: 1,
         name: "Netflix Premium 1 ماهه",
         categoryName: "استریمینگ",
-        deliveryType: "invite",
+        deliveryType: "custom_schedule",
         stock: 15,
         isActive: true,
         price: "320000",
@@ -1216,6 +1216,8 @@ function getDevMockData(url: string): unknown {
       cardEnabled: true,
       zarinpalEnabled: false,
       zarinpalMerchantId: null,
+      zarinpalCallbackUrl:
+        "https://example.com/api/public/payments/zarinpal/wallet/callback",
       zarinpalSandbox: true,
       cryptoEnabled: false,
       cryptoAddress: null,

@@ -25,6 +25,7 @@ import { settingsRouter } from "./src/routes/settings.ts";
 import { accountRouter } from "./src/routes/account.ts";
 import { inventoryRouter } from "./src/routes/inventory.ts";
 import { sessionChatsRouter } from "./src/routes/session-chats.ts";
+import { publicPaymentsRouter } from "./src/routes/public-payments.ts";
 
 const app = new Hono();
 
@@ -59,6 +60,7 @@ app.get("/health", (c) =>
 // ─── Routes ───────────────────────────────────────────────────────────────────
 // Auth (بدون middleware)
 app.route("/api/auth", authRouter);
+app.route("/api/public/payments", publicPaymentsRouter);
 
 // Admin routes (همه با requireAuth محافظت شده‌اند)
 app.route("/api/admin/dashboard", dashboardRouter);

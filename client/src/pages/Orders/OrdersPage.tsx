@@ -168,8 +168,6 @@ const OrdersPage = () => {
                           ))}
                         </select>
                       </div>
-
-                      {/* Row 2: price + method + date + refund */}
                       <div className="flex items-center justify-between gap-4 flex-wrap text-xs text-white/60">
                         <div className="flex items-center gap-4 flex-wrap">
                           <span>

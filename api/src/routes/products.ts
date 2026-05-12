@@ -35,6 +35,55 @@ import { logAdminAction } from "../helpers/logger.ts";
 export const productsRouter = new Hono();
 productsRouter.use("*", requireAuth, requireSection("products"));
 
+type RequiredInput = {
+  key: string;
+  label: string;
+  inputType?: "text" | "email" | "password" | "number" | "url";
+  required?: boolean;
+  sensitive?: boolean;
+  placeholder?: string;
+};
+
+function normalizeRequiredInputs(value: unknown): RequiredInput[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item): RequiredInput | null => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+
+      const key = String(row.key ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+      const label = String(row.label ?? "").trim();
+
+      if (!key || !label) return null;
+
+      const inputTypeRaw = String(row.inputType ?? "text")
+        .trim()
+        .toLowerCase();
+      const inputType = ["text", "email", "password", "number", "url"].includes(
+        inputTypeRaw,
+      )
+        ? (inputTypeRaw as RequiredInput["inputType"])
+        : "text";
+
+      return {
+        key,
+        label,
+        inputType,
+        required: row.required === undefined ? true : Boolean(row.required),
+        sensitive: Boolean(row.sensitive),
+        placeholder:
+          row.placeholder === undefined
+            ? undefined
+            : String(row.placeholder ?? "").trim(),
+      };
+    })
+    .filter((x): x is RequiredInput => Boolean(x));
+}
+
 // ── GET /api/admin/products ───────────────────────────────────────────────────
 productsRouter.get("/", async (c) => {
   const {
@@ -210,6 +259,8 @@ productsRouter.post("/:id/plans", async (c) => {
     return c.json({ error: "deliveryType is required" }, 400);
   }
 
+  body.requiredInputs = normalizeRequiredInputs(body.requiredInputs);
+
   const [plan] = await db
     .insert(productPlansTable)
     .values({ ...body, productId })
@@ -235,6 +286,10 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
   // Validation: deliveryType \u0628\u0627\u06cc\u062f \u0645\u0634\u062e\u0635 \u0628\u0627\u0634\u062f (\u0627\u06af\u0631 ارسال شد)
   if (body.deliveryType === undefined) {
     body.deliveryType = "automatic"; // Default value
+  }
+
+  if (body.requiredInputs !== undefined) {
+    body.requiredInputs = normalizeRequiredInputs(body.requiredInputs);
   }
 
   const [updated] = await db

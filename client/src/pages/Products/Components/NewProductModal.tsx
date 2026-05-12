@@ -183,10 +183,10 @@ export default function NewProductModal({ onClose }: Props) {
           <div className="flex flex-col gap-2 pt-1">
             <div className="grid grid-cols-2 gap-2">
               {(
-                [
-                  ["isRenewable", t("products.isRenewable")],
-                  ["isActive", t("products.active")],
-                ] as [keyof typeof form, string][]
+                [["isActive", t("products.active")]] as [
+                  keyof typeof form,
+                  string,
+                ][]
               ).map(([key, label]) => (
                 <label
                   key={key}
@@ -202,17 +202,6 @@ export default function NewProductModal({ onClose }: Props) {
                 </label>
               ))}
             </div>
-            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-              <input
-                type="checkbox"
-                className="w-4 h-4 accent-blue-400"
-                checked={form.requiresEmail}
-                onChange={(e) => set("requiresEmail", e.target.checked)}
-              />
-              <span className="text-white/70">
-                {t("products.requiresEmail")}
-              </span>
-            </label>
           </div>
         </div>
 

@@ -18,6 +18,77 @@ import { requireAuth, requireSection } from "../middleware/auth.ts";
 export const walletRouter = new Hono();
 walletRouter.use("*", requireAuth, requireSection("wallet"));
 
+type SupportedLanguage = "fa" | "en" | "ru";
+type TopupNotifyType = "approved" | "rejected";
+
+function normalizeLanguage(languageCode?: string | null): SupportedLanguage {
+  if (languageCode === "en" || languageCode === "ru") return languageCode;
+  return "fa";
+}
+
+function formatToman(amount: number, language: SupportedLanguage): string {
+  const locale =
+    language === "fa" ? "fa-IR" : language === "ru" ? "ru-RU" : "en-US";
+  return amount.toLocaleString(locale);
+}
+
+function buildTopupNotificationMessage(params: {
+  type: TopupNotifyType;
+  languageCode?: string | null;
+  amount?: number;
+  newBalance?: number;
+}): string {
+  const language = normalizeLanguage(params.languageCode);
+
+  if (params.type === "approved") {
+    const amount = params.amount ?? 0;
+    const newBalance = params.newBalance ?? 0;
+    const amountText = formatToman(amount, language);
+    const balanceText = formatToman(newBalance, language);
+
+    if (language === "en") {
+      return (
+        `✅ <b>Your card-to-card top-up has been approved</b>\n\n` +
+        `💰 Amount: <b>${amountText}</b> Toman\n` +
+        `💳 New balance: <b>${balanceText}</b> Toman`
+      );
+    }
+
+    if (language === "ru") {
+      return (
+        `✅ <b>Ваше пополнение с карты на карту подтверждено</b>\n\n` +
+        `💰 Сумма: <b>${amountText}</b> томан\n` +
+        `💳 Новый баланс: <b>${balanceText}</b> томан`
+      );
+    }
+
+    return (
+      `✅ <b>شارژ کارت به کارت شما تایید شد</b>\n\n` +
+      `💰 مبلغ: <b>${amountText}</b> تومان\n` +
+      `💳 موجودی جدید: <b>${balanceText}</b> تومان`
+    );
+  }
+
+  if (language === "en") {
+    return (
+      `❌ <b>Your card-to-card top-up was rejected</b>\n\n` +
+      `Please review your receipt and submit it again if needed.`
+    );
+  }
+
+  if (language === "ru") {
+    return (
+      `❌ <b>Ваше пополнение с карты на карту отклонено</b>\n\n` +
+      `Пожалуйста, проверьте чек и при необходимости отправьте его повторно.`
+    );
+  }
+
+  return (
+    `❌ <b>شارژ کارت به کارت شما رد شد</b>\n\n` +
+    `لطفاً در صورت نیاز رسید را بررسی و دوباره ارسال کنید.`
+  );
+}
+
 function parseTopupReceiptPath(receiptPath: string) {
   if (receiptPath.startsWith("telegram-file-id:")) {
     return {
@@ -251,9 +322,12 @@ walletRouter.post("/topups/:id/approve", async (c) => {
 
   await sendTelegramMessage(
     user.id,
-    `✅ <b>شارژ کارت به کارت شما تایید شد</b>\n\n` +
-      `💰 مبلغ: <b>${amount.toLocaleString("fa-IR")}</b> تومان\n` +
-      `💳 موجودی جدید: <b>${newBalance.toLocaleString("fa-IR")}</b> تومان`,
+    buildTopupNotificationMessage({
+      type: "approved",
+      languageCode: user.languageCode,
+      amount,
+      newBalance,
+    }),
   ).catch((err) =>
     console.error("[wallet/topups] failed to notify approved user:", err),
   );
@@ -286,9 +360,20 @@ walletRouter.post("/topups/:id/reject", async (c) => {
     })
     .where(eq(walletTopupsTable.id, id));
 
+  const user = await db.query.usersTable.findFirst({
+    where: eq(usersTable.id, topup.userId),
+    columns: {
+      id: true,
+      languageCode: true,
+    },
+  });
+
   await sendTelegramMessage(
     topup.userId,
-    `❌ <b>شارژ کارت به کارت شما رد شد</b>\n\nلطفاً در صورت نیاز رسید را بررسی و دوباره ارسال کنید.`,
+    buildTopupNotificationMessage({
+      type: "rejected",
+      languageCode: user?.languageCode,
+    }),
   ).catch((err) =>
     console.error("[wallet/topups] failed to notify rejected user:", err),
   );

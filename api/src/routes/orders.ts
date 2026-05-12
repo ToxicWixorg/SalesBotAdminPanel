@@ -32,6 +32,112 @@ import { logAdminAction } from "../helpers/logger.ts";
 export const ordersRouter = new Hono();
 ordersRouter.use("*", requireAuth, requireSection("orders"));
 
+type SupportedLanguage = "fa" | "en" | "ru";
+type NotifiableOrderStatus = "in_progress" | "completed" | "cancelled";
+
+const ORDER_STATUS_MESSAGES: Record<
+  SupportedLanguage,
+  Record<
+    NotifiableOrderStatus,
+    {
+      title: string;
+      description: (productName: string, orderId: number) => string;
+    }
+  >
+> = {
+  fa: {
+    in_progress: {
+      title: "🔄 <b>سفارش شما در حال انجام است</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nتیم ما پردازش سفارش شما را شروع کرده است.`,
+    },
+    completed: {
+      title: "✅ <b>سفارش شما تکمیل شد</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش شما با موفقیت تکمیل شد. برای مشاهده جزئیات، بخش سفارشات من را بررسی کنید.`,
+    },
+    cancelled: {
+      title: "❌ <b>سفارش شما لغو شد</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nاگر این تغییر غیرمنتظره بوده، با پشتیبانی تماس بگیرید.`,
+    },
+  },
+  en: {
+    in_progress: {
+      title: "🔄 <b>Your order is now in progress</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nOur team has started processing your order.`,
+    },
+    completed: {
+      title: "✅ <b>Your order has been completed</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order was completed successfully. Check My Orders for the details.`,
+    },
+    cancelled: {
+      title: "❌ <b>Your order has been cancelled</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nIf this change was unexpected, please contact support.`,
+    },
+  },
+  ru: {
+    in_progress: {
+      title: "🔄 <b>Ваш заказ теперь в обработке</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nНаша команда начала обработку вашего заказа.`,
+    },
+    completed: {
+      title: "✅ <b>Ваш заказ завершён</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ успешно завершён. Подробности доступны в разделе «Мои заказы».`,
+    },
+    cancelled: {
+      title: "❌ <b>Ваш заказ отменён</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nЕсли это произошло неожиданно, пожалуйста, свяжитесь с поддержкой.`,
+    },
+  },
+};
+
+function normalizeLanguage(languageCode?: string | null): SupportedLanguage {
+  if (languageCode === "fa" || languageCode === "ru") return languageCode;
+  return "en";
+}
+
+function isNotifiableOrderStatus(
+  status: string,
+): status is NotifiableOrderStatus {
+  return ["in_progress", "completed", "cancelled"].includes(status);
+}
+
+async function notifyUserAboutOrderStatusChange(params: {
+  chatId: number;
+  languageCode?: string | null;
+  productName?: string | null;
+  orderId: number;
+  status: NotifiableOrderStatus;
+}): Promise<void> {
+  const botToken = process.env.BOT_TOKEN;
+  if (!botToken) return;
+
+  const language = normalizeLanguage(params.languageCode);
+  const productName = params.productName?.trim() || "—";
+  const message = ORDER_STATUS_MESSAGES[language][params.status];
+
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: params.chatId,
+        text: `${message.title}\n\n${message.description(productName, params.orderId)}`,
+        parse_mode: "HTML",
+      }),
+    });
+  } catch (error) {
+    console.error("[orders] failed to notify user about status change:", error);
+  }
+}
+
 // ── GET /api/admin/orders ─────────────────────────────────────────────────────
 ordersRouter.get("/", async (c) => {
   const {
@@ -68,7 +174,7 @@ ordersRouter.get("/", async (c) => {
       product: {
         id: productsTable.id,
         name: productsTable.name,
-        deliveryType: productsTable.deliveryType,
+        deliveryType: productPlansTable.deliveryType,
       },
       plan: {
         id: productPlansTable.id,
@@ -100,12 +206,13 @@ ordersRouter.get("/pending-admin", async (c) => {
       product: {
         id: productsTable.id,
         name: productsTable.name,
-        deliveryType: productsTable.deliveryType,
+        deliveryType: productPlansTable.deliveryType,
       },
     })
     .from(ordersTable)
     .leftJoin(usersTable, eq(ordersTable.userId, usersTable.id))
     .leftJoin(productsTable, eq(ordersTable.productId, productsTable.id))
+    .leftJoin(productPlansTable, eq(ordersTable.planId, productPlansTable.id))
     .where(eq(ordersTable.status, "pending_admin"))
     .orderBy(desc(ordersTable.createdAt));
 
@@ -220,6 +327,35 @@ ordersRouter.patch("/:id/status", async (c) => {
     changes: { status: { from: old.status, to: status } },
     description: `Order status changed: ${old.status} → ${status}`,
   });
+
+  if (isNotifiableOrderStatus(status)) {
+    const [user, product] = await Promise.all([
+      db.query.usersTable.findFirst({
+        where: eq(usersTable.id, old.userId),
+        columns: {
+          id: true,
+          languageCode: true,
+          notifyOrders: true,
+        },
+      }),
+      db.query.productsTable.findFirst({
+        where: eq(productsTable.id, old.productId),
+        columns: {
+          name: true,
+        },
+      }),
+    ]);
+
+    if (user?.id && user.notifyOrders !== false) {
+      await notifyUserAboutOrderStatusChange({
+        chatId: user.id,
+        languageCode: user.languageCode,
+        productName: product?.name,
+        orderId: id,
+        status,
+      });
+    }
+  }
 
   return c.json(updated);
 });
@@ -418,6 +554,8 @@ ordersRouter.patch("/:id/approve-payment", async (c) => {
     .where(eq(ordersTable.id, id))
     .returning();
 
+  if (!updated) return c.json({ error: "Order not found" }, 404);
+
   const BOT_TOKEN = process.env.BOT_TOKEN;
   if (BOT_TOKEN && updated.userId) {
     fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -461,6 +599,8 @@ ordersRouter.patch("/:id/reject-payment", async (c) => {
     })
     .where(eq(ordersTable.id, id))
     .returning();
+
+  if (!updated) return c.json({ error: "Order not found" }, 404);
 
   const BOT_TOKEN = process.env.BOT_TOKEN;
   if (BOT_TOKEN && updated.userId) {

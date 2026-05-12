@@ -72,26 +72,6 @@ export default function EditProductModal({ product, onClose }: Props) {
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const addRegion = () =>
-    setForm((f) => ({
-      ...f,
-      regions: [...(f.regions ?? []), { flag: "", name: "" }],
-    }));
-
-  const removeRegion = (i: number) =>
-    setForm((f) => ({
-      ...f,
-      regions: (f.regions ?? []).filter((_, idx) => idx !== i),
-    }));
-
-  const updateRegion = (i: number, key: "flag" | "name", val: string) =>
-    setForm((f) => ({
-      ...f,
-      regions: (f.regions ?? []).map((r, idx) =>
-        idx === i ? { ...r, [key]: val } : r,
-      ),
-    }));
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -192,65 +172,17 @@ export default function EditProductModal({ product, onClose }: Props) {
               placeholder="5373141891321699086"
             />
             <span className="text-xs text-white/30">
-              آیدی عددی Custom Emoji — در دکمه تلگرام نمایش داده می‌شود
+              {t("products.customEmojiHint")}
             </span>
           </label>
-
-          {/* ── فیلدهای Inventory ── */}
-          <div className="flex flex-col gap-3 border border-purple-500/20 rounded-lg p-3 bg-purple-500/5">
-            <p className="text-xs text-purple-300/70 font-medium">
-              تنظیمات موجودی
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-white/60">
-                  {t("products.warrantyDays")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                  value={form.warrantyDays}
-                  onChange={(e) => set("warrantyDays", Number(e.target.value))}
-                />
-                <span className="text-xs text-white/30">
-                  {t("products.warrantyDaysHint")}
-                </span>
-              </label>
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="text-white/60">
-                  {t("products.maxPerUser")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                  value={form.maxPerUser}
-                  onChange={(e) => set("maxPerUser", Number(e.target.value))}
-                />
-                <span className="text-xs text-white/30">
-                  {t("products.maxPerUserHint")}
-                </span>
-              </label>
-            </div>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-white/60">{t("products.terms")}</span>
-              <textarea
-                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
-                value={form.terms ?? ""}
-                onChange={(e) => set("terms", e.target.value || null)}
-                placeholder={t("products.termsPlaceholder")}
-              />
-            </label>
-          </div>
 
           <div className="flex flex-col gap-2 pt-1">
             <div className="grid grid-cols-2 gap-2">
               {(
-                [
-                  ["isRenewable", t("products.isRenewable")],
-                  ["isActive", t("products.active")],
-                ] as [keyof typeof form, string][]
+                [["isActive", t("products.active")]] as [
+                  keyof typeof form,
+                  string,
+                ][]
               ).map(([key, label]) => (
                 <label
                   key={key}
@@ -277,52 +209,6 @@ export default function EditProductModal({ product, onClose }: Props) {
                 {t("products.requiresEmail")}
               </span>
             </label>
-          </div>
-
-          {/* ── مناطق ── */}
-          <div className="flex flex-col gap-2 border border-green-500/20 rounded-lg p-3 bg-green-500/5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-green-300/70 font-medium">
-                {t("products.regions")}
-              </p>
-              <button
-                type="button"
-                onClick={addRegion}
-                className="text-xs text-green-400 hover:text-green-300 transition-colors"
-              >
-                {t("products.addRegion")}
-              </button>
-            </div>
-            <p className="text-xs text-white/30">{t("products.regionsHint")}</p>
-            {(form.regions ?? []).length === 0 && (
-              <p className="text-xs text-white/20 italic">
-                {t("products.noRegions")}
-              </p>
-            )}
-            {(form.regions ?? []).map((r, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <input
-                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-14 text-center text-base"
-                  value={r.flag}
-                  onChange={(e) => updateRegion(i, "flag", e.target.value)}
-                  placeholder="🇪🇬"
-                  maxLength={4}
-                />
-                <input
-                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1 text-sm"
-                  value={r.name}
-                  onChange={(e) => updateRegion(i, "name", e.target.value)}
-                  placeholder="Egypt"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRegion(i)}
-                  className="text-red-400 hover:text-red-300 text-sm px-1"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
           </div>
         </div>
 

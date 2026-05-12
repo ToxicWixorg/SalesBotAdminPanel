@@ -113,6 +113,24 @@ export type Product = typeof productsTable.$inferSelect;
 export const productPlansTable = pgTable(
   "product_plans",
   {
+    // Dynamic user-input fields required before completing order
+    // Example:
+    // [
+    //   { key: "account_email", label: "ایمیل", inputType: "email", required: true, sensitive: false },
+    //   { key: "account_password", label: "رمز", inputType: "password", required: true, sensitive: true }
+    // ]
+    requiredInputs: jsonb("required_inputs")
+      .$type<
+        {
+          key: string;
+          label: string;
+          inputType?: "text" | "email" | "password" | "number" | "url";
+          required?: boolean;
+          sensitive?: boolean;
+          placeholder?: string;
+        }[]
+      >()
+      .default([]),
     id: serial("id").primaryKey(),
     productId: integer("product_id")
       .notNull()

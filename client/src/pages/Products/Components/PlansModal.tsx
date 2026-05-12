@@ -6,6 +6,7 @@ import SuspencePage from "../../../suspence/suspence";
 import DeliveryItemsModal from "./DeliveryItemsModal";
 
 type Plan = {
+  requiredInputs?: RequiredInput[];
   id: number;
   productId: number;
   name: string;
@@ -22,6 +23,15 @@ type Plan = {
   requiresRegion: boolean;
   regions: Array<{ flag: string; name: string; price: string }> | null;
   customEmojiId: string | null;
+};
+
+type RequiredInput = {
+  key: string;
+  label: string;
+  inputType: "text" | "email" | "password" | "number" | "url";
+  required: boolean;
+  sensitive: boolean;
+  placeholder?: string;
 };
 
 const SCHEDULE_TYPES = [
@@ -51,6 +61,7 @@ const emptyForm = {
   requiresLogin: false,
   requiresRegion: false,
   regions: [] as Array<{ flag: string; name: string; price: string }>,
+  requiredInputs: [] as RequiredInput[],
   customEmojiId: "",
 };
 
@@ -72,6 +83,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
     mutationFn: (data: typeof form) =>
       api.post(`/api/admin/products/${productId}/plans`, {
         ...data,
+        requiredInputs: data.requiredInputs,
         price: String(data.price),
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
@@ -88,6 +100,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
     mutationFn: ({ id, data }: { id: number; data: typeof form }) =>
       api.put(`/api/admin/products/${productId}/plans/${id}`, {
         ...data,
+        requiredInputs: data.requiredInputs,
         price: String(data.price),
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
@@ -129,6 +142,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
       requiresLogin: plan.requiresLogin ?? false,
       requiresRegion: plan.requiresRegion ?? false,
       regions: plan.regions ?? [],
+      requiredInputs: plan.requiredInputs ?? [],
       customEmojiId: plan.customEmojiId ?? "",
     });
   };
@@ -141,6 +155,47 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
 
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
+
+  const addRequiredInput = () => {
+    set(
+      "requiredInputs",
+      form.requiredInputs.concat({
+        key: "",
+        label: "",
+        inputType: "text",
+        required: true,
+        sensitive: false,
+        placeholder: "",
+      }),
+    );
+  };
+
+  const updateRequiredInput = <K extends keyof RequiredInput>(
+    idx: number,
+    key: K,
+    value: RequiredInput[K],
+  ) => {
+    const rows = [...form.requiredInputs];
+    rows[idx] = {
+      ...(rows[idx] ?? {
+        key: "",
+        label: "",
+        inputType: "text",
+        required: true,
+        sensitive: false,
+        placeholder: "",
+      }),
+      [key]: value,
+    };
+    set("requiredInputs", rows);
+  };
+
+  const removeRequiredInput = (idx: number) => {
+    set(
+      "requiredInputs",
+      form.requiredInputs.filter((_, i) => i !== idx),
+    );
+  };
 
   const handleSubmit = () => {
     if (editingPlan) {
@@ -425,7 +480,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                         : []),
                     ];
                     return (
-                      <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-2">
+                      <div className="border border-white/10 rounded-lg p-3 flex flex-col gap-3">
                         <span className="text-xs text-white/50 font-medium uppercase tracking-wide">
                           {t("products.planModal.requirements")}
                         </span>
@@ -445,6 +500,136 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                 {t(labelKey)}
                               </span>
                             </label>
+                          ))}
+                        </div>
+
+                        <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-white/50 font-medium uppercase tracking-wide">
+                              فیلدهای داینامیک موردنیاز کاربر
+                            </span>
+                            <button
+                              type="button"
+                              onClick={addRequiredInput}
+                              className="text-xs bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded px-2 py-0.5 transition-all"
+                            >
+                              + افزودن فیلد
+                            </button>
+                          </div>
+
+                          <p className="text-[11px] text-white/40">
+                            مثال: ایمیل+رمز، شماره+رمز+رمز دوم، فقط لینک، یا هر
+                            ترکیب دلخواه.
+                          </p>
+
+                          {form.requiredInputs.length === 0 && (
+                            <div className="text-xs text-white/30 text-center py-2 border border-dashed border-white/10 rounded">
+                              هنوز فیلد داینامیک تعریف نشده.
+                            </div>
+                          )}
+
+                          {form.requiredInputs.map((field, idx) => (
+                            <div
+                              key={`${field.key}-${idx}`}
+                              className="grid grid-cols-12 gap-2 items-center bg-black/20 border border-white/10 rounded p-2"
+                            >
+                              <input
+                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
+                                placeholder="key مثلا: account_email"
+                                value={field.key}
+                                onChange={(e) =>
+                                  updateRequiredInput(
+                                    idx,
+                                    "key",
+                                    e.target.value
+                                      .trim()
+                                      .toLowerCase()
+                                      .replace(/\s+/g, "_"),
+                                  )
+                                }
+                              />
+                              <input
+                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
+                                placeholder="label مثلا: ایمیل اکانت"
+                                value={field.label}
+                                onChange={(e) =>
+                                  updateRequiredInput(
+                                    idx,
+                                    "label",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <select
+                                className="col-span-2 text-xs bg-slate-800 border border-white/20 rounded px-2 py-1 text-white outline-none"
+                                value={field.inputType}
+                                onChange={(e) =>
+                                  updateRequiredInput(
+                                    idx,
+                                    "inputType",
+                                    e.target
+                                      .value as RequiredInput["inputType"],
+                                  )
+                                }
+                              >
+                                <option value="text">text</option>
+                                <option value="email">email</option>
+                                <option value="password">password</option>
+                                <option value="number">number</option>
+                                <option value="url">url</option>
+                              </select>
+                              <input
+                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
+                                placeholder="placeholder (اختیاری)"
+                                value={field.placeholder ?? ""}
+                                onChange={(e) =>
+                                  updateRequiredInput(
+                                    idx,
+                                    "placeholder",
+                                    e.target.value,
+                                  )
+                                }
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeRequiredInput(idx)}
+                                className="col-span-1 text-red-400 hover:text-red-300 text-sm"
+                                title="حذف فیلد"
+                              >
+                                ✕
+                              </button>
+
+                              <label className="col-span-2 flex items-center gap-1 text-[11px] cursor-pointer text-white/70">
+                                <input
+                                  type="checkbox"
+                                  className="w-3.5 h-3.5 accent-blue-400"
+                                  checked={field.required}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "required",
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                اجباری
+                              </label>
+                              <label className="col-span-2 flex items-center gap-1 text-[11px] cursor-pointer text-white/70">
+                                <input
+                                  type="checkbox"
+                                  className="w-3.5 h-3.5 accent-rose-400"
+                                  checked={field.sensitive}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "sensitive",
+                                      e.target.checked,
+                                    )
+                                  }
+                                />
+                                حساس (ماسک)
+                              </label>
+                            </div>
                           ))}
                         </div>
                       </div>

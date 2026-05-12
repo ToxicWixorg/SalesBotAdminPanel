@@ -3,24 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 
-const DELIVERY_TYPES = [
-  "automatic",
-  "manual",
-  "custom_schedule",
-  // "invite",
-  // "code",
-  // "family_join",
-  // "renewable",
-  // "reservation",
-] as const;
-
 type Product = {
   id: number;
   name: string;
   slug: string;
   description: string | null;
   categoryId: number | null;
-  deliveryType: string;
   isActive: boolean;
   stock: number;
   minStock: number;
@@ -32,10 +20,6 @@ type Product = {
   maxPerUser: number;
   regions: Array<{ flag: string; name: string }> | null;
 };
-
-// Delivery types that use pre-loaded configs
-const CONFIG_DELIVERY_TYPES = ["automatic", "code", "family_join"] as const;
-const INVITE_DELIVERY_TYPES = ["invite"] as const;
 
 type Category = { id: number; name: string };
 
@@ -58,7 +42,6 @@ export default function EditProductModal({ product, onClose }: Props) {
     slug: product.slug,
     description: product.description,
     categoryId: product.categoryId,
-    deliveryType: product.deliveryType,
     isActive: product.isActive,
     stock: product.stock,
     minStock: product.minStock,
@@ -180,23 +163,6 @@ export default function EditProductModal({ product, onClose }: Props) {
             </label>
 
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-white/60">
-                {t("products.deliveryType")}
-              </span>
-              <select
-                className="bg-slate-800 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none"
-                value={form.deliveryType}
-                onChange={(e) => set("deliveryType", e.target.value)}
-              >
-                {DELIVERY_TYPES.map((dt) => (
-                  <option key={dt} value={dt} className="bg-slate-900">
-                    {t(`products.deliveryTypes.${dt}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">{t("products.stock")}</span>
               <input
                 type="number"
@@ -231,58 +197,52 @@ export default function EditProductModal({ product, onClose }: Props) {
           </label>
 
           {/* ── فیلدهای Inventory ── */}
-          {CONFIG_DELIVERY_TYPES.includes(
-            form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
-          ) && (
-            <div className="flex flex-col gap-3 border border-purple-500/20 rounded-lg p-3 bg-purple-500/5">
-              <p className="text-xs text-purple-300/70 font-medium">
-                تنظیمات موجودی
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">
-                    {t("products.warrantyDays")}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                    value={form.warrantyDays}
-                    onChange={(e) =>
-                      set("warrantyDays", Number(e.target.value))
-                    }
-                  />
-                  <span className="text-xs text-white/30">
-                    {t("products.warrantyDaysHint")}
-                  </span>
-                </label>
-                <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">
-                    {t("products.maxPerUser")}
-                  </span>
-                  <input
-                    type="number"
-                    min={0}
-                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                    value={form.maxPerUser}
-                    onChange={(e) => set("maxPerUser", Number(e.target.value))}
-                  />
-                  <span className="text-xs text-white/30">
-                    {t("products.maxPerUserHint")}
-                  </span>
-                </label>
-              </div>
+          <div className="flex flex-col gap-3 border border-purple-500/20 rounded-lg p-3 bg-purple-500/5">
+            <p className="text-xs text-purple-300/70 font-medium">
+              تنظیمات موجودی
+            </p>
+            <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-sm">
-                <span className="text-white/60">{t("products.terms")}</span>
-                <textarea
-                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
-                  value={form.terms ?? ""}
-                  onChange={(e) => set("terms", e.target.value || null)}
-                  placeholder={t("products.termsPlaceholder")}
+                <span className="text-white/60">
+                  {t("products.warrantyDays")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                  value={form.warrantyDays}
+                  onChange={(e) => set("warrantyDays", Number(e.target.value))}
                 />
+                <span className="text-xs text-white/30">
+                  {t("products.warrantyDaysHint")}
+                </span>
+              </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-white/60">
+                  {t("products.maxPerUser")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                  value={form.maxPerUser}
+                  onChange={(e) => set("maxPerUser", Number(e.target.value))}
+                />
+                <span className="text-xs text-white/30">
+                  {t("products.maxPerUserHint")}
+                </span>
               </label>
             </div>
-          )}
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">{t("products.terms")}</span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.terms ?? ""}
+                onChange={(e) => set("terms", e.target.value || null)}
+                placeholder={t("products.termsPlaceholder")}
+              />
+            </label>
+          </div>
 
           <div className="flex flex-col gap-2 pt-1">
             <div className="grid grid-cols-2 gap-2">
@@ -306,84 +266,64 @@ export default function EditProductModal({ product, onClose }: Props) {
                 </label>
               ))}
             </div>
-            {INVITE_DELIVERY_TYPES.includes(
-              form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
-            ) && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 accent-blue-400"
-                  checked={form.requiresEmail}
-                  onChange={(e) => set("requiresEmail", e.target.checked)}
-                />
-                <span className="text-white/70">
-                  {t("products.requiresEmail")}
-                </span>
-              </label>
-            )}
-            {!CONFIG_DELIVERY_TYPES.includes(
-              form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
-            ) &&
-              !INVITE_DELIVERY_TYPES.includes(
-                form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
-              ) && (
-                <p className="text-xs text-blue-400/70 bg-blue-500/10 rounded-lg px-3 py-2">
-                  {t("products.planRequirementsHint")}
-                </p>
-              )}
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-blue-400"
+                checked={form.requiresEmail}
+                onChange={(e) => set("requiresEmail", e.target.checked)}
+              />
+              <span className="text-white/70">
+                {t("products.requiresEmail")}
+              </span>
+            </label>
           </div>
 
-          {/* ── مناطق (فقط برای انواع غیر خودکار) ── */}
-          {!CONFIG_DELIVERY_TYPES.includes(
-            form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
-          ) && (
-            <div className="flex flex-col gap-2 border border-green-500/20 rounded-lg p-3 bg-green-500/5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-green-300/70 font-medium">
-                  {t("products.regions")}
-                </p>
+          {/* ── مناطق ── */}
+          <div className="flex flex-col gap-2 border border-green-500/20 rounded-lg p-3 bg-green-500/5">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-green-300/70 font-medium">
+                {t("products.regions")}
+              </p>
+              <button
+                type="button"
+                onClick={addRegion}
+                className="text-xs text-green-400 hover:text-green-300 transition-colors"
+              >
+                {t("products.addRegion")}
+              </button>
+            </div>
+            <p className="text-xs text-white/30">{t("products.regionsHint")}</p>
+            {(form.regions ?? []).length === 0 && (
+              <p className="text-xs text-white/20 italic">
+                {t("products.noRegions")}
+              </p>
+            )}
+            {(form.regions ?? []).map((r, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-14 text-center text-base"
+                  value={r.flag}
+                  onChange={(e) => updateRegion(i, "flag", e.target.value)}
+                  placeholder="🇪🇬"
+                  maxLength={4}
+                />
+                <input
+                  className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1 text-sm"
+                  value={r.name}
+                  onChange={(e) => updateRegion(i, "name", e.target.value)}
+                  placeholder="Egypt"
+                />
                 <button
                   type="button"
-                  onClick={addRegion}
-                  className="text-xs text-green-400 hover:text-green-300 transition-colors"
+                  onClick={() => removeRegion(i)}
+                  className="text-red-400 hover:text-red-300 text-sm px-1"
                 >
-                  {t("products.addRegion")}
+                  ✕
                 </button>
               </div>
-              <p className="text-xs text-white/30">
-                {t("products.regionsHint")}
-              </p>
-              {(form.regions ?? []).length === 0 && (
-                <p className="text-xs text-white/20 italic">
-                  {t("products.noRegions")}
-                </p>
-              )}
-              {(form.regions ?? []).map((r, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input
-                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 w-14 text-center text-base"
-                    value={r.flag}
-                    onChange={(e) => updateRegion(i, "flag", e.target.value)}
-                    placeholder="🇪🇬"
-                    maxLength={4}
-                  />
-                  <input
-                    className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white outline-none focus:border-white/40 flex-1 text-sm"
-                    value={r.name}
-                    onChange={(e) => updateRegion(i, "name", e.target.value)}
-                    placeholder="Egypt"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeRegion(i)}
-                    className="text-red-400 hover:text-red-300 text-sm px-1"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         <div className="flex gap-2 justify-end p-4 border-t border-white/10">

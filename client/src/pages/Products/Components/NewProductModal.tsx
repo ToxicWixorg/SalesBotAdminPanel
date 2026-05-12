@@ -3,30 +3,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 
-const DELIVERY_TYPES = [
-  "automatic",
-  "manual",
-  "custom_schedule",
-  // "invite",
-  // "code",
-  // "family_join",
-  // "renewable",
-  // "reservation",
-] as const;
-
 type Category = { id: number; name: string };
-
-// Delivery types that use pre-loaded configs (VPN links, keys, etc.)
-const CONFIG_DELIVERY_TYPES = ["automatic", "code", "family_join"] as const;
-// Delivery types where email is collected at product level (invite sends to user's email)
-const INVITE_DELIVERY_TYPES = ["invite"] as const;
 
 const defaultForm = {
   name: "",
   slug: "",
   description: "",
   categoryId: "" as number | "",
-  deliveryType: "automatic",
   isActive: true,
   stock: 0,
   minStock: 5,
@@ -85,10 +68,7 @@ export default function NewProductModal({ onClose }: Props) {
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const isValid =
-    form.name.trim() !== "" &&
-    form.slug.trim() !== "" &&
-    form.deliveryType !== "";
+  const isValid = form.name.trim() !== "" && form.slug.trim() !== "";
 
   return (
     <div
@@ -165,23 +145,6 @@ export default function NewProductModal({ onClose }: Props) {
             </label>
 
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-white/60">
-                {t("products.deliveryType")}{" "}
-                <span className="text-red-400">*</span>
-              </span>
-              <select
-                className="bg-slate-800 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none"
-                value={form.deliveryType}
-                onChange={(e) => set("deliveryType", e.target.value)}
-              >
-                {DELIVERY_TYPES.map((dt) => (
-                  <option key={dt} value={dt} className="bg-slate-900">
-                    {t(`products.deliveryTypes.${dt}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">{t("products.stock")}</span>
               <input
                 type="number"
@@ -239,31 +202,17 @@ export default function NewProductModal({ onClose }: Props) {
                 </label>
               ))}
             </div>
-            {INVITE_DELIVERY_TYPES.includes(
-              form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
-            ) && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 accent-blue-400"
-                  checked={form.requiresEmail}
-                  onChange={(e) => set("requiresEmail", e.target.checked)}
-                />
-                <span className="text-white/70">
-                  {t("products.requiresEmail")}
-                </span>
-              </label>
-            )}
-            {!CONFIG_DELIVERY_TYPES.includes(
-              form.deliveryType as (typeof CONFIG_DELIVERY_TYPES)[number],
-            ) &&
-              !INVITE_DELIVERY_TYPES.includes(
-                form.deliveryType as (typeof INVITE_DELIVERY_TYPES)[number],
-              ) && (
-                <p className="text-xs text-blue-400/70 bg-blue-500/10 rounded-lg px-3 py-2">
-                  {t("products.planRequirementsHint")}
-                </p>
-              )}
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 accent-blue-400"
+                checked={form.requiresEmail}
+                onChange={(e) => set("requiresEmail", e.target.checked)}
+              />
+              <span className="text-white/70">
+                {t("products.requiresEmail")}
+              </span>
+            </label>
           </div>
         </div>
 

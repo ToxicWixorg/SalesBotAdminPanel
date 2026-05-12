@@ -39,7 +39,6 @@ productsRouter.use("*", requireAuth, requireSection("products"));
 productsRouter.get("/", async (c) => {
   const {
     categoryId,
-    deliveryType,
     isActive,
     search,
     page = "1",
@@ -50,8 +49,6 @@ productsRouter.get("/", async (c) => {
 
   if (categoryId)
     conditions.push(eq(productsTable.categoryId, parseInt(categoryId)));
-  if (deliveryType)
-    conditions.push(eq(productsTable.deliveryType, deliveryType));
   if (isActive !== undefined)
     conditions.push(eq(productsTable.isActive, isActive === "true"));
   if (search) conditions.push(ilike(productsTable.name, `%${search}%`));
@@ -73,6 +70,7 @@ productsRouter.post("/", async (c) => {
   const body = await c.req.json();
 
   const [product] = await db.insert(productsTable).values(body).returning();
+  if (!product) return c.json({ error: "Failed to create product" }, 500);
 
   await logAdminAction(c, {
     action: "create",
@@ -136,6 +134,7 @@ productsRouter.patch("/:id/toggle", async (c) => {
     .set({ isActive: !product.isActive, updatedAt: new Date() })
     .where(eq(productsTable.id, id))
     .returning();
+  if (!updated) return c.json({ error: "Product not found" }, 404);
 
   await logAdminAction(c, {
     action: updated.isActive ? "activate" : "deactivate",
@@ -206,16 +205,22 @@ productsRouter.post("/:id/plans", async (c) => {
   const productId = parseInt(c.req.param("id"));
   const body = await c.req.json();
 
+  // Validation: deliveryType باید مشخص شود
+  if (!body.deliveryType) {
+    return c.json({ error: "deliveryType is required" }, 400);
+  }
+
   const [plan] = await db
     .insert(productPlansTable)
     .values({ ...body, productId })
     .returning();
+  if (!plan) return c.json({ error: "Failed to create plan" }, 500);
 
   await logAdminAction(c, {
     action: "create",
     entityType: "product_plan",
     entityId: plan.id,
-    description: `Created plan: ${plan.name} for product ${productId}`,
+    description: `Created plan: ${plan.name} (${body.deliveryType}) for product ${productId}`,
   });
 
   return c.json(plan, 201);
@@ -227,6 +232,11 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
   delete body.id;
   delete body.productId;
 
+  // Validation: deliveryType \u0628\u0627\u06cc\u062f \u0645\u0634\u062e\u0635 \u0628\u0627\u0634\u062f (\u0627\u06af\u0631 ارسال شد)
+  if (body.deliveryType === undefined) {
+    body.deliveryType = "automatic"; // Default value
+  }
+
   const [updated] = await db
     .update(productPlansTable)
     .set(body)
@@ -234,6 +244,14 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
     .returning();
 
   if (!updated) return c.json({ error: "Plan not found" }, 404);
+
+  await logAdminAction(c, {
+    action: "update",
+    entityType: "product_plan",
+    entityId: planId,
+    description: `Updated plan: ${updated.name} (${updated.deliveryType})`,
+  });
+
   return c.json(updated);
 });
 
@@ -355,6 +373,7 @@ productsRouter.post("/:id/configs", async (c) => {
       planId: body.planId ?? null,
     })
     .returning();
+  if (!config) return c.json({ error: "Failed to create config" }, 500);
 
   await logAdminAction(c, {
     action: "create",

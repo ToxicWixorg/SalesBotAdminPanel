@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
 import SuspencePage from "../../suspence/suspence";
 
-import DeliveryTypeFilter from "./Components/DeliveryTypeFilter";
 import IsActiveFilter from "./Components/IsActiveFilter";
 import EditProductModal from "./Components/EditProductModal";
 import PlansModal from "./Components/PlansModal";
@@ -19,7 +18,6 @@ type Product = {
   description: string | null;
   categoryId: number | null;
   categoryName: string;
-  deliveryType: string;
   stock: number;
   minStock: number;
   isActive: boolean;
@@ -41,7 +39,6 @@ export default function ProductsPage() {
   const [filters, setFilters] = useState({
     search: "",
     isActive: "",
-    deliveryType: "",
   });
   const [filterValue, setFilterValue] = useState("");
   const [editProduct, setEditProduct] = useState<Product | null>(null);
@@ -113,7 +110,6 @@ export default function ProductsPage() {
           </button>
         </div>
         <div className="flex justify-start items-center gap-4">
-          <DeliveryTypeFilter filters={filters} setFilters={setFilters} t={t} />
           <IsActiveFilter filters={filters} setFilters={setFilters} t={t} />
         </div>
       </div>
@@ -147,7 +143,6 @@ export default function ProductsPage() {
         <PlansModal
           productId={plansProduct.id}
           productName={plansProduct.name}
-          deliveryType={plansProduct.deliveryType}
           onClose={() => setPlansProduct(null)}
         />
       )}

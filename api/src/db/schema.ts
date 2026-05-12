@@ -81,8 +81,6 @@ export const productsTable = pgTable(
     description: text("description"),
     image: text("image"),
     categoryId: integer("category_id").references(() => categoriesTable.id),
-    // automatic | manual | custom_schedule | invite | code | family_join | renewable | reservation
-    deliveryType: text("delivery_type").notNull(),
     requiresEmail: boolean("requires_email").default(false),
     requiresOtp: boolean("requires_otp").default(false),
     requiresLogin: boolean("requires_login").default(false),
@@ -96,6 +94,7 @@ export const productsTable = pgTable(
     warrantyDays: integer("warranty_days").default(0),
     terms: text("terms"),
     maxPerUser: integer("max_per_user").default(0),
+    customEmojiId: text("custom_emoji_id"),
     // Regions available for this product (e.g. [{flag:"🇪🇬", name:"Egypt"}])
     regions: jsonb("regions")
       .$type<{ flag: string; name: string }[]>()
@@ -123,6 +122,8 @@ export const productPlansTable = pgTable(
     price: decimal("price", { precision: 15, scale: 2 }).notNull(),
     duration: integer("duration"),
     durationUnit: text("duration_unit"), // day | month | year
+    // automatic | manual | custom_schedule | invite | code | family_join | renewable | reservation
+    deliveryType: text("delivery_type").notNull().default("automatic"),
     // Per-plan delivery requirements (override product-level defaults)
     requiresEmail: boolean("requires_email").default(false),
     requiresOtp: boolean("requires_otp").default(false),

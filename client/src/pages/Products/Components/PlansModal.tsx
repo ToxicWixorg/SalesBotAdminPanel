@@ -13,6 +13,7 @@ type Plan = {
   price: string;
   duration: number | null;
   durationUnit: string | null;
+  deliveryType: string;
   order: number;
   isActive: boolean;
   requiresEmail: boolean;
@@ -33,7 +34,6 @@ const SCHEDULE_TYPES = [
 type Props = {
   productId: number;
   productName: string;
-  deliveryType: string;
   onClose: () => void;
 };
 
@@ -43,6 +43,7 @@ const emptyForm = {
   price: "",
   duration: "",
   durationUnit: "month",
+  deliveryType: "automatic",
   order: 0,
   isActive: true,
   requiresEmail: false,
@@ -53,12 +54,7 @@ const emptyForm = {
   customEmojiId: "",
 };
 
-export default function PlansModal({
-  productId,
-  productName,
-  deliveryType,
-  onClose,
-}: Props) {
+export default function PlansModal({ productId, productName, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
@@ -125,6 +121,7 @@ export default function PlansModal({
       price: plan.price,
       duration: plan.duration ? String(plan.duration) : "",
       durationUnit: plan.durationUnit ?? "month",
+      deliveryType: plan.deliveryType ?? "automatic",
       order: plan.order,
       isActive: plan.isActive,
       requiresEmail: plan.requiresEmail ?? false,
@@ -245,7 +242,7 @@ export default function PlansModal({
                               {t("common.edit")}
                             </button>
 
-                            {deliveryType === "automatic" && (
+                            {plan.deliveryType === "automatic" && (
                               <button
                                 onClick={() => setShowDeliveryItems(true)}
                                 className="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded px-2 py-0.5 transition-all"
@@ -344,6 +341,41 @@ export default function PlansModal({
                   </label>
                   <label className="flex flex-col gap-1 text-sm">
                     <span className="text-white/60">
+                      {t("products.deliveryType")}
+                    </span>
+                    <select
+                      className="bg-slate-800 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none"
+                      value={form.deliveryType}
+                      onChange={(e) => set("deliveryType", e.target.value)}
+                    >
+                      <option value="automatic" className="bg-slate-900">
+                        {t("products.deliveryTypes.automatic")}
+                      </option>
+                      <option value="manual" className="bg-slate-900">
+                        {t("products.deliveryTypes.manual")}
+                      </option>
+                      <option value="custom_schedule" className="bg-slate-900">
+                        {t("products.deliveryTypes.custom_schedule")}
+                      </option>
+                      <option value="invite" className="bg-slate-900">
+                        {t("products.deliveryTypes.invite")}
+                      </option>
+                      <option value="code" className="bg-slate-900">
+                        {t("products.deliveryTypes.code")}
+                      </option>
+                      <option value="family_join" className="bg-slate-900">
+                        {t("products.deliveryTypes.family_join")}
+                      </option>
+                      <option value="renewable" className="bg-slate-900">
+                        {t("products.deliveryTypes.renewable")}
+                      </option>
+                      <option value="reservation" className="bg-slate-900">
+                        {t("products.deliveryTypes.reservation")}
+                      </option>
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">
                       {t("products.planModal.tartib")}
                     </span>
                     <input
@@ -365,8 +397,8 @@ export default function PlansModal({
                     </span>
                   </label>
                 </div>
-                {(SCHEDULE_TYPES.includes(deliveryType) ||
-                  deliveryType === "invite") &&
+                {(SCHEDULE_TYPES.includes(form.deliveryType) ||
+                  form.deliveryType === "invite") &&
                   (() => {
                     type ReqKey =
                       | "requiresEmail"
@@ -375,7 +407,7 @@ export default function PlansModal({
                       | "requiresRegion";
                     const rows: [ReqKey, string][] = [
                       ["requiresEmail", "products.planModal.requiresEmail"],
-                      ...(SCHEDULE_TYPES.includes(deliveryType)
+                      ...(SCHEDULE_TYPES.includes(form.deliveryType)
                         ? [
                             [
                               "requiresOtp",

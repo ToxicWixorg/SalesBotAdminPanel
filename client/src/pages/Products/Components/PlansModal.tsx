@@ -530,105 +530,109 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
 
                           {form.requiredInputs.map((field, idx) => (
                             <div
-                              key={`${field.key}-${idx}`}
-                              className="grid grid-cols-12 gap-2 items-center bg-black/20 border border-white/10 rounded p-2"
+                              key={idx}
+                              className="flex flex-col gap-2 bg-black/20 border border-white/10 rounded p-2"
                             >
-                              <input
-                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
-                                placeholder="key مثلا: account_email"
-                                value={field.key}
-                                onChange={(e) =>
-                                  updateRequiredInput(
-                                    idx,
-                                    "key",
-                                    e.target.value
-                                      .trim()
-                                      .toLowerCase()
-                                      .replace(/\s+/g, "_"),
-                                  )
-                                }
-                              />
-                              <input
-                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
-                                placeholder="label مثلا: ایمیل اکانت"
-                                value={field.label}
-                                onChange={(e) =>
-                                  updateRequiredInput(
-                                    idx,
-                                    "label",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                              <select
-                                className="col-span-2 text-xs bg-slate-800 border border-white/20 rounded px-2 py-1 text-white outline-none"
-                                value={field.inputType}
-                                onChange={(e) =>
-                                  updateRequiredInput(
-                                    idx,
-                                    "inputType",
-                                    e.target
-                                      .value as RequiredInput["inputType"],
-                                  )
-                                }
-                              >
-                                <option value="text">text</option>
-                                <option value="email">email</option>
-                                <option value="password">password</option>
-                                <option value="number">number</option>
-                                <option value="url">url</option>
-                              </select>
-                              <input
-                                className="col-span-3 text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white outline-none focus:border-white/40"
-                                placeholder="placeholder (اختیاری)"
-                                value={field.placeholder ?? ""}
-                                onChange={(e) =>
-                                  updateRequiredInput(
-                                    idx,
-                                    "placeholder",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeRequiredInput(idx)}
-                                className="col-span-1 text-red-400 hover:text-red-300 text-sm"
-                                title="حذف فیلد"
-                              >
-                                ✕
-                              </button>
+                              <div className="flex flex-wrap gap-2 items-center">
+                                <input
+                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
+                                  placeholder="key مثلا: account_email"
+                                  value={field.key}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "key",
+                                      e.target.value
+                                        .toLowerCase()
+                                        .replace(/\s+/g, "_"),
+                                    )
+                                  }
+                                />
+                                <input
+                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
+                                  placeholder="label مثلا: ایمیل اکانت"
+                                  value={field.label}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "label",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                                <select
+                                  className="text-xs bg-slate-800 border border-white/20 rounded px-2 py-1.5 text-white outline-none"
+                                  value={field.inputType}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "inputType",
+                                      e.target
+                                        .value as RequiredInput["inputType"],
+                                    )
+                                  }
+                                >
+                                  <option value="text">text</option>
+                                  <option value="email">email</option>
+                                  <option value="password">password</option>
+                                  <option value="number">number</option>
+                                  <option value="url">url</option>
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => removeRequiredInput(idx)}
+                                  className="text-red-400 hover:text-red-300 text-sm px-1"
+                                  title="حذف فیلد"
+                                >
+                                  ✕
+                                </button>
+                              </div>
 
-                              <label className="col-span-2 flex items-center gap-1 text-[11px] cursor-pointer text-white/70">
+                              {/* Row 2: placeholder + checkboxes */}
+                              <div className="flex flex-wrap gap-2 items-center">
                                 <input
-                                  type="checkbox"
-                                  className="w-3.5 h-3.5 accent-blue-400"
-                                  checked={field.required}
+                                  className="flex-1 min-w-35 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
+                                  placeholder="placeholder (اختیاری)"
+                                  value={field.placeholder ?? ""}
                                   onChange={(e) =>
                                     updateRequiredInput(
                                       idx,
-                                      "required",
-                                      e.target.checked,
+                                      "placeholder",
+                                      e.target.value,
                                     )
                                   }
                                 />
-                                اجباری
-                              </label>
-                              <label className="col-span-2 flex items-center gap-1 text-[11px] cursor-pointer text-white/70">
-                                <input
-                                  type="checkbox"
-                                  className="w-3.5 h-3.5 accent-rose-400"
-                                  checked={field.sensitive}
-                                  onChange={(e) =>
-                                    updateRequiredInput(
-                                      idx,
-                                      "sensitive",
-                                      e.target.checked,
-                                    )
-                                  }
-                                />
-                                حساس (ماسک)
-                              </label>
+                                <label className="flex items-center gap-1 text-[11px] cursor-pointer text-white/70 whitespace-nowrap">
+                                  <input
+                                    type="checkbox"
+                                    className="w-3.5 h-3.5 accent-blue-400"
+                                    checked={field.required}
+                                    onChange={(e) =>
+                                      updateRequiredInput(
+                                        idx,
+                                        "required",
+                                        e.target.checked,
+                                      )
+                                    }
+                                  />
+                                  اجباری
+                                </label>
+                                <label className="flex items-center gap-1 text-[11px] cursor-pointer text-white/70 whitespace-nowrap">
+                                  <input
+                                    type="checkbox"
+                                    className="w-3.5 h-3.5 accent-rose-400"
+                                    checked={field.sensitive}
+                                    onChange={(e) =>
+                                      updateRequiredInput(
+                                        idx,
+                                        "sensitive",
+                                        e.target.checked,
+                                      )
+                                    }
+                                  />
+                                  حساس (ماسک)
+                                </label>
+                              </div>
                             </div>
                           ))}
                         </div>

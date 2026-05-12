@@ -9,8 +9,10 @@ import { Hono } from "hono";
 import { eq, and, gte, lte, desc, sum, count } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
+  nowpaymentsWalletPaymentsTable,
   walletTransactionsTable,
   walletTopupsTable,
+  zarinpalWalletPaymentsTable,
   usersTable,
 } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
@@ -188,6 +190,108 @@ walletRouter.get("/topups", async (c) => {
       ...item,
       receiptUrl: `/api/admin/wallet/topups/${item.topup.id}/receipt`,
     })),
+  );
+});
+
+// ── GET /api/admin/wallet/zarinpal-payments ─────────────────────────────────
+walletRouter.get("/zarinpal-payments", async (c) => {
+  const { status = "pending", page = "1", limit = "30" } = c.req.query();
+
+  const conditions = [];
+  if (status) conditions.push(eq(zarinpalWalletPaymentsTable.status, status));
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const payments = await db
+    .select({
+      payment: zarinpalWalletPaymentsTable,
+      user: {
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+      },
+    })
+    .from(zarinpalWalletPaymentsTable)
+    .leftJoin(usersTable, eq(zarinpalWalletPaymentsTable.userId, usersTable.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(zarinpalWalletPaymentsTable.createdAt))
+    .limit(parseInt(limit))
+    .offset(offset);
+
+  return c.json(
+    payments.map((item) => ({
+      ...item,
+      // optional evidence model for UI: image may be missing, hash/id may be missing
+      evidence: {
+        imageUrl: null,
+        hash: item.payment.refId ?? item.payment.authority ?? null,
+      },
+    })),
+  );
+});
+
+// ── GET /api/admin/wallet/crypto-payments ───────────────────────────────────
+walletRouter.get("/crypto-payments", async (c) => {
+  const { status = "waiting", page = "1", limit = "30" } = c.req.query();
+
+  const conditions = [];
+  if (status) {
+    conditions.push(eq(nowpaymentsWalletPaymentsTable.paymentStatus, status));
+  }
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const payments = await db
+    .select({
+      payment: nowpaymentsWalletPaymentsTable,
+      user: {
+        id: usersTable.id,
+        username: usersTable.username,
+        firstName: usersTable.firstName,
+      },
+    })
+    .from(nowpaymentsWalletPaymentsTable)
+    .leftJoin(
+      usersTable,
+      eq(nowpaymentsWalletPaymentsTable.userId, usersTable.id),
+    )
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(nowpaymentsWalletPaymentsTable.createdAt))
+    .limit(parseInt(limit))
+    .offset(offset);
+
+  return c.json(
+    payments.map((item) => {
+      const callback =
+        item.payment.callbackPayload &&
+        typeof item.payment.callbackPayload === "object"
+          ? (item.payment.callbackPayload as Record<string, unknown>)
+          : undefined;
+
+      const callbackHash =
+        typeof callback?.tx_hash === "string"
+          ? callback.tx_hash
+          : typeof callback?.payment_id === "string"
+            ? callback.payment_id
+            : null;
+
+      const callbackImage =
+        typeof callback?.evidence_image_url === "string"
+          ? callback.evidence_image_url
+          : null;
+
+      return {
+        ...item,
+        evidence: {
+          imageUrl: callbackImage,
+          hash:
+            callbackHash ??
+            item.payment.nowpaymentsPaymentId ??
+            item.payment.orderId ??
+            null,
+        },
+      };
+    }),
   );
 });
 

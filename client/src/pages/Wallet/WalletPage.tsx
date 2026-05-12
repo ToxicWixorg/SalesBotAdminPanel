@@ -43,6 +43,49 @@ type TopupItem = {
   receiptUrl: string;
 };
 
+type ZarinpalPaymentItem = {
+  payment: {
+    id: number;
+    userId: number;
+    amount: string;
+    authority: string | null;
+    paymentUrl: string | null;
+    callbackUrl: string | null;
+    callbackStatus: string | null;
+    status: string;
+    refId: string | null;
+    verifiedAt: string | null;
+    creditedAt: string | null;
+    createdAt: string;
+  };
+  user: { id: number; username: string; firstName: string } | null;
+  evidence?: {
+    imageUrl?: string | null;
+    hash?: string | null;
+  };
+};
+
+type CryptoPaymentItem = {
+  payment: {
+    id: number;
+    userId: number;
+    amount: string;
+    orderId: string;
+    payCurrency: string | null;
+    payAddress: string | null;
+    payAmount: string | null;
+    nowpaymentsPaymentId: string | null;
+    paymentUrl: string | null;
+    paymentStatus: string;
+    createdAt: string;
+  };
+  user: { id: number; username: string; firstName: string } | null;
+  evidence?: {
+    imageUrl?: string | null;
+    hash?: string | null;
+  };
+};
+
 const SOURCE_VALUES = [
   "purchase",
   "recharge",
@@ -59,9 +102,16 @@ export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<"transactions" | "topups">(
     "transactions",
   );
+  const [reviewTab, setReviewTab] = useState<"card" | "zarinpal" | "crypto">(
+    "card",
+  );
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [selectedTopup, setSelectedTopup] = useState<TopupItem | null>(null);
+  const [selectedZarinpal, setSelectedZarinpal] =
+    useState<ZarinpalPaymentItem | null>(null);
+  const [selectedCrypto, setSelectedCrypto] =
+    useState<CryptoPaymentItem | null>(null);
   const [filters, setFilters] = useState({
     type: "",
     source: "",
@@ -125,6 +175,54 @@ export default function WalletPage() {
     },
   });
 
+  const { data: zarinpalPayments, isLoading: isZarinpalLoading } = useQuery<
+    ZarinpalPaymentItem[]
+  >({
+    queryKey: ["wallet-zarinpal-payments"],
+    queryFn: async () => {
+      const r = await api.get(
+        "/api/admin/wallet/zarinpal-payments?status=pending",
+      );
+      const payload = r.data as unknown;
+
+      if (Array.isArray(payload)) return payload as ZarinpalPaymentItem[];
+      if (
+        payload &&
+        typeof payload === "object" &&
+        Array.isArray((payload as { payments?: unknown[] }).payments)
+      ) {
+        return (payload as { payments: ZarinpalPaymentItem[] }).payments;
+      }
+
+      return [];
+    },
+    enabled: activeTab === "topups",
+  });
+
+  const { data: cryptoPayments, isLoading: isCryptoLoading } = useQuery<
+    CryptoPaymentItem[]
+  >({
+    queryKey: ["wallet-crypto-payments"],
+    queryFn: async () => {
+      const r = await api.get(
+        "/api/admin/wallet/crypto-payments?status=waiting",
+      );
+      const payload = r.data as unknown;
+
+      if (Array.isArray(payload)) return payload as CryptoPaymentItem[];
+      if (
+        payload &&
+        typeof payload === "object" &&
+        Array.isArray((payload as { payments?: unknown[] }).payments)
+      ) {
+        return (payload as { payments: CryptoPaymentItem[] }).payments;
+      }
+
+      return [];
+    },
+    enabled: activeTab === "topups",
+  });
+
   const { data: receiptPreviewUrl } = useQuery<string | null>({
     queryKey: ["wallet-topup-receipt", selectedTopup?.topup.id],
     enabled: !!selectedTopup,
@@ -149,7 +247,13 @@ export default function WalletPage() {
     setSelectedTopup(null);
   }
 
-  if (isLoading || isStatsLoading || isTopupsLoading)
+  if (
+    isLoading ||
+    isStatsLoading ||
+    isTopupsLoading ||
+    isZarinpalLoading ||
+    isCryptoLoading
+  )
     return <SuspencePage Text={null} />;
 
   const filteredTransactions = search
@@ -276,52 +380,179 @@ export default function WalletPage() {
         </>
       ) : (
         <div className="space-y-3">
-          {(!topups || topups.length === 0) && (
-            <p className="text-center text-white/40 py-10 text-sm">
-              {t("common.noData")}
-            </p>
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              onClick={() => setReviewTab("card")}
+              className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${reviewTab === "card" ? "bg-white/20 border-white/30 text-white" : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"}`}
+            >
+              {t("wallet.cardTab", { defaultValue: "Card-to-card" })}
+            </button>
+            <button
+              onClick={() => setReviewTab("zarinpal")}
+              className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${reviewTab === "zarinpal" ? "bg-white/20 border-white/30 text-white" : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"}`}
+            >
+              {t("wallet.zarinpalTab", { defaultValue: "Zarinpal" })}
+            </button>
+            <button
+              onClick={() => setReviewTab("crypto")}
+              className={`px-3 py-1.5 rounded-lg text-xs border transition-all ${reviewTab === "crypto" ? "bg-white/20 border-white/30 text-white" : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"}`}
+            >
+              {t("wallet.cryptoTab", { defaultValue: "Crypto" })}
+            </button>
+          </div>
+
+          {reviewTab === "card" && (
+            <>
+              {(!topups || topups.length === 0) && (
+                <p className="text-center text-white/40 py-10 text-sm">
+                  {t("common.noData")}
+                </p>
+              )}
+
+              {topups?.map((item) => (
+                <div
+                  key={item.topup.id}
+                  className="rounded-2xl bg-white/5 border border-white/10 p-4 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">
+                        #{item.topup.id}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                        {t("wallet.pendingTopup", { defaultValue: "Pending" })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-white/80">
+                      {item.user?.firstName
+                        ? `${item.user.firstName}${item.user.username ? ` (@${item.user.username})` : ""}`
+                        : item.user?.username
+                          ? `@${item.user.username}`
+                          : `User #${item.topup.userId}`}
+                    </div>
+                    <div className="text-sm text-green-300 font-medium">
+                      {Number(item.topup.amount).toLocaleString()}{" "}
+                      {t("common.toman")}
+                    </div>
+                    <div className="text-xs text-white/40">
+                      {new Date(item.topup.createdAt).toLocaleString("fa-IR")}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setSelectedTopup(item)}
+                      className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm hover:bg-white/20 transition-all"
+                    >
+                      {t("common.view", { defaultValue: "View receipt" })}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
 
-          {topups?.map((item) => (
-            <div
-              key={item.topup.id}
-              className="rounded-2xl bg-white/5 border border-white/10 p-4 flex flex-wrap items-center justify-between gap-3"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-white">
-                    #{item.topup.id}
-                  </span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
-                    {t("wallet.pendingTopup", { defaultValue: "Pending" })}
-                  </span>
-                </div>
-                <div className="text-sm text-white/80">
-                  {item.user?.firstName
-                    ? `${item.user.firstName}${item.user.username ? ` (@${item.user.username})` : ""}`
-                    : item.user?.username
-                      ? `@${item.user.username}`
-                      : `User #${item.topup.userId}`}
-                </div>
-                <div className="text-sm text-green-300 font-medium">
-                  {Number(item.topup.amount).toLocaleString()}{" "}
-                  {t("common.toman")}
-                </div>
-                <div className="text-xs text-white/40">
-                  {new Date(item.topup.createdAt).toLocaleString("fa-IR")}
-                </div>
-              </div>
+          {reviewTab === "zarinpal" && (
+            <>
+              {(!zarinpalPayments || zarinpalPayments.length === 0) && (
+                <p className="text-center text-white/40 py-10 text-sm">
+                  {t("common.noData")}
+                </p>
+              )}
 
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setSelectedTopup(item)}
-                  className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm hover:bg-white/20 transition-all"
+              {zarinpalPayments?.map((item) => (
+                <div
+                  key={item.payment.id}
+                  className="rounded-2xl bg-white/5 border border-white/10 p-4 flex flex-wrap items-center justify-between gap-3"
                 >
-                  {t("common.view", { defaultValue: "View receipt" })}
-                </button>
-              </div>
-            </div>
-          ))}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">
+                        #{item.payment.id}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                        {item.payment.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-white/80">
+                      {item.user?.firstName
+                        ? `${item.user.firstName}${item.user.username ? ` (@${item.user.username})` : ""}`
+                        : item.user?.username
+                          ? `@${item.user.username}`
+                          : `User #${item.payment.userId}`}
+                    </div>
+                    <div className="text-sm text-green-300 font-medium">
+                      {Number(item.payment.amount).toLocaleString()}{" "}
+                      {t("common.toman")}
+                    </div>
+                    <div className="text-xs text-white/40">
+                      {new Date(item.payment.createdAt).toLocaleString("fa-IR")}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setSelectedZarinpal(item)}
+                      className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm hover:bg-white/20 transition-all"
+                    >
+                      {t("common.view", { defaultValue: "View" })}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
+
+          {reviewTab === "crypto" && (
+            <>
+              {(!cryptoPayments || cryptoPayments.length === 0) && (
+                <p className="text-center text-white/40 py-10 text-sm">
+                  {t("common.noData")}
+                </p>
+              )}
+
+              {cryptoPayments?.map((item) => (
+                <div
+                  key={item.payment.id}
+                  className="rounded-2xl bg-white/5 border border-white/10 p-4 flex flex-wrap items-center justify-between gap-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-white">
+                        #{item.payment.id}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
+                        {item.payment.paymentStatus}
+                      </span>
+                    </div>
+                    <div className="text-sm text-white/80">
+                      {item.user?.firstName
+                        ? `${item.user.firstName}${item.user.username ? ` (@${item.user.username})` : ""}`
+                        : item.user?.username
+                          ? `@${item.user.username}`
+                          : `User #${item.payment.userId}`}
+                    </div>
+                    <div className="text-sm text-green-300 font-medium">
+                      {Number(item.payment.amount).toLocaleString()}{" "}
+                      {t("common.toman")}
+                    </div>
+                    <div className="text-xs text-white/40">
+                      {new Date(item.payment.createdAt).toLocaleString("fa-IR")}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setSelectedCrypto(item)}
+                      className="px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-sm hover:bg-white/20 transition-all"
+                    >
+                      {t("common.view", { defaultValue: "View" })}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       )}
 
@@ -403,6 +634,159 @@ export default function WalletPage() {
                   >
                     {t("common.cancel", { defaultValue: "Reject" })}
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedZarinpal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  {t("wallet.zarinpalDetails", {
+                    defaultValue: "Zarinpal payment",
+                  })}
+                </h2>
+                <p className="text-xs text-white/50">
+                  #{selectedZarinpal.payment.id} ·{" "}
+                  {Number(selectedZarinpal.payment.amount).toLocaleString()}{" "}
+                  {t("common.toman")}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedZarinpal(null)}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+              >
+                {t("common.close")}
+              </button>
+            </div>
+
+            <div className="p-4 grid md:grid-cols-[1.5fr_1fr] gap-4">
+              <div className="rounded-2xl bg-black/30 border border-white/10 min-h-80 flex items-center justify-center overflow-hidden">
+                {selectedZarinpal.evidence?.imageUrl ? (
+                  <img
+                    src={selectedZarinpal.evidence.imageUrl}
+                    alt="zarinpal-evidence"
+                    className="max-h-[70vh] w-full object-contain"
+                  />
+                ) : (
+                  <p className="text-white/50 text-sm py-16">
+                    {t("wallet.noImageEvidence", {
+                      defaultValue: "No image evidence",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-2 text-sm text-white/80">
+                  <div>
+                    <span className="text-white/40">User: </span>
+                    {selectedZarinpal.user?.firstName ||
+                      selectedZarinpal.user?.username ||
+                      `#${selectedZarinpal.payment.userId}`}
+                  </div>
+                  <div>
+                    <span className="text-white/40">Status: </span>
+                    {selectedZarinpal.payment.status}
+                  </div>
+                  <div>
+                    <span className="text-white/40">Hash/ID: </span>
+                    <span className="break-all">
+                      {selectedZarinpal.evidence?.hash ||
+                        selectedZarinpal.payment.refId ||
+                        selectedZarinpal.payment.authority ||
+                        t("wallet.noHashEvidence", { defaultValue: "N/A" })}
+                    </span>
+                  </div>
+                  <div className="break-all text-xs text-white/40">
+                    {selectedZarinpal.payment.paymentUrl ||
+                      selectedZarinpal.payment.callbackUrl ||
+                      ""}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCrypto && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-slate-950 border border-white/10 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  {t("wallet.cryptoDetails", {
+                    defaultValue: "Crypto payment",
+                  })}
+                </h2>
+                <p className="text-xs text-white/50">
+                  #{selectedCrypto.payment.id} ·{" "}
+                  {Number(selectedCrypto.payment.amount).toLocaleString()}{" "}
+                  {t("common.toman")}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCrypto(null)}
+                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+              >
+                {t("common.close")}
+              </button>
+            </div>
+
+            <div className="p-4 grid md:grid-cols-[1.5fr_1fr] gap-4">
+              <div className="rounded-2xl bg-black/30 border border-white/10 min-h-80 flex items-center justify-center overflow-hidden">
+                {selectedCrypto.evidence?.imageUrl ? (
+                  <img
+                    src={selectedCrypto.evidence.imageUrl}
+                    alt="crypto-evidence"
+                    className="max-h-[70vh] w-full object-contain"
+                  />
+                ) : (
+                  <p className="text-white/50 text-sm py-16">
+                    {t("wallet.noImageEvidence", {
+                      defaultValue: "No image evidence",
+                    })}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-2 text-sm text-white/80">
+                  <div>
+                    <span className="text-white/40">User: </span>
+                    {selectedCrypto.user?.firstName ||
+                      selectedCrypto.user?.username ||
+                      `#${selectedCrypto.payment.userId}`}
+                  </div>
+                  <div>
+                    <span className="text-white/40">Status: </span>
+                    {selectedCrypto.payment.paymentStatus}
+                  </div>
+                  <div>
+                    <span className="text-white/40">Hash/ID: </span>
+                    <span className="break-all">
+                      {selectedCrypto.evidence?.hash ||
+                        selectedCrypto.payment.nowpaymentsPaymentId ||
+                        selectedCrypto.payment.orderId ||
+                        t("wallet.noHashEvidence", { defaultValue: "N/A" })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-white/40">Address: </span>
+                    <span className="break-all">
+                      {selectedCrypto.payment.payAddress ||
+                        t("wallet.noHashEvidence", { defaultValue: "N/A" })}
+                    </span>
+                  </div>
+                  <div className="break-all text-xs text-white/40">
+                    {selectedCrypto.payment.paymentUrl || ""}
+                  </div>
                 </div>
               </div>
             </div>

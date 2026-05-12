@@ -47,14 +47,7 @@ const ProductTable = ({
               </button>
             </div>
 
-            {/* Row 2: Meta info */}
             <div className="flex items-center gap-4 flex-wrap text-sm text-white/60">
-              <span>
-                <span className="text-white/30 text-xs mr-1">
-                  {t("products.deliveryType")}:
-                </span>
-                {t(`products.deliveryTypes.${product.deliveryType}`)}
-              </span>
               <span className="flex items-center gap-1.5">
                 <span className="text-white/30 text-xs mr-1">
                   {t("products.stock")}:

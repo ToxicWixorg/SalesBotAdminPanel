@@ -5,7 +5,7 @@
 // به جای آن، مستقیم با Telegram HTTP API ارتباط برقرار می‌کند.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
   stockNotificationsTable,
@@ -15,11 +15,16 @@ import {
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const localizedProductName = sql<string>`COALESCE(${productsTable.nameFA}, ${productsTable.nameEN}, ${productsTable.nameRU})`;
 
 // پیام‌های چندزبانه ساده (برای ارسال از admin API)
-const MESSAGES: Record<string, { text: (name: string) => string; btn: string }> = {
+const MESSAGES: Record<
+  string,
+  { text: (name: string) => string; btn: string }
+> = {
   fa: {
-    text: (name) => `✅ <b>${name}</b> دوباره موجود شد!\nهم‌اکنون می‌توانید خرید کنید.`,
+    text: (name) =>
+      `✅ <b>${name}</b> دوباره موجود شد!\nهم‌اکنون می‌توانید خرید کنید.`,
     btn: "🛒 خرید",
   },
   en: {
@@ -27,14 +32,19 @@ const MESSAGES: Record<string, { text: (name: string) => string; btn: string }> 
     btn: "🛒 Buy Now",
   },
   ru: {
-    text: (name) => `✅ <b>${name}</b> снова в наличии!\nТеперь вы можете купить.`,
+    text: (name) =>
+      `✅ <b>${name}</b> снова в наличии!\nТеперь вы можете купить.`,
     btn: "🛒 Купить",
   },
 };
 
-export async function notifyRestockedUsersFromAdmin(productId: number): Promise<void> {
+export async function notifyRestockedUsersFromAdmin(
+  productId: number,
+): Promise<void> {
   if (!BOT_TOKEN) {
-    console.warn("[notifyRestocked] BOT_TOKEN not set — skipping notifications");
+    console.warn(
+      "[notifyRestocked] BOT_TOKEN not set — skipping notifications",
+    );
     return;
   }
 
@@ -59,7 +69,7 @@ export async function notifyRestockedUsersFromAdmin(productId: number): Promise<
   if (subscribers.length === 0) return;
 
   const [product] = await db
-    .select({ name: productsTable.name, id: productsTable.id })
+    .select({ name: localizedProductName, id: productsTable.id })
     .from(productsTable)
     .where(eq(productsTable.id, productId))
     .limit(1);
@@ -70,7 +80,8 @@ export async function notifyRestockedUsersFromAdmin(productId: number): Promise<
     // احترام به تنظیم کاربر
     if (sub.notifyStock === false) continue;
 
-    const lang = (sub.languageCode ?? "fa") in MESSAGES ? sub.languageCode! : "fa";
+    const lang =
+      (sub.languageCode ?? "fa") in MESSAGES ? sub.languageCode! : "fa";
     const msg = MESSAGES[lang];
 
     const body = {

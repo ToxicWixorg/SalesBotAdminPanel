@@ -571,7 +571,7 @@ const ru: Translations = {
     syntaxSpoiler: "Спойлер: ||text||",
     syntaxCode: "Копируемый/кодовый стиль: ''text''",
     syntaxQuote: "Цитата: {text}",
-    syntaxEmoji: "Custom emoji: [1222564456546]",
+    syntaxEmoji: "Custom emoji: [1222564456546]👑",
     variablesHint:
       "Подсказка: используйте FIRST_NAME, LAST_NAME, USERNAME, USER_ID для подстановки данных пользователя.",
     htmlPlaceholder: "Привет <b>{first_name}</b>\nВаше сообщение...",

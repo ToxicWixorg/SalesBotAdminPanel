@@ -572,7 +572,7 @@ const en: Translations = {
     syntaxSpoiler: "Spoiler: ||text||",
     syntaxCode: "Copy/code style: ''text''",
     syntaxQuote: "Quote: {text}",
-    syntaxEmoji: "Custom emoji: [1222564456546]",
+    syntaxEmoji: "Custom emoji: [1222564456546]👑",
     variablesHint:
       "Hint: use FIRST_NAME, LAST_NAME, USERNAME, USER_ID to inject user data.",
     htmlPlaceholder: "Hello <b>{first_name}</b>\nYour message...",

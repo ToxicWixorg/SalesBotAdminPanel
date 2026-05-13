@@ -584,7 +584,7 @@ const fa = {
     syntaxSpoiler: "اسپویلر: ||text||",
     syntaxCode: "حالت کپی/کد: ''text''",
     syntaxQuote: "نقل‌قول: {text}",
-    syntaxEmoji: "کاستوم ایموجی: [1222564456546]",
+    syntaxEmoji: "کاستوم ایموجی: [1222564456546]👑",
     variablesHint:
       "راهنما: از FIRST_NAME ، LAST_NAME ، USERNAME ، USER_ID برای درج اطلاعات کاربر استفاده کن.",
     htmlPlaceholder: "سلام <b>{first_name}</b>\nپیام شما...",

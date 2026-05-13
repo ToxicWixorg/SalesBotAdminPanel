@@ -21,7 +21,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
-import { eq, and, or, ilike, desc, asc } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc, sql } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
   productsTable,
@@ -140,6 +140,23 @@ function displayName(entity: {
   );
 }
 
+function isLegacyNameConstraintError(
+  err: unknown,
+  table: "categories" | "products" | "product_plans",
+): boolean {
+  if (!err || typeof err !== "object") return false;
+  const pgErr = err as {
+    code?: string;
+    column_name?: string;
+    table_name?: string;
+  };
+  return (
+    pgErr.code === "23502" &&
+    pgErr.column_name === "name" &&
+    pgErr.table_name === table
+  );
+}
+
 // ── GET /api/admin/products ───────────────────────────────────────────────────
 productsRouter.get("/", async (c) => {
   const {
@@ -184,7 +201,84 @@ productsRouter.post("/", async (c) => {
 
   normalizeLocalizedPayload(body);
 
-  const [product] = await db.insert(productsTable).values(body).returning();
+  let product;
+  try {
+    [product] = await db.insert(productsTable).values(body).returning();
+  } catch (err: unknown) {
+    if (isLegacyNameConstraintError(err, "products")) {
+      try {
+        await db.execute(sql`
+          insert into products (
+            name,
+            name_fa,
+            name_en,
+            name_ru,
+            slug,
+            description,
+            description_fa,
+            description_en,
+            description_ru,
+            image,
+            category_id,
+            requires_email,
+            requires_otp,
+            requires_login,
+            requires_region,
+            is_active,
+            stock,
+            min_stock,
+            terms,
+            custom_emoji_id,
+            regions,
+            updated_at
+          )
+          values (
+            ${body.nameFA},
+            ${body.nameFA},
+            ${body.nameEN},
+            ${body.nameRU},
+            ${body.slug},
+            ${body.descriptionFA ?? null},
+            ${body.descriptionFA ?? null},
+            ${body.descriptionEN ?? null},
+            ${body.descriptionRU ?? null},
+            ${body.image ?? null},
+            ${body.categoryId ?? null},
+            ${body.requiresEmail ?? false},
+            ${body.requiresOtp ?? false},
+            ${body.requiresLogin ?? false},
+            ${body.requiresRegion ?? false},
+            ${body.isActive ?? true},
+            ${body.stock ?? 0},
+            ${body.minStock ?? 5},
+            ${body.terms ?? null},
+            ${body.customEmojiId ?? null},
+            ${body.regions ?? []},
+            NOW()
+          )
+        `);
+
+        [product] = await db
+          .select()
+          .from(productsTable)
+          .where(eq(productsTable.slug, body.slug))
+          .limit(1);
+      } catch (fallbackErr: unknown) {
+        const pgFallback = fallbackErr as { code?: string };
+        if (pgFallback?.code === "23505") {
+          return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
+        }
+        throw fallbackErr;
+      }
+    } else {
+      const pgErr = err as { code?: string };
+      if (pgErr?.code === "23505") {
+        return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
+      }
+      throw err;
+    }
+  }
+
   if (!product) return c.json({ error: "Failed to create product" }, 500);
 
   await logAdminAction(c, {
@@ -329,10 +423,81 @@ productsRouter.post("/:id/plans", async (c) => {
   normalizeLocalizedPayload(body);
   body.requiredInputs = normalizeRequiredInputs(body.requiredInputs);
 
-  const [plan] = await db
-    .insert(productPlansTable)
-    .values({ ...body, productId })
-    .returning();
+  let plan;
+  try {
+    [plan] = await db
+      .insert(productPlansTable)
+      .values({ ...body, productId })
+      .returning();
+  } catch (err: unknown) {
+    if (isLegacyNameConstraintError(err, "product_plans")) {
+      await db.execute(sql`
+        insert into product_plans (
+          product_id,
+          name,
+          name_fa,
+          name_en,
+          name_ru,
+          description,
+          description_fa,
+          description_en,
+          description_ru,
+          price,
+          duration,
+          duration_unit,
+          delivery_type,
+          requires_email,
+          requires_otp,
+          requires_login,
+          requires_region,
+          regions,
+          custom_emoji_id,
+          "order",
+          is_active,
+          required_inputs
+        )
+        values (
+          ${productId},
+          ${body.nameFA},
+          ${body.nameFA},
+          ${body.nameEN},
+          ${body.nameRU},
+          ${body.descriptionFA ?? null},
+          ${body.descriptionFA ?? null},
+          ${body.descriptionEN ?? null},
+          ${body.descriptionRU ?? null},
+          ${body.price},
+          ${body.duration ?? null},
+          ${body.durationUnit ?? null},
+          ${body.deliveryType},
+          ${body.requiresEmail ?? false},
+          ${body.requiresOtp ?? false},
+          ${body.requiresLogin ?? false},
+          ${body.requiresRegion ?? false},
+          ${body.regions ?? []},
+          ${body.customEmojiId ?? null},
+          ${body.order ?? 0},
+          ${body.isActive ?? true},
+          ${body.requiredInputs ?? []}
+        )
+      `);
+
+      [plan] = await db
+        .select()
+        .from(productPlansTable)
+        .where(
+          and(
+            eq(productPlansTable.productId, productId),
+            eq(productPlansTable.nameFA, body.nameFA),
+          ),
+        )
+        .orderBy(desc(productPlansTable.id))
+        .limit(1);
+    } else {
+      throw err;
+    }
+  }
+
   if (!plan) return c.json({ error: "Failed to create plan" }, 500);
 
   await logAdminAction(c, {
@@ -406,8 +571,60 @@ categoriesRouter.post("/", async (c) => {
       .values(body)
       .returning();
     return c.json(category, 201);
-  } catch (err: any) {
-    if (err?.code === "23505") {
+  } catch (err: unknown) {
+    if (isLegacyNameConstraintError(err, "categories")) {
+      try {
+        await db.execute(sql`
+          insert into categories (
+            name,
+            name_fa,
+            name_en,
+            name_ru,
+            slug,
+            description,
+            description_fa,
+            description_en,
+            description_ru,
+            icon,
+            custom_emoji_id,
+            is_active
+          )
+          values (
+            ${body.nameFA},
+            ${body.nameFA},
+            ${body.nameEN},
+            ${body.nameRU},
+            ${body.slug},
+            ${body.descriptionFA ?? null},
+            ${body.descriptionFA ?? null},
+            ${body.descriptionEN ?? null},
+            ${body.descriptionRU ?? null},
+            ${body.icon ?? null},
+            ${body.customEmojiId ?? null},
+            ${body.isActive ?? true}
+          )
+        `);
+
+        const [created] = await db
+          .select()
+          .from(categoriesTable)
+          .where(eq(categoriesTable.slug, body.slug))
+          .limit(1);
+
+        if (created) return c.json(created, 201);
+      } catch (fallbackErr: unknown) {
+        const pgFallback = fallbackErr as { code?: string };
+        if (pgFallback?.code === "23505") {
+          return c.json({ error: "این دسته‌بندی قبلاً وجود دارد" }, 409);
+        }
+        throw fallbackErr;
+      }
+
+      return c.json({ error: "Failed to create category" }, 500);
+    }
+
+    const pgErr = err as { code?: string };
+    if (pgErr?.code === "23505") {
       return c.json({ error: "این دسته‌بندی قبلاً وجود دارد" }, 409);
     }
     throw err;

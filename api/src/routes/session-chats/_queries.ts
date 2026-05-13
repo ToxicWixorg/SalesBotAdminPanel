@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { db } from "../../db/index.ts";
 import {
   sessionChatsTable,
@@ -27,7 +27,7 @@ export const chatSelectShape = {
   },
   product: {
     id: productsTable.id,
-    name: productsTable.name,
+    name: sql<string>`COALESCE(${productsTable.nameFA}, ${productsTable.nameEN}, ${productsTable.nameRU})`,
   },
 } as const;
 

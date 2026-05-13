@@ -16,7 +16,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
-import { eq, and, gte, lte, desc, count } from "drizzle-orm";
+import { eq, and, gte, lte, desc, count, sql } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
   schedulesTable,
@@ -31,6 +31,8 @@ import { logAdminAction } from "../helpers/logger.ts";
 
 export const schedulesRouter = new Hono();
 schedulesRouter.use("*", requireAuth, requireSection("schedules"));
+
+const localizedProductName = sql<string>`COALESCE(${productsTable.nameFA}, ${productsTable.nameEN}, ${productsTable.nameRU})`;
 
 // ── GET /api/admin/schedules/templates ────────────────────────────────────────
 schedulesRouter.get("/templates", async (c) => {
@@ -212,7 +214,7 @@ schedulesRouter.get("/active", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
       },
       template: {
         id: timeSlotTemplatesTable.id,
@@ -259,7 +261,7 @@ schedulesRouter.post("/:id/start", async (c) => {
         productId: ordersTable.productId,
       },
       product: {
-        name: productsTable.name,
+        name: localizedProductName,
       },
     })
     .from(schedulesTable)
@@ -400,7 +402,7 @@ schedulesRouter.get("/today", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
       },
       template: {
         id: timeSlotTemplatesTable.id,
@@ -464,7 +466,7 @@ schedulesRouter.get("/:date", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
       },
       template: {
         id: timeSlotTemplatesTable.id,
@@ -541,7 +543,7 @@ schedulesRouter.patch("/:id/reminder", async (c) => {
         id: usersTable.id,
       },
       order: { id: ordersTable.id },
-      product: { name: productsTable.name },
+      product: { name: localizedProductName },
     })
     .from(schedulesTable)
     .leftJoin(ordersTable, eq(schedulesTable.orderId, ordersTable.id))

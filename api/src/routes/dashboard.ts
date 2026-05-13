@@ -27,6 +27,8 @@ import { requireAuth } from "../middleware/auth.ts";
 export const dashboardRouter = new Hono();
 dashboardRouter.use("*", requireAuth);
 
+const localizedProductName = sql<string>`COALESCE(${productsTable.nameFA}, ${productsTable.nameEN}, ${productsTable.nameRU})`;
+
 // ── GET /api/admin/dashboard/stats ────────────────────────────────────────────
 dashboardRouter.get("/stats", async (c) => {
   const todayStart = new Date();
@@ -152,7 +154,7 @@ dashboardRouter.get("/pending", async (c) => {
     db
       .select({
         id: ordersTable.id,
-        productName: productsTable.name,
+        productName: localizedProductName,
         userName: usersTable.firstName,
         createdAt: ordersTable.createdAt,
       })
@@ -186,7 +188,7 @@ dashboardRouter.get("/pending", async (c) => {
     db
       .select({
         id: ordersTable.id,
-        productName: productsTable.name,
+        productName: localizedProductName,
         userName: usersTable.firstName,
         createdAt: ordersTable.createdAt,
       })

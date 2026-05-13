@@ -55,7 +55,7 @@ function renderBroadcastMessage(
   recipient: BroadcastRecipient,
 ): string {
   const values: Record<BroadcastVariableKey, string> = {
-    FIRST_NAME: escapeHtml(recipient.firstName?.trim() || "دوست عزیز"),
+    FIRST_NAME: escapeHtml(recipient.firstName?.trim() || ""),
     LAST_NAME: escapeHtml(recipient.lastName?.trim() || ""),
     USERNAME: escapeHtml(recipient.username?.trim() || ""),
     USER_ID: escapeHtml(String(recipient.id)),
@@ -76,8 +76,12 @@ function renderBroadcastMessage(
     protect(`<code>${content}</code>`),
   );
 
-  formatted = formatted.replace(/\[(\d{5,})\]/g, (_match, emojiId: string) =>
-    protect(`<tg-emoji emoji-id="${emojiId}"></tg-emoji>`),
+  formatted = formatted.replace(
+    /\[(\d{5,})\](\p{Extended_Pictographic})?/gu,
+    (_match, emojiId: string, emojiChar?: string) =>
+      protect(
+        `<tg-emoji emoji-id="${emojiId}">${emojiChar ?? "✨"}</tg-emoji>`,
+      ),
   );
 
   formatted = formatted

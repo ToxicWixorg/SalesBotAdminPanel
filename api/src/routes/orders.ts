@@ -32,6 +32,9 @@ import { logAdminAction } from "../helpers/logger.ts";
 export const ordersRouter = new Hono();
 ordersRouter.use("*", requireAuth, requireSection("orders"));
 
+const localizedProductName = sql<string>`COALESCE(${productsTable.nameFA}, ${productsTable.nameEN}, ${productsTable.nameRU})`;
+const localizedPlanName = sql<string>`COALESCE(${productPlansTable.nameFA}, ${productPlansTable.nameEN}, ${productPlansTable.nameRU})`;
+
 type SupportedLanguage = "fa" | "en" | "ru";
 type NotifiableOrderStatus = "in_progress" | "completed" | "cancelled";
 
@@ -173,12 +176,12 @@ ordersRouter.get("/", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
         deliveryType: productPlansTable.deliveryType,
       },
       plan: {
         id: productPlansTable.id,
-        name: productPlansTable.name,
+        name: localizedPlanName,
       },
     })
     .from(ordersTable)
@@ -205,7 +208,7 @@ ordersRouter.get("/pending-admin", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
         deliveryType: productPlansTable.deliveryType,
       },
     })
@@ -234,7 +237,7 @@ ordersRouter.get("/scheduled-today", async (c) => {
         username: usersTable.username,
         firstName: usersTable.firstName,
       },
-      product: { id: productsTable.id, name: productsTable.name },
+      product: { id: productsTable.id, name: localizedProductName },
     })
     .from(ordersTable)
     .leftJoin(usersTable, eq(ordersTable.userId, usersTable.id))
@@ -261,7 +264,7 @@ ordersRouter.get("/waiting-invite", async (c) => {
         username: usersTable.username,
         firstName: usersTable.firstName,
       },
-      product: { id: productsTable.id, name: productsTable.name },
+      product: { id: productsTable.id, name: localizedProductName },
       invite: invitesTable,
     })
     .from(ordersTable)
@@ -338,12 +341,12 @@ ordersRouter.patch("/:id/status", async (c) => {
           notifyOrders: true,
         },
       }),
-      db.query.productsTable.findFirst({
-        where: eq(productsTable.id, old.productId),
-        columns: {
-          name: true,
-        },
-      }),
+      db
+        .select({ name: localizedProductName })
+        .from(productsTable)
+        .where(eq(productsTable.id, old.productId))
+        .limit(1)
+        .then((rows) => rows[0]),
     ]);
 
     if (user?.id && user.notifyOrders !== false) {
@@ -515,11 +518,11 @@ ordersRouter.get("/pending-payment", async (c) => {
       },
       product: {
         id: productsTable.id,
-        name: productsTable.name,
+        name: localizedProductName,
       },
       plan: {
         id: productPlansTable.id,
-        name: productPlansTable.name,
+        name: localizedPlanName,
       },
     })
     .from(ordersTable)

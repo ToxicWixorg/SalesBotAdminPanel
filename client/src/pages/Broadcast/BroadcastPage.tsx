@@ -340,7 +340,7 @@ export default function BroadcastPage() {
               <li>{t("broadcast.syntaxSpoiler")} </li>
               <li>{t("broadcast.syntaxCode")}</li>
               <li>{t("broadcast.syntaxQuote")}</li>
-              <li>{t("broadcast.syntaxEmoji")} ⇛ 👑 </li>
+              <li>{t("broadcast.syntaxEmoji")} </li>
             </ul>
           </div>
         </div>

@@ -450,7 +450,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                       <option value="custom_schedule" className="bg-slate-900">
                         {t("products.deliveryTypes.custom_schedule")}
                       </option>
-                      <option value="invite" className="bg-slate-900">
+                      {/* <option value="invite" className="bg-slate-900">
                         {t("products.deliveryTypes.invite")}
                       </option>
                       <option value="code" className="bg-slate-900">
@@ -464,7 +464,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                       </option>
                       <option value="reservation" className="bg-slate-900">
                         {t("products.deliveryTypes.reservation")}
-                      </option>
+                      </option> */}
                     </select>
                   </label>
                   <label className="flex flex-col gap-1 text-sm">

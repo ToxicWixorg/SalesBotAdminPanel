@@ -9,6 +9,7 @@ import { Hono } from "hono";
 import { eq, and, gte, lte, desc, sum, count } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
+  ordersTable,
   walletTransactionsTable,
   walletTopupsTable,
   usersTable,
@@ -104,6 +105,12 @@ function parseTopupReceiptPath(receiptPath: string) {
   return { kind: "local" as const, path: receiptPath };
 }
 
+function parseOrderPaymentNotes(notes: string | null | undefined): number | null {
+  if (!notes) return null;
+  const match = notes.match(/^order_payment:(\d+)$/);
+  return match ? parseInt(match[1]!, 10) : null;
+}
+
 async function sendTelegramMessage(userId: number, text: string) {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) return;
@@ -187,6 +194,11 @@ walletRouter.get("/topups", async (c) => {
     topups.map((item) => ({
       ...item,
       receiptUrl: `/api/admin/wallet/topups/${item.topup.id}/receipt`,
+      reviewType:
+        parseOrderPaymentNotes(item.topup.notes) !== null
+          ? "order_payment"
+          : "wallet_topup",
+      orderId: parseOrderPaymentNotes(item.topup.notes),
     })),
   );
 });
@@ -290,6 +302,46 @@ walletRouter.post("/topups/:id/approve", async (c) => {
   });
   if (!user) return c.json({ error: "User not found" }, 404);
 
+  const linkedOrderId = parseOrderPaymentNotes(topup.notes);
+
+  if (linkedOrderId !== null) {
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, linkedOrderId))
+      .limit(1);
+
+    if (!order) return c.json({ error: "Order not found" }, 404);
+    if (order.status !== "pending_payment") {
+      return c.json({ error: "Order already processed" }, 400);
+    }
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(ordersTable)
+        .set({ status: "pending_admin", updatedAt: new Date() })
+        .where(eq(ordersTable.id, order.id));
+
+      await tx
+        .update(walletTopupsTable)
+        .set({
+          status: "approved",
+          approvedBy: admin.id,
+          approvedAt: new Date(),
+        })
+        .where(eq(walletTopupsTable.id, id));
+    });
+
+    await sendTelegramMessage(
+      user.id,
+      `✅ <b>پرداخت سفارش شما تایید شد</b>\n\nسفارش #${order.id} در حال آماده‌سازی است.`,
+    ).catch((err) =>
+      console.error("[wallet/topups] failed to notify approved order payment:", err),
+    );
+
+    return c.json({ success: true, orderId: order.id });
+  }
+
   const amount = parseFloat(topup.amount ?? "0");
   const currentBalance = parseFloat(user.walletBalance ?? "0");
   const newBalance = parseFloat((currentBalance + amount).toFixed(2));
@@ -367,6 +419,47 @@ walletRouter.post("/topups/:id/reject", async (c) => {
       languageCode: true,
     },
   });
+
+  const linkedOrderId = parseOrderPaymentNotes(topup.notes);
+
+  if (linkedOrderId !== null) {
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, linkedOrderId))
+      .limit(1);
+
+    if (!order) return c.json({ error: "Order not found" }, 404);
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(ordersTable)
+        .set({
+          status: "cancelled",
+          notes: order.notes,
+          updatedAt: new Date(),
+        })
+        .where(eq(ordersTable.id, order.id));
+
+      await tx
+        .update(walletTopupsTable)
+        .set({
+          status: "rejected",
+          approvedBy: admin.id,
+          approvedAt: new Date(),
+        })
+        .where(eq(walletTopupsTable.id, id));
+    });
+
+    await sendTelegramMessage(
+      topup.userId,
+      `❌ <b>پرداخت سفارش شما رد شد</b>\n\nسفارش #${order.id} لغو شد.`,
+    ).catch((err) =>
+      console.error("[wallet/topups] failed to notify rejected order payment:", err),
+    );
+
+    return c.json({ success: true, orderId: order.id });
+  }
 
   await sendTelegramMessage(
     topup.userId,

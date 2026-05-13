@@ -41,6 +41,8 @@ type TopupItem = {
   };
   user: { id: number; username: string; firstName: string } | null;
   receiptUrl: string;
+  reviewType?: "wallet_topup" | "order_payment";
+  orderId?: number | null;
 };
 
 type ZarinpalPaymentItem = {
@@ -422,6 +424,14 @@ export default function WalletPage() {
                       <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300">
                         {t("wallet.pendingTopup", { defaultValue: "Pending" })}
                       </span>
+                      {item.reviewType === "order_payment" && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200">
+                          {t("wallet.orderPaymentReview", {
+                            defaultValue: "Order payment",
+                          })}
+                          {item.orderId ? ` #${item.orderId}` : ""}
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-white/80">
                       {item.user?.firstName
@@ -612,6 +622,14 @@ export default function WalletPage() {
                     <span className="text-white/40">Status: </span>
                     {selectedTopup.topup.status}
                   </div>
+                  {selectedTopup.reviewType === "order_payment" && (
+                    <div>
+                      <span className="text-white/40">Review: </span>
+                      {selectedTopup.orderId
+                        ? `Order payment #${selectedTopup.orderId}`
+                        : "Order payment"}
+                    </div>
+                  )}
                   <div className="break-all text-xs text-white/40">
                     {selectedTopup.topup.receiptPath}
                   </div>

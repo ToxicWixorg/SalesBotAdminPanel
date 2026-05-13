@@ -208,7 +208,6 @@ broadcastRouter.post("/send", async (c) => {
     successCount += results.filter((r) => r.status === "fulfilled").length;
     failCount += results.filter((r) => r.status === "rejected").length;
 
-    // تاخیر بین batch ها برای رعایت rate limit تلگرام
     if (i + batchSize < recipients.length) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }

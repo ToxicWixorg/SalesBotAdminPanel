@@ -270,7 +270,7 @@ productsRouter.post("/", async (c) => {
             ${body.minStock ?? 5},
             ${body.terms ?? null},
             ${body.customEmojiId ?? null},
-            ${body.regions ?? []},
+            ${JSON.stringify(body.regions ?? [])}::jsonb,
             NOW()
           )
         `);
@@ -491,11 +491,11 @@ productsRouter.post("/:id/plans", async (c) => {
           ${body.requiresOtp ?? false},
           ${body.requiresLogin ?? false},
           ${body.requiresRegion ?? false},
-          ${body.regions ?? []},
+          ${JSON.stringify(body.regions ?? [])}::jsonb,
           ${body.customEmojiId ?? null},
           ${body.order ?? 0},
           ${body.isActive ?? true},
-          ${body.requiredInputs ?? []}
+          ${JSON.stringify(body.requiredInputs ?? [])}::jsonb
         )
       `);
 

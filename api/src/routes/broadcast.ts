@@ -27,19 +27,79 @@ import { logAdminAction } from "../helpers/logger.ts";
 export const broadcastRouter = new Hono();
 broadcastRouter.use("*", requireAuth, requireSection("broadcast"));
 
+type ParseMode = "HTML" | "Markdown";
+
+type BroadcastRecipient = {
+  id: number;
+  firstName: string | null;
+  username: string | null;
+};
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function escapeMarkdown(value: string): string {
+  return value.replace(/([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g, "\\$1");
+}
+
+function renderBroadcastMessage(
+  template: string,
+  recipient: BroadcastRecipient,
+  parseMode: ParseMode,
+): string {
+  const esc = parseMode === "HTML" ? escapeHtml : escapeMarkdown;
+  const firstName = esc(recipient.firstName?.trim() || "دوست عزیز");
+  const username = esc(
+    recipient.username?.trim() ? `@${recipient.username.trim()}` : "",
+  );
+  const userId = esc(String(recipient.id));
+
+  return template
+    .replaceAll("{first_name}", firstName)
+    .replaceAll("{username}", username)
+    .replaceAll("{user_id}", userId);
+}
+
+async function getUsersByIds(userIds: number[]): Promise<BroadcastRecipient[]> {
+  if (userIds.length === 0) return [];
+
+  const users = await db
+    .select({
+      id: usersTable.id,
+      firstName: usersTable.firstName,
+      username: usersTable.username,
+    })
+    .from(usersTable)
+    .where(
+      and(inArray(usersTable.id, userIds), eq(usersTable.isBlocked, false)),
+    );
+
+  return users;
+}
+
 // ─── helper: پیدا کردن userId ها بر اساس فیلتر ───────────────────────────────
 async function getTargetUserIds(filter: {
   type: "all" | "product" | "role" | "subscriptionExpiring";
   productId?: number;
   role?: string;
   daysUntilExpiry?: number;
-}): Promise<number[]> {
+}): Promise<BroadcastRecipient[]> {
   if (filter.type === "all") {
     const users = await db
-      .select({ id: usersTable.id })
+      .select({
+        id: usersTable.id,
+        firstName: usersTable.firstName,
+        username: usersTable.username,
+      })
       .from(usersTable)
       .where(eq(usersTable.isBlocked, false));
-    return users.map((u) => u.id);
+    return users;
   }
 
   if (filter.type === "product" && filter.productId) {
@@ -52,17 +112,21 @@ async function getTargetUserIds(filter: {
           eq(ordersTable.status, "completed"),
         ),
       );
-    return orders.map((o) => o.userId);
+    return getUsersByIds(orders.map((o) => o.userId));
   }
 
   if (filter.type === "role" && filter.role) {
     const users = await db
-      .select({ id: usersTable.id })
+      .select({
+        id: usersTable.id,
+        firstName: usersTable.firstName,
+        username: usersTable.username,
+      })
       .from(usersTable)
       .where(
         and(eq(usersTable.role, filter.role), eq(usersTable.isBlocked, false)),
       );
-    return users.map((u) => u.id);
+    return users;
   }
 
   if (filter.type === "subscriptionExpiring" && filter.daysUntilExpiry) {
@@ -81,7 +145,7 @@ async function getTargetUserIds(filter: {
           lte(subscriptionsTable.endDate, futureDate),
         ),
       );
-    return subs.map((s) => s.userId);
+    return getUsersByIds(subs.map((s) => s.userId));
   }
 
   return [];
@@ -90,8 +154,8 @@ async function getTargetUserIds(filter: {
 // ── POST /api/admin/broadcast/preview ────────────────────────────────────────
 broadcastRouter.post("/preview", async (c) => {
   const body = await c.req.json();
-  const userIds = await getTargetUserIds(body.filter);
-  return c.json({ count: userIds.length });
+  const recipients = await getTargetUserIds(body.filter);
+  return c.json({ count: recipients.length });
 });
 
 // ── POST /api/admin/broadcast/send ───────────────────────────────────────────
@@ -103,13 +167,13 @@ broadcastRouter.post("/send", async (c) => {
   } = await c.req.json<{
     message: string;
     filter: Parameters<typeof getTargetUserIds>[0];
-    parseMode?: "HTML" | "Markdown";
+    parseMode?: ParseMode;
   }>();
 
   if (!message?.trim()) return c.json({ error: "Message is required" }, 400);
 
-  const userIds = await getTargetUserIds(filter);
-  if (userIds.length === 0)
+  const recipients = await getTargetUserIds(filter);
+  if (recipients.length === 0)
     return c.json({ error: "No target users found" }, 400);
 
   const botToken = process.env.BOT_TOKEN;
@@ -121,17 +185,17 @@ broadcastRouter.post("/send", async (c) => {
   let failCount = 0;
 
   const batchSize = 30;
-  for (let i = 0; i < userIds.length; i += batchSize) {
-    const batch = userIds.slice(i, i + batchSize);
+  for (let i = 0; i < recipients.length; i += batchSize) {
+    const batch = recipients.slice(i, i + batchSize);
 
     const results = await Promise.allSettled(
-      batch.map((userId) =>
+      batch.map((recipient) =>
         fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            chat_id: userId,
-            text: message,
+            chat_id: recipient.id,
+            text: renderBroadcastMessage(message, recipient, parseMode),
             parse_mode: parseMode,
           }),
         }).then((res) => {
@@ -145,7 +209,7 @@ broadcastRouter.post("/send", async (c) => {
     failCount += results.filter((r) => r.status === "rejected").length;
 
     // تاخیر بین batch ها برای رعایت rate limit تلگرام
-    if (i + batchSize < userIds.length) {
+    if (i + batchSize < recipients.length) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -154,9 +218,16 @@ broadcastRouter.post("/send", async (c) => {
     action: "broadcast",
     entityType: "broadcast",
     description: `Broadcast sent to ${successCount} users (${failCount} failed)`,
-    metadata: { totalTargets: userIds.length, successCount, failCount, filter },
+    metadata: {
+      totalTargets: recipients.length,
+      successCount,
+      failCount,
+      filter,
+      parseMode,
+      placeholders: ["{first_name}", "{username}", "{user_id}"],
+    },
     severity: "info",
   });
 
-  return c.json({ successCount, failCount, total: userIds.length });
+  return c.json({ successCount, failCount, total: recipients.length });
 });

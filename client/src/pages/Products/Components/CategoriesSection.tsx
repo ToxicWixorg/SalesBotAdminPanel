@@ -23,6 +23,9 @@ const emptyForm = {
   nameFA: "",
   nameEN: "",
   nameRU: "",
+  descriptionFA: "",
+  descriptionEN: "",
+  descriptionRU: "",
   slug: "",
   customEmojiId: "",
 };
@@ -57,8 +60,17 @@ export default function CategoriesSection() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setEditingId(null);
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.error;
+    onError: (err: unknown) => {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: unknown }).response === "object" &&
+        (err as { response?: { data?: { error?: string } } }).response?.data
+          ?.error
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
       alert(msg || "خطا در ویرایش دسته‌بندی");
     },
   });
@@ -94,8 +106,17 @@ export default function CategoriesSection() {
       setShowAdd(false);
       setAddForm(emptyForm);
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.error;
+    onError: (err: unknown) => {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: unknown }).response === "object" &&
+        (err as { response?: { data?: { error?: string } } }).response?.data
+          ?.error
+          ? (err as { response?: { data?: { error?: string } } }).response?.data
+              ?.error
+          : undefined;
       alert(msg || "خطا در ساخت دسته‌بندی");
     },
   });

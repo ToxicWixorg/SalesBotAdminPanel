@@ -2,11 +2,11 @@ const DELIVERY_TYPES = [
   "automatic",
   "manual",
   "custom_schedule",
-  "invite",
-  "code",
-  "family_join",
-  "renewable",
-  "reservation",
+  // "invite",
+  // "code",
+  // "family_join",
+  // "renewable",
+  // "reservation",
 ] as const;
 
 const DeliveryTypeFilter = ({

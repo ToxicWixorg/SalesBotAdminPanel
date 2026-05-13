@@ -285,7 +285,7 @@ export default function WalletPage() {
           onClick={() => setActiveTab("topups")}
           className={`px-4 py-2 rounded-lg text-sm border transition-all ${activeTab === "topups" ? "bg-white/20 border-white/30 text-white" : "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"}`}
         >
-          {t("wallet.topupsTab", { defaultValue: "Card-to-card reviews" })}
+          {t("wallet.topupsTab", { defaultValue: "Reviews" })}
         </button>
       </div>
 

@@ -15,6 +15,9 @@
 // - product: کاربرانی که محصول خاصی خریده‌اند
 // - role: بر اساس نقش
 // - subscriptionExpiring: اشتراک رو‌به‌اتمام (N روز آینده)
+//
+// فیلتر کمکی اختیاری:
+// - languageCode: محدودسازی نتایج فیلتر اصلی به زبان کاربر (fa/en/ru)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
@@ -27,13 +30,16 @@ import { logAdminAction } from "../helpers/logger.ts";
 export const broadcastRouter = new Hono();
 broadcastRouter.use("*", requireAuth, requireSection("broadcast"));
 
-type ParseMode = "HTML" | "Markdown";
+const BROADCAST_PARSE_MODE = "HTML" as const;
 
 type BroadcastRecipient = {
   id: number;
   firstName: string | null;
+  lastName: string | null;
   username: string | null;
 };
+
+type BroadcastVariableKey = "FIRST_NAME" | "LAST_NAME" | "USERNAME" | "USER_ID";
 
 function escapeHtml(value: string): string {
   return value
@@ -44,26 +50,45 @@ function escapeHtml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
-function escapeMarkdown(value: string): string {
-  return value.replace(/([_\*\[\]\(\)~`>#+\-=|{}.!\\])/g, "\\$1");
-}
-
 function renderBroadcastMessage(
   template: string,
   recipient: BroadcastRecipient,
-  parseMode: ParseMode,
 ): string {
-  const esc = parseMode === "HTML" ? escapeHtml : escapeMarkdown;
-  const firstName = esc(recipient.firstName?.trim() || "دوست عزیز");
-  const username = esc(
-    recipient.username?.trim() ? `@${recipient.username.trim()}` : "",
-  );
-  const userId = esc(String(recipient.id));
+  const values: Record<BroadcastVariableKey, string> = {
+    FIRST_NAME: escapeHtml(recipient.firstName?.trim() || "دوست عزیز"),
+    LAST_NAME: escapeHtml(recipient.lastName?.trim() || ""),
+    USERNAME: escapeHtml(recipient.username?.trim() || ""),
+    USER_ID: escapeHtml(String(recipient.id)),
+  };
 
-  return template
-    .replaceAll("{first_name}", firstName)
-    .replaceAll("{username}", username)
-    .replaceAll("{user_id}", userId);
+  const protectedSegments: string[] = [];
+  const protect = (html: string) => {
+    const index = protectedSegments.push(html) - 1;
+    return `\uE000${index}\uE000`;
+  };
+
+  let formatted = escapeHtml(template).replace(
+    /\b(FIRST_NAME|LAST_NAME|USERNAME|USER_ID)\b/g,
+    (token) => values[token as BroadcastVariableKey],
+  );
+
+  formatted = formatted.replace(/''([\s\S]+?)''/g, (_match, content: string) =>
+    protect(`<code>${content}</code>`),
+  );
+
+  formatted = formatted.replace(/\[(\d{5,})\]/g, (_match, emojiId: string) =>
+    protect(`<tg-emoji emoji-id="${emojiId}"></tg-emoji>`),
+  );
+
+  formatted = formatted
+    .replace(/\*\*([\s\S]+?)\*\*/g, "<b>$1</b>")
+    .replace(/__([\s\S]+?)__/g, "<u>$1</u>")
+    .replace(/\|\|([\s\S]+?)\|\|/g, "<tg-spoiler>$1</tg-spoiler>")
+    .replace(/\{([\s\S]+?)\}/g, "<blockquote>$1</blockquote>");
+
+  return formatted.replace(/\uE000(\d+)\uE000/g, (_match, index: string) => {
+    return protectedSegments[Number(index)] ?? "";
+  });
 }
 
 async function getUsersByIds(userIds: number[]): Promise<BroadcastRecipient[]> {
@@ -73,6 +98,7 @@ async function getUsersByIds(userIds: number[]): Promise<BroadcastRecipient[]> {
     .select({
       id: usersTable.id,
       firstName: usersTable.firstName,
+      lastName: usersTable.lastName,
       username: usersTable.username,
     })
     .from(usersTable)
@@ -81,6 +107,31 @@ async function getUsersByIds(userIds: number[]): Promise<BroadcastRecipient[]> {
     );
 
   return users;
+}
+
+async function applyLanguageFilter(
+  recipients: BroadcastRecipient[],
+  languageCode?: "fa" | "en" | "ru",
+): Promise<BroadcastRecipient[]> {
+  if (!languageCode) return recipients;
+  if (recipients.length === 0) return [];
+
+  const allowed = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(
+      and(
+        inArray(
+          usersTable.id,
+          recipients.map((recipient) => recipient.id),
+        ),
+        eq(usersTable.isBlocked, false),
+        eq(usersTable.languageCode, languageCode),
+      ),
+    );
+
+  const allowedIds = new Set(allowed.map((row) => row.id));
+  return recipients.filter((recipient) => allowedIds.has(recipient.id));
 }
 
 // ─── helper: پیدا کردن userId ها بر اساس فیلتر ───────────────────────────────
@@ -95,6 +146,7 @@ async function getTargetUserIds(filter: {
       .select({
         id: usersTable.id,
         firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
         username: usersTable.username,
       })
       .from(usersTable)
@@ -120,6 +172,7 @@ async function getTargetUserIds(filter: {
       .select({
         id: usersTable.id,
         firstName: usersTable.firstName,
+        lastName: usersTable.lastName,
         username: usersTable.username,
       })
       .from(usersTable)
@@ -153,27 +206,34 @@ async function getTargetUserIds(filter: {
 
 // ── POST /api/admin/broadcast/preview ────────────────────────────────────────
 broadcastRouter.post("/preview", async (c) => {
-  const body = await c.req.json();
+  const body = await c.req.json<{
+    filter: Parameters<typeof getTargetUserIds>[0];
+    languageCode?: "fa" | "en" | "ru";
+  }>();
   const recipients = await getTargetUserIds(body.filter);
-  return c.json({ count: recipients.length });
+  const filteredRecipients = await applyLanguageFilter(
+    recipients,
+    body.languageCode,
+  );
+  return c.json({ count: filteredRecipients.length });
 });
 
 // ── POST /api/admin/broadcast/send ───────────────────────────────────────────
 broadcastRouter.post("/send", async (c) => {
-  const {
-    message,
-    filter,
-    parseMode = "HTML",
-  } = await c.req.json<{
+  const { message, filter, languageCode } = await c.req.json<{
     message: string;
     filter: Parameters<typeof getTargetUserIds>[0];
-    parseMode?: ParseMode;
+    languageCode?: "fa" | "en" | "ru";
   }>();
 
   if (!message?.trim()) return c.json({ error: "Message is required" }, 400);
 
   const recipients = await getTargetUserIds(filter);
-  if (recipients.length === 0)
+  const filteredRecipients = await applyLanguageFilter(
+    recipients,
+    languageCode,
+  );
+  if (filteredRecipients.length === 0)
     return c.json({ error: "No target users found" }, 400);
 
   const botToken = process.env.BOT_TOKEN;
@@ -185,8 +245,8 @@ broadcastRouter.post("/send", async (c) => {
   let failCount = 0;
 
   const batchSize = 30;
-  for (let i = 0; i < recipients.length; i += batchSize) {
-    const batch = recipients.slice(i, i + batchSize);
+  for (let i = 0; i < filteredRecipients.length; i += batchSize) {
+    const batch = filteredRecipients.slice(i, i + batchSize);
 
     const results = await Promise.allSettled(
       batch.map((recipient) =>
@@ -195,8 +255,8 @@ broadcastRouter.post("/send", async (c) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             chat_id: recipient.id,
-            text: renderBroadcastMessage(message, recipient, parseMode),
-            parse_mode: parseMode,
+            text: renderBroadcastMessage(message, recipient),
+            parse_mode: BROADCAST_PARSE_MODE,
           }),
         }).then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -208,7 +268,7 @@ broadcastRouter.post("/send", async (c) => {
     successCount += results.filter((r) => r.status === "fulfilled").length;
     failCount += results.filter((r) => r.status === "rejected").length;
 
-    if (i + batchSize < recipients.length) {
+    if (i + batchSize < filteredRecipients.length) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -219,14 +279,24 @@ broadcastRouter.post("/send", async (c) => {
     description: `Broadcast sent to ${successCount} users (${failCount} failed)`,
     metadata: {
       totalTargets: recipients.length,
+      totalAfterLanguage: filteredRecipients.length,
       successCount,
       failCount,
       filter,
-      parseMode,
-      placeholders: ["{first_name}", "{username}", "{user_id}"],
+      languageCode: languageCode ?? null,
+      parseMode: BROADCAST_PARSE_MODE,
+      placeholders: ["FIRST_NAME", "LAST_NAME", "USERNAME", "USER_ID"],
+      syntax: [
+        "**bold**",
+        "__underline__",
+        "||spoiler||",
+        "''code''",
+        "{quote}",
+        "[custom_emoji_id]",
+      ],
     },
     severity: "info",
   });
 
-  return c.json({ successCount, failCount, total: recipients.length });
+  return c.json({ successCount, failCount, total: filteredRecipients.length });
 });

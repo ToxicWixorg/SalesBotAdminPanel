@@ -8,17 +8,17 @@ import PendingPayments from "./Components/PendingPayments";
 
 const ORDER_STATUSES = [
   "pending_payment",
-  "paid",
+  // "paid",
   "pending_admin",
   "waiting_schedule",
-  "scheduled",
+  // "scheduled",
   "in_progress",
   "completed",
   "cancelled",
-  "refunded",
-  "waiting_invite",
-  "invite_sent",
-  "rescheduled",
+  // "refunded",
+  // "waiting_invite",
+  // "invite_sent",
+  // "rescheduled",
 ];
 
 const OrdersPage = () => {

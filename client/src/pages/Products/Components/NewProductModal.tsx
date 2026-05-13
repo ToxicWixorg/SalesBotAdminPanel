@@ -2,13 +2,23 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
+import { getLocalizedName } from "../utils/localizedFields";
 
-type Category = { id: number; name: string };
+type Category = {
+  id: number;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
+};
 
 const defaultForm = {
-  name: "",
+  nameFA: "",
+  nameEN: "",
+  nameRU: "",
   slug: "",
-  description: "",
+  descriptionFA: "",
+  descriptionEN: "",
+  descriptionRU: "",
   categoryId: "" as number | "",
   isActive: true,
   stock: 0,
@@ -43,6 +53,9 @@ export default function NewProductModal({ onClose }: Props) {
         categoryId: data.categoryId === "" ? null : data.categoryId,
         customEmojiId: data.customEmojiId || null,
         terms: data.terms || null,
+        descriptionFA: data.descriptionFA || null,
+        descriptionEN: data.descriptionEN || null,
+        descriptionRU: data.descriptionRU || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -57,18 +70,35 @@ export default function NewProductModal({ onClose }: Props) {
   }, [onClose]);
 
   // auto-generate slug از روی نام
-  const handleNameChange = (name: string) => {
-    const slug = name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-    setForm((f) => ({ ...f, name, slug }));
+  const handleNameChange = (
+    key: "nameFA" | "nameEN" | "nameRU",
+    value: string,
+  ) => {
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      if (!f.slug.trim()) {
+        const candidates = [next.nameEN, next.nameFA, next.nameRU];
+        for (const candidate of candidates) {
+          const slug = candidate
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "");
+          if (slug) {
+            next.slug = slug;
+            break;
+          }
+        }
+      }
+      return next;
+    });
   };
 
   const set = <K extends keyof typeof form>(key: K, val: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: val }));
 
-  const isValid = form.name.trim() !== "" && form.slug.trim() !== "";
+  const isValid =
+    [form.nameFA, form.nameEN, form.nameRU].some((v) => v.trim()) &&
+    form.slug.trim() !== "";
 
   return (
     <div
@@ -89,18 +119,44 @@ export default function NewProductModal({ onClose }: Props) {
         </div>
 
         <div className="p-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">
-              {t("products.name")} <span className="text-red-400">*</span>
-            </span>
-            <input
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-              value={form.name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder={t("products.namePlaceholder")}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <div className="flex flex-col gap-3 mb-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                FA {t("products.name")} <span className="text-red-400">*</span>
+              </span>
+              <input
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameFA}
+                onChange={(e) => handleNameChange("nameFA", e.target.value)}
+                placeholder="مثال: نتفلیکس پرمیوم 1 ماهه"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                EN {t("products.name")} <span className="text-red-400">*</span>
+              </span>
+              <input
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameEN}
+                onChange={(e) => handleNameChange("nameEN", e.target.value)}
+                placeholder="e.g. Netflix Premium 1 Month"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                RU {t("products.name")} <span className="text-red-400">*</span>
+              </span>
+              <input
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameRU}
+                onChange={(e) => handleNameChange("nameRU", e.target.value)}
+                placeholder="например: Netflix Premium 1 месяц"
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600" />
+          <label className="flex flex-col gap-1 text-sm mb-4">
             <span className="text-white/60">
               Slug <span className="text-red-400">*</span>
             </span>
@@ -111,14 +167,41 @@ export default function NewProductModal({ onClose }: Props) {
               placeholder="netflix-premium-1-month"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">{t("common.description")}</span>
-            <textarea
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
-              value={form.description}
-              onChange={(e) => set("description", e.target.value)}
-            />
-          </label>
+          <hr className="border border-slate-600" />
+          <div className="flex flex-col gap-3 mb-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                FA {t("common.description")}
+              </span>
+              <textarea
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionFA}
+                onChange={(e) => set("descriptionFA", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                EN {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionEN}
+                onChange={(e) => set("descriptionEN", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                RU {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionRU}
+                onChange={(e) => set("descriptionRU", e.target.value)}
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600" />
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-sm">
@@ -138,7 +221,7 @@ export default function NewProductModal({ onClose }: Props) {
                 </option>
                 {categories?.map((c) => (
                   <option key={c.id} value={c.id} className="bg-slate-900">
-                    {c.name}
+                    {getLocalizedName(c)}
                   </option>
                 ))}
               </select>

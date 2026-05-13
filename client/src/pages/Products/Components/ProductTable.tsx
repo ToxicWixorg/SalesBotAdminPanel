@@ -1,3 +1,5 @@
+import { getLocalizedName } from "../utils/localizedFields";
+
 const ProductTable = ({
   products,
   toggleMutation,
@@ -27,7 +29,7 @@ const ProductTable = ({
                   #{product.id}
                 </span>
                 <span className="font-semibold text-white/90">
-                  {product.name}
+                  {getLocalizedName(product)}
                 </span>
                 <span className="text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
                   {product.categoryName}

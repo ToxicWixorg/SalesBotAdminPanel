@@ -10,12 +10,17 @@ import PlansModal from "./Components/PlansModal";
 import NewProductModal from "./Components/NewProductModal";
 import ProductTable from "./Components/ProductTable";
 import CategoriesSection from "./Components/CategoriesSection";
+import { getLocalizedName } from "./utils/localizedFields";
 
 type Product = {
   id: number;
-  name: string;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
   slug: string;
-  description: string | null;
+  descriptionFA: string | null;
+  descriptionEN: string | null;
+  descriptionRU: string | null;
   categoryId: number | null;
   categoryName: string;
   stock: number;
@@ -142,7 +147,7 @@ export default function ProductsPage() {
       {plansProduct && (
         <PlansModal
           productId={plansProduct.id}
-          productName={plansProduct.name}
+          productName={getLocalizedName(plansProduct)}
           onClose={() => setPlansProduct(null)}
         />
       )}

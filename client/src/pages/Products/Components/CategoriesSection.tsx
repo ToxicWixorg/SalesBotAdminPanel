@@ -2,12 +2,17 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
+import { getLocalizedName } from "../utils/localizedFields";
 
 type Category = {
   id: number;
-  name: string;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
   slug: string;
-  description: string | null;
+  descriptionFA: string | null;
+  descriptionEN: string | null;
+  descriptionRU: string | null;
   icon: string | null;
   customEmojiId: string | null;
   isActive: boolean;
@@ -15,7 +20,9 @@ type Category = {
 };
 
 const emptyForm = {
-  name: "",
+  nameFA: "",
+  nameEN: "",
+  nameRU: "",
   slug: "",
   customEmojiId: "",
 };
@@ -37,7 +44,12 @@ export default function CategoriesSection() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: typeof form }) =>
       api.put(`/api/admin/categories/${id}`, {
-        name: data.name,
+        nameFA: data.nameFA,
+        nameEN: data.nameEN,
+        nameRU: data.nameRU,
+        descriptionFA: data.descriptionFA || null,
+        descriptionEN: data.descriptionEN || null,
+        descriptionRU: data.descriptionRU || null,
         slug: data.slug,
         customEmojiId: data.customEmojiId || null,
       }),
@@ -60,10 +72,18 @@ export default function CategoriesSection() {
   const createMutation = useMutation({
     mutationFn: (data: typeof addForm) =>
       api.post("/api/admin/categories", {
-        name: data.name,
+        nameFA: data.nameFA,
+        nameEN: data.nameEN,
+        nameRU: data.nameRU,
+        descriptionFA: data.descriptionFA || null,
+        descriptionEN: data.descriptionEN || null,
+        descriptionRU: data.descriptionRU || null,
         slug:
           data.slug ||
-          data.name
+          data.nameEN ||
+          data.nameFA ||
+          data.nameRU ||
+          "category"
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, ""),
@@ -84,7 +104,12 @@ export default function CategoriesSection() {
     setEditingId(cat.id);
     setShowAdd(false);
     setForm({
-      name: cat.name,
+      nameFA: cat.nameFA,
+      nameEN: cat.nameEN,
+      nameRU: cat.nameRU,
+      descriptionFA: cat.descriptionFA ?? "",
+      descriptionEN: cat.descriptionEN ?? "",
+      descriptionRU: cat.descriptionRU ?? "",
       slug: cat.slug,
       customEmojiId: cat.customEmojiId ?? "",
     });
@@ -96,12 +121,27 @@ export default function CategoriesSection() {
   const setAdd = <K extends keyof typeof addForm>(key: K, val: string) =>
     setAddForm((f) => ({ ...f, [key]: val }));
 
-  const handleAddNameChange = (name: string) => {
-    const slug = name
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-    setAddForm((f) => ({ ...f, name, slug }));
+  const buildSlug = (...values: string[]) => {
+    for (const value of values) {
+      const slug = value
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+      if (slug) return slug;
+    }
+    return "";
+  };
+
+  const handleAddNameChange = (
+    key: "nameFA" | "nameEN" | "nameRU",
+    value: string,
+  ) => {
+    setAddForm((f) => {
+      const next = { ...f, [key]: value };
+      if (!f.slug.trim())
+        next.slug = buildSlug(next.nameEN, next.nameFA, next.nameRU);
+      return next;
+    });
   };
 
   return (
@@ -149,7 +189,7 @@ export default function CategoriesSection() {
                   >
                     <td className="p-2 font-medium">
                       {cat.icon && <span className="mr-1">{cat.icon}</span>}
-                      {cat.name}
+                      {getLocalizedName(cat)}
                     </td>
                     <td className="p-2 font-mono text-xs text-white/50">
                       {cat.slug}
@@ -202,17 +242,82 @@ export default function CategoriesSection() {
                     >
                       <td colSpan={5} className="p-3">
                         <div className="flex flex-col gap-3">
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="flex flex-col gap-3">
                             <label className="flex flex-col gap-1 text-sm">
                               <span className="text-white/60">
-                                {t("common.name")}
+                                FA {t("common.name")}
                               </span>
                               <input
                                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                                value={form.name}
-                                onChange={(e) => set("name", e.target.value)}
+                                value={form.nameFA}
+                                onChange={(e) => set("nameFA", e.target.value)}
                               />
                             </label>
+                            <label className="flex flex-col gap-1 text-sm">
+                              <span className="text-white/60">
+                                EN {t("common.name")}
+                              </span>
+                              <input
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                                value={form.nameEN}
+                                onChange={(e) => set("nameEN", e.target.value)}
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-sm">
+                              <span className="text-white/60">
+                                RU {t("common.name")}
+                              </span>
+                              <input
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                                value={form.nameRU}
+                                onChange={(e) => set("nameRU", e.target.value)}
+                              />
+                            </label>
+                          </div>
+                          <hr className="border border-slate-600 my-4" />
+
+                          <div className="flex flex-col gap-3">
+                            <label className="flex flex-col gap-1 text-sm">
+                              <span className="text-white/60">
+                                FA {t("common.description")}
+                              </span>
+                              <textarea
+                                dir="rtl"
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                                value={form.descriptionFA}
+                                onChange={(e) =>
+                                  set("descriptionFA", e.target.value)
+                                }
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-sm">
+                              <span className="text-white/60">
+                                EN {t("common.description")}
+                              </span>
+                              <textarea
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                                value={form.descriptionEN}
+                                onChange={(e) =>
+                                  set("descriptionEN", e.target.value)
+                                }
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-sm">
+                              <span className="text-white/60">
+                                RU {t("common.description")}
+                              </span>
+                              <textarea
+                                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                                value={form.descriptionRU}
+                                onChange={(e) =>
+                                  set("descriptionRU", e.target.value)
+                                }
+                              />
+                            </label>
+                          </div>
+                          <hr className="border border-slate-600 my-4" />
+
+                          <div className="grid grid-cols-2 gap-3">
                             <label className="flex flex-col gap-1 text-sm">
                               <span className="text-white/60">Slug</span>
                               <input
@@ -276,24 +381,85 @@ export default function CategoriesSection() {
         </div>
       )}
 
-      {/* Add new category form */}
       {showAdd && (
         <div className="mt-4 border border-white/10 rounded-xl p-4 flex flex-col gap-3">
           <h3 className="text-sm font-medium text-white/80">
             {t("products.categories.new")}
           </h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">
-                {t("common.name")} <span className="text-red-400">*</span>
+                FA {t("common.name")} <span className="text-red-400">*</span>
+              </span>
+              <input
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={addForm.nameFA}
+                onChange={(e) => handleAddNameChange("nameFA", e.target.value)}
+                placeholder="مثلاً: موزیک"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                EN {t("common.name")} <span className="text-red-400">*</span>
               </span>
               <input
                 className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                value={addForm.name}
-                onChange={(e) => handleAddNameChange(e.target.value)}
-                placeholder={t("products.categories.namePlaceholder")}
+                value={addForm.nameEN}
+                onChange={(e) => handleAddNameChange("nameEN", e.target.value)}
+                placeholder="e.g. Music"
               />
             </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                RU {t("common.name")} <span className="text-red-400">*</span>
+              </span>
+              <input
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={addForm.nameRU}
+                onChange={(e) => handleAddNameChange("nameRU", e.target.value)}
+                placeholder="например: Музыка"
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600 my-4" />
+
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                FA {t("common.description")}
+              </span>
+              <textarea
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={addForm.descriptionFA}
+                onChange={(e) => setAdd("descriptionFA", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                EN {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={addForm.descriptionEN}
+                onChange={(e) => setAdd("descriptionEN", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                RU {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={addForm.descriptionRU}
+                onChange={(e) => setAdd("descriptionRU", e.target.value)}
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600" />
+
+          <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-sm">
               <span className="text-white/60">Slug</span>
               <input
@@ -322,7 +488,12 @@ export default function CategoriesSection() {
             </button>
             <button
               onClick={() => createMutation.mutate(addForm)}
-              disabled={createMutation.isPending || !addForm.name.trim()}
+              disabled={
+                createMutation.isPending ||
+                ![addForm.nameFA, addForm.nameEN, addForm.nameRU].some((v) =>
+                  v.trim(),
+                )
+              }
               className="px-4 py-1.5 text-sm rounded-lg bg-white text-black hover:opacity-80 transition-all disabled:opacity-50"
             >
               {createMutation.isPending ? "..." : t("common.save")}

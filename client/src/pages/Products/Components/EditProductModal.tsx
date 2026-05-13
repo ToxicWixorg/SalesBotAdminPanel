@@ -2,12 +2,17 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
+import { getLocalizedName } from "../utils/localizedFields";
 
 type Product = {
   id: number;
-  name: string;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
   slug: string;
-  description: string | null;
+  descriptionFA: string | null;
+  descriptionEN: string | null;
+  descriptionRU: string | null;
   categoryId: number | null;
   isActive: boolean;
   stock: number;
@@ -21,7 +26,12 @@ type Product = {
   regions: Array<{ flag: string; name: string }> | null;
 };
 
-type Category = { id: number; name: string };
+type Category = {
+  id: number;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
+};
 
 type Props = {
   product: Product;
@@ -38,9 +48,13 @@ export default function EditProductModal({ product, onClose }: Props) {
   });
 
   const [form, setForm] = useState<Omit<Product, "id">>({
-    name: product.name,
+    nameFA: product.nameFA,
+    nameEN: product.nameEN,
+    nameRU: product.nameRU,
     slug: product.slug,
-    description: product.description,
+    descriptionFA: product.descriptionFA,
+    descriptionEN: product.descriptionEN,
+    descriptionRU: product.descriptionRU,
     categoryId: product.categoryId,
     isActive: product.isActive,
     stock: product.stock,
@@ -80,7 +94,7 @@ export default function EditProductModal({ product, onClose }: Props) {
       <div className="bg-slate-900 border border-white/10 rounded-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center p-4 border-b border-white/10">
           <h2 className="font-semibold text-base">
-            {t("common.edit")} — {product.name}
+            {t("common.edit")} — {getLocalizedName(product)}
           </h2>
           <button
             onClick={onClose}
@@ -91,16 +105,36 @@ export default function EditProductModal({ product, onClose }: Props) {
         </div>
 
         <div className="p-4 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">{t("products.name")}</span>
-            <input
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
-            />
-          </label>
+          <div className="flex flex-col gap-3 mb-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">FA {t("products.name")}</span>
+              <input
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameFA}
+                onChange={(e) => set("nameFA", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">EN {t("products.name")}</span>
+              <input
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameEN}
+                onChange={(e) => set("nameEN", e.target.value)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">RU {t("products.name")}</span>
+              <input
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                value={form.nameRU}
+                onChange={(e) => set("nameRU", e.target.value)}
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600" />
 
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm mb-4">
             <span className="text-white/60">Slug</span>
             <input
               className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 font-mono text-xs"
@@ -108,15 +142,42 @@ export default function EditProductModal({ product, onClose }: Props) {
               onChange={(e) => set("slug", e.target.value)}
             />
           </label>
+          <hr className="border border-slate-600" />
 
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-white/60">{t("common.description")}</span>
-            <textarea
-              className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
-              value={form.description ?? ""}
-              onChange={(e) => set("description", e.target.value || null)}
-            />
-          </label>
+          <div className="flex flex-col gap-3 mb-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                FA {t("common.description")}
+              </span>
+              <textarea
+                dir="rtl"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionFA ?? ""}
+                onChange={(e) => set("descriptionFA", e.target.value || null)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                EN {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionEN ?? ""}
+                onChange={(e) => set("descriptionEN", e.target.value || null)}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-white/60">
+                RU {t("common.description")}
+              </span>
+              <textarea
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                value={form.descriptionRU ?? ""}
+                onChange={(e) => set("descriptionRU", e.target.value || null)}
+              />
+            </label>
+          </div>
+          <hr className="border border-slate-600" />
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1 text-sm">
@@ -136,7 +197,7 @@ export default function EditProductModal({ product, onClose }: Props) {
                 </option>
                 {categories?.map((c) => (
                   <option key={c.id} value={c.id} className="bg-slate-900">
-                    {c.name}
+                    {getLocalizedName(c)}
                   </option>
                 ))}
               </select>

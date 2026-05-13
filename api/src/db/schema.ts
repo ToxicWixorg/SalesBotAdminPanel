@@ -61,9 +61,13 @@ export type User = typeof usersTable.$inferSelect;
 
 export const categoriesTable = pgTable("categories", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
+  nameFA: text("name_fa").notNull(),
+  nameEN: text("name_en").notNull(),
+  nameRU: text("name_ru").notNull(),
   slug: text("slug").notNull().unique(),
-  description: text("description"),
+  descriptionFA: text("description_fa"),
+  descriptionEN: text("description_en"),
+  descriptionRU: text("description_ru"),
   icon: text("icon"),
   customEmojiId: text("custom_emoji_id"),
   isActive: boolean("is_active").notNull().default(true),
@@ -76,9 +80,13 @@ export const productsTable = pgTable(
   "products",
   {
     id: serial("id").primaryKey(),
-    name: text("name").notNull(),
+    nameFA: text("name_fa").notNull(),
+    nameEN: text("name_en").notNull(),
+    nameRU: text("name_ru").notNull(),
     slug: text("slug").notNull().unique(),
-    description: text("description"),
+    descriptionFA: text("description_fa"),
+    descriptionEN: text("description_en"),
+    descriptionRU: text("description_ru"),
     image: text("image"),
     categoryId: integer("category_id").references(() => categoriesTable.id),
     requiresEmail: boolean("requires_email").default(false),
@@ -135,8 +143,12 @@ export const productPlansTable = pgTable(
     productId: integer("product_id")
       .notNull()
       .references(() => productsTable.id, { onDelete: "cascade" }),
-    name: text("name").notNull(),
-    description: text("description"),
+    nameFA: text("name_fa").notNull(),
+    nameEN: text("name_en").notNull(),
+    nameRU: text("name_ru").notNull(),
+    descriptionFA: text("description_fa"),
+    descriptionEN: text("description_en"),
+    descriptionRU: text("description_ru"),
     price: decimal("price", { precision: 15, scale: 2 }).notNull(),
     duration: integer("duration"),
     durationUnit: text("duration_unit"), // day | month | year

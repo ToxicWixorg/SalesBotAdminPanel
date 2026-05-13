@@ -21,7 +21,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Hono } from "hono";
-import { eq, and, ilike, desc, asc } from "drizzle-orm";
+import { eq, and, or, ilike, desc, asc } from "drizzle-orm";
 import { db } from "../db/index.ts";
 import {
   productsTable,
@@ -84,6 +84,62 @@ function normalizeRequiredInputs(value: unknown): RequiredInput[] {
     .filter((x): x is RequiredInput => Boolean(x));
 }
 
+function firstNonEmpty(...values: Array<unknown>): string {
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
+
+function normalizeLocalizedPayload(body: Record<string, any>): void {
+  const name = firstNonEmpty(body.nameFA, body.nameEN, body.nameRU, body.name);
+
+  if (name) {
+    body.nameFA = firstNonEmpty(body.nameFA, name) || name;
+    body.nameEN = firstNonEmpty(body.nameEN, name) || name;
+    body.nameRU = firstNonEmpty(body.nameRU, name) || name;
+  }
+
+  const description = firstNonEmpty(
+    body.descriptionFA,
+    body.descriptionEN,
+    body.descriptionRU,
+    body.description,
+  );
+
+  if (description) {
+    body.descriptionFA =
+      firstNonEmpty(body.descriptionFA, description) || description;
+    body.descriptionEN =
+      firstNonEmpty(body.descriptionEN, description) || description;
+    body.descriptionRU =
+      firstNonEmpty(body.descriptionRU, description) || description;
+  } else {
+    delete body.descriptionFA;
+    delete body.descriptionEN;
+    delete body.descriptionRU;
+  }
+
+  delete body.name;
+  delete body.description;
+}
+
+function displayName(entity: {
+  nameFA?: string | null;
+  nameEN?: string | null;
+  nameRU?: string | null;
+  name?: string | null;
+}): string {
+  return firstNonEmpty(
+    entity.nameFA,
+    entity.nameEN,
+    entity.nameRU,
+    entity.name,
+  );
+}
+
 // ── GET /api/admin/products ───────────────────────────────────────────────────
 productsRouter.get("/", async (c) => {
   const {
@@ -100,7 +156,15 @@ productsRouter.get("/", async (c) => {
     conditions.push(eq(productsTable.categoryId, parseInt(categoryId)));
   if (isActive !== undefined)
     conditions.push(eq(productsTable.isActive, isActive === "true"));
-  if (search) conditions.push(ilike(productsTable.name, `%${search}%`));
+  if (search) {
+    conditions.push(
+      or(
+        ilike(productsTable.nameFA, `%${search}%`),
+        ilike(productsTable.nameEN, `%${search}%`),
+        ilike(productsTable.nameRU, `%${search}%`),
+      ),
+    );
+  }
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -118,6 +182,8 @@ productsRouter.get("/", async (c) => {
 productsRouter.post("/", async (c) => {
   const body = await c.req.json();
 
+  normalizeLocalizedPayload(body);
+
   const [product] = await db.insert(productsTable).values(body).returning();
   if (!product) return c.json({ error: "Failed to create product" }, 500);
 
@@ -125,7 +191,7 @@ productsRouter.post("/", async (c) => {
     action: "create",
     entityType: "product",
     entityId: product.id,
-    description: `Created product: ${product.name}`,
+    description: `Created product: ${displayName(product)}`,
   });
 
   return c.json(product, 201);
@@ -150,6 +216,7 @@ productsRouter.put("/:id", async (c) => {
   // حذف فیلدهایی که نباید تغییر کنند
   delete body.id;
   delete body.createdAt;
+  normalizeLocalizedPayload(body);
 
   const [updated] = await db
     .update(productsTable)
@@ -163,7 +230,7 @@ productsRouter.put("/:id", async (c) => {
     action: "update",
     entityType: "product",
     entityId: id,
-    description: `Updated product: ${updated.name}`,
+    description: `Updated product: ${displayName(updated)}`,
   });
 
   return c.json(updated);
@@ -259,6 +326,7 @@ productsRouter.post("/:id/plans", async (c) => {
     return c.json({ error: "deliveryType is required" }, 400);
   }
 
+  normalizeLocalizedPayload(body);
   body.requiredInputs = normalizeRequiredInputs(body.requiredInputs);
 
   const [plan] = await db
@@ -271,7 +339,7 @@ productsRouter.post("/:id/plans", async (c) => {
     action: "create",
     entityType: "product_plan",
     entityId: plan.id,
-    description: `Created plan: ${plan.name} (${body.deliveryType}) for product ${productId}`,
+    description: `Created plan: ${displayName(plan)} (${body.deliveryType}) for product ${productId}`,
   });
 
   return c.json(plan, 201);
@@ -282,6 +350,7 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
   const body = await c.req.json();
   delete body.id;
   delete body.productId;
+  normalizeLocalizedPayload(body);
 
   // Validation: deliveryType \u0628\u0627\u06cc\u062f \u0645\u0634\u062e\u0635 \u0628\u0627\u0634\u062f (\u0627\u06af\u0631 ارسال شد)
   if (body.deliveryType === undefined) {
@@ -304,7 +373,7 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
     action: "update",
     entityType: "product_plan",
     entityId: planId,
-    description: `Updated plan: ${updated.name} (${updated.deliveryType})`,
+    description: `Updated plan: ${displayName(updated)} (${updated.deliveryType})`,
   });
 
   return c.json(updated);
@@ -323,13 +392,14 @@ categoriesRouter.use("*", requireAuth, requireSection("products"));
 
 categoriesRouter.get("/", async (c) => {
   const categories = await db.query.categoriesTable.findMany({
-    orderBy: [asc(categoriesTable.name)],
+    orderBy: [asc(categoriesTable.nameFA)],
   });
   return c.json(categories);
 });
 
 categoriesRouter.post("/", async (c) => {
   const body = await c.req.json();
+  normalizeLocalizedPayload(body);
   try {
     const [category] = await db
       .insert(categoriesTable)
@@ -348,6 +418,7 @@ categoriesRouter.put("/:id", async (c) => {
   const id = parseInt(c.req.param("id"));
   const body = await c.req.json();
   delete body.id;
+  normalizeLocalizedPayload(body);
 
   try {
     const [updated] = await db

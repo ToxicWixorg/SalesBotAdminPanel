@@ -38,10 +38,22 @@ const inputCls =
 
 export default function BroadcastPage() {
   const { t } = useTranslation();
+  const variableTokens = [
+    "FIRST_NAME",
+    "LAST_NAME",
+    "USERNAME",
+    "USER_ID",
+    "**",
+    "__",
+    "''",
+    "{}",
+    "[]",
+  ];
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterValue, setFilterValue] = useState("");
+  const [languageCode, setLanguageCode] = useState<"" | "fa" | "en" | "ru">("");
   const [message, setMessage] = useState("");
-  const [parseMode, setParseMode] = useState<"HTML" | "Markdown">("HTML");
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [sendResult, setSendResult] = useState<{
     successCount: number;
@@ -61,7 +73,11 @@ export default function BroadcastPage() {
       if (!filter)
         return Promise.reject(new Error(t("broadcast.invalidFilter")));
       return api
-        .post("/api/admin/broadcast/preview", { filter, message })
+        .post("/api/admin/broadcast/preview", {
+          filter,
+          languageCode: languageCode || undefined,
+          message,
+        })
         .then((r) => r.data);
     },
     onSuccess: (data) => {
@@ -76,7 +92,11 @@ export default function BroadcastPage() {
       if (!filter)
         return Promise.reject(new Error(t("broadcast.invalidFilter")));
       return api
-        .post("/api/admin/broadcast/send", { filter, message, parseMode })
+        .post("/api/admin/broadcast/send", {
+          filter,
+          languageCode: languageCode || undefined,
+          message,
+        })
         .then((r) => r.data);
     },
     onSuccess: (data) => {
@@ -89,6 +109,16 @@ export default function BroadcastPage() {
   const filter = buildFilter(filterType, filterValue);
   const canPreview = !!message.trim() && !!filter;
   const canSend = canPreview && previewCount !== null;
+
+  const copyToken = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(token);
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 1200);
+    } catch {
+      // no-op
+    }
+  };
 
   return (
     <div className="w-full h-full p-4 mb-20">
@@ -129,6 +159,41 @@ export default function BroadcastPage() {
               </option>
               <option value="subscriptionExpiring" className="bg-slate-900">
                 {t("broadcast.expiringSubscriptions")}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs text-white/50 mb-1 block">
+              {t("broadcast.languageFilter")}
+            </label>
+            <select
+              className={inputCls}
+              value={languageCode}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (
+                  value === "" ||
+                  value === "fa" ||
+                  value === "en" ||
+                  value === "ru"
+                ) {
+                  setLanguageCode(value);
+                  setPreviewCount(null);
+                }
+              }}
+            >
+              <option value="" className="bg-slate-900">
+                {t("common.all")}
+              </option>
+              <option value="fa" className="bg-slate-900">
+                {t("broadcast.languageFa")}
+              </option>
+              <option value="en" className="bg-slate-900">
+                {t("broadcast.languageEn")}
+              </option>
+              <option value="ru" className="bg-slate-900">
+                {t("broadcast.languageRu")}
               </option>
             </select>
           </div>
@@ -226,27 +291,6 @@ export default function BroadcastPage() {
 
           <div>
             <label className="text-xs text-white/50 mb-1 block">
-              {t("broadcast.messageFormat")}
-            </label>
-            <div className="flex gap-2">
-              {(["HTML", "Markdown"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setParseMode(m)}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                    parseMode === m
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/10 hover:bg-white/20 text-white/60"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-white/50 mb-1 block">
               {t("broadcast.messageLabel")}
             </label>
             <textarea
@@ -258,15 +302,46 @@ export default function BroadcastPage() {
                 setPreviewCount(null);
                 setSendResult(null);
               }}
-              placeholder={
-                parseMode === "HTML"
-                  ? t("broadcast.htmlPlaceholder")
-                  : t("broadcast.markdownPlaceholder")
-              }
+              placeholder={t("broadcast.placeholder")}
             />
             <p className="text-xs text-white/30 mt-1">
               {message.length} {t("broadcast.characters")}
             </p>
+          </div>
+
+          <div className="rounded-lg border border-white/10 bg-black/20 p-3 text-xs text-white/60">
+            <p className="mb-2 font-semibold text-white/75">
+              {t("broadcast.syntaxGuideTitle")}
+            </p>
+            <ul className="space-y-1 px-4 list-disc">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {variableTokens.map((token) => (
+                  <button
+                    key={token}
+                    type="button"
+                    onClick={() => copyToken(token)}
+                    className="rounded-md border text-xs border-white/20 bg-white/10 px-2 py-1 font-mono text-white/90 hover:bg-white/20 transition-colors"
+                    title={t("common.copy")}
+                  >
+                    {token}
+                    {copiedToken === token ? " ✓" : ""}
+                  </button>
+                ))}
+              </div>
+              <li>
+                <div className="mb-1">{t("broadcast.syntaxVariables")}</div>
+              </li>
+              <li>
+                {t("broadcast.syntaxBold")} ⇛ <b>text</b>
+              </li>
+              <li>
+                {t("broadcast.syntaxUnderline")} ⇛ <u>text</u>
+              </li>
+              <li>{t("broadcast.syntaxSpoiler")} </li>
+              <li>{t("broadcast.syntaxCode")}</li>
+              <li>{t("broadcast.syntaxQuote")}</li>
+              <li>{t("broadcast.syntaxEmoji")} ⇛ 👑 </li>
+            </ul>
           </div>
         </div>
 

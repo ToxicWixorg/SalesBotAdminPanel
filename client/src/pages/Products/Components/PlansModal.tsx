@@ -4,13 +4,18 @@ import { useTranslation } from "react-i18next";
 import { api } from "../../../lib/api";
 import SuspencePage from "../../../suspence/suspence";
 import DeliveryItemsModal from "./DeliveryItemsModal";
+import { getLocalizedName } from "../utils/localizedFields";
 
 type Plan = {
   requiredInputs?: RequiredInput[];
   id: number;
   productId: number;
-  name: string;
-  description: string | null;
+  nameFA: string;
+  nameEN: string;
+  nameRU: string;
+  descriptionFA: string | null;
+  descriptionEN: string | null;
+  descriptionRU: string | null;
   price: string;
   duration: number | null;
   durationUnit: string | null;
@@ -48,8 +53,12 @@ type Props = {
 };
 
 const emptyForm = {
-  name: "",
-  description: "",
+  nameFA: "",
+  nameEN: "",
+  nameRU: "",
+  descriptionFA: "",
+  descriptionEN: "",
+  descriptionRU: "",
   price: "",
   duration: "",
   durationUnit: "month",
@@ -88,6 +97,9 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
         customEmojiId: data.customEmojiId || null,
+        descriptionFA: data.descriptionFA || null,
+        descriptionEN: data.descriptionEN || null,
+        descriptionRU: data.descriptionRU || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans", productId] });
@@ -105,6 +117,9 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
         duration: data.duration ? Number(data.duration) : null,
         durationUnit: data.durationUnit || null,
         customEmojiId: data.customEmojiId || null,
+        descriptionFA: data.descriptionFA || null,
+        descriptionEN: data.descriptionEN || null,
+        descriptionRU: data.descriptionRU || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans", productId] });
@@ -129,8 +144,12 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
     setEditingPlan(plan);
     setShowAdd(false);
     setForm({
-      name: plan.name,
-      description: plan.description ?? "",
+      nameFA: plan.nameFA,
+      nameEN: plan.nameEN,
+      nameRU: plan.nameRU,
+      descriptionFA: plan.descriptionFA ?? "",
+      descriptionEN: plan.descriptionEN ?? "",
+      descriptionRU: plan.descriptionRU ?? "",
       price: plan.price,
       duration: plan.duration ? String(plan.duration) : "",
       durationUnit: plan.durationUnit ?? "month",
@@ -253,7 +272,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                   <tbody>
                     {plans?.map((plan) => (
                       <tr key={plan.id} className="border-b hover:bg-white/5">
-                        <td className="p-2">{plan.name}</td>
+                        <td className="p-2">{getLocalizedName(plan)}</td>
                         <td className="p-2">
                           {Number(plan.price).toLocaleString()}{" "}
                           {t("common.toman")}
@@ -345,15 +364,34 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                     ? t("common.edit")
                     : t("products.planModal.newPlan")}
                 </h3>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-3">
                   <label className="flex flex-col gap-1 text-sm">
-                    <span className="text-white/60">{t("common.name")}</span>
+                    <span className="text-white/60">FA {t("common.name")}</span>
                     <input
+                      dir="rtl"
                       className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                      value={form.name}
-                      onChange={(e) => set("name", e.target.value)}
+                      value={form.nameFA}
+                      onChange={(e) => set("nameFA", e.target.value)}
                     />
                   </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">EN {t("common.name")}</span>
+                    <input
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                      value={form.nameEN}
+                      onChange={(e) => set("nameEN", e.target.value)}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">RU {t("common.name")}</span>
+                    <input
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                      value={form.nameRU}
+                      onChange={(e) => set("nameRU", e.target.value)}
+                    />
+                  </label>
+                  <hr className="border border-slate-600 my-4" />
+
                   <label className="flex flex-col gap-1 text-sm">
                     <span className="text-white/60">{`${t("products.planModal.cost")} ( ${t("common.toman")} )`}</span>
                     <input
@@ -451,6 +489,42 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                       {t("products.active")}
                     </span>
                   </label>
+                </div>
+                <hr className="border border-slate-600" />
+
+                <div className="flex flex-col gap-3">
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">
+                      FA {t("common.description")}
+                    </span>
+                    <textarea
+                      dir="rtl"
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                      value={form.descriptionFA}
+                      onChange={(e) => set("descriptionFA", e.target.value)}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">
+                      EN {t("common.description")}
+                    </span>
+                    <textarea
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                      value={form.descriptionEN}
+                      onChange={(e) => set("descriptionEN", e.target.value)}
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="text-white/60">
+                      RU {t("common.description")}
+                    </span>
+                    <textarea
+                      className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40 resize-none h-20"
+                      value={form.descriptionRU}
+                      onChange={(e) => set("descriptionRU", e.target.value)}
+                    />
+                  </label>
+                  <hr className="border border-slate-600 my-4" />
                 </div>
                 {(SCHEDULE_TYPES.includes(form.deliveryType) ||
                   form.deliveryType === "invite") &&
@@ -725,16 +799,6 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                     ))}
                   </div>
                 )}
-                <label className="flex flex-col gap-1 text-sm">
-                  <span className="text-white/60">
-                    {t("common.description")}
-                  </span>
-                  <input
-                    className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                    value={form.description}
-                    onChange={(e) => set("description", e.target.value)}
-                  />
-                </label>
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="text-white/60">Custom Emoji ID</span>
                   <input

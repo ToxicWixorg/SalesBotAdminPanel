@@ -140,16 +140,33 @@ function displayName(entity: {
   );
 }
 
+type PgLikeError = {
+  code?: string;
+  column_name?: string;
+  table_name?: string;
+  cause?: unknown;
+};
+
+function extractPgError(err: unknown): PgLikeError | null {
+  let current: unknown = err;
+  let depth = 0;
+
+  while (current && typeof current === "object" && depth < 8) {
+    const candidate = current as PgLikeError;
+    if (candidate.code) return candidate;
+    current = candidate.cause;
+    depth += 1;
+  }
+
+  return null;
+}
+
 function isLegacyNameConstraintError(
   err: unknown,
   table: "categories" | "products" | "product_plans",
 ): boolean {
-  if (!err || typeof err !== "object") return false;
-  const pgErr = err as {
-    code?: string;
-    column_name?: string;
-    table_name?: string;
-  };
+  const pgErr = extractPgError(err);
+  if (!pgErr) return false;
   return (
     pgErr.code === "23502" &&
     pgErr.column_name === "name" &&
@@ -264,14 +281,14 @@ productsRouter.post("/", async (c) => {
           .where(eq(productsTable.slug, body.slug))
           .limit(1);
       } catch (fallbackErr: unknown) {
-        const pgFallback = fallbackErr as { code?: string };
+        const pgFallback = extractPgError(fallbackErr);
         if (pgFallback?.code === "23505") {
           return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
         }
         throw fallbackErr;
       }
     } else {
-      const pgErr = err as { code?: string };
+      const pgErr = extractPgError(err);
       if (pgErr?.code === "23505") {
         return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
       }
@@ -613,7 +630,7 @@ categoriesRouter.post("/", async (c) => {
 
         if (created) return c.json(created, 201);
       } catch (fallbackErr: unknown) {
-        const pgFallback = fallbackErr as { code?: string };
+        const pgFallback = extractPgError(fallbackErr);
         if (pgFallback?.code === "23505") {
           return c.json({ error: "این دسته‌بندی قبلاً وجود دارد" }, 409);
         }
@@ -623,7 +640,7 @@ categoriesRouter.post("/", async (c) => {
       return c.json({ error: "Failed to create category" }, 500);
     }
 
-    const pgErr = err as { code?: string };
+    const pgErr = extractPgError(err);
     if (pgErr?.code === "23505") {
       return c.json({ error: "این دسته‌بندی قبلاً وجود دارد" }, 409);
     }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { AxiosProgressEvent } from "axios";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../hooks/useAuth";
 import { api } from "../../../lib/api";
@@ -61,12 +62,14 @@ const BackupTab = ({ activeTab }: { activeTab: string }) => {
   const [restoreLoading, setRestoreLoading] = useState(false);
   const [restoreResult, setRestoreResult] = useState<string | null>(null);
   // -- Restore Backup (Upload SQL) --
+  const [uploadProgress, setUploadProgress] = useState(0);
   const handleRestoreBackup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setRestoreLoading(true);
     setRestoreResult(null);
     setBackupRunError(null);
     setBackupRunErrorDetails(null);
+    setUploadProgress(0);
     const form = e.currentTarget;
     const fileInput = form.elements.namedItem("backupFile") as HTMLInputElement;
     if (!fileInput?.files?.[0]) {
@@ -80,6 +83,13 @@ const BackupTab = ({ activeTab }: { activeTab: string }) => {
     try {
       const res = await api.post("/api/admin/settings/backup/restore", data, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+          if (progressEvent.total) {
+            setUploadProgress(
+              Math.round((progressEvent.loaded * 100) / progressEvent.total),
+            );
+          }
+        },
       });
       setRestoreResult(
         res.data?.success
@@ -90,6 +100,7 @@ const BackupTab = ({ activeTab }: { activeTab: string }) => {
       setRestoreResult(err?.response?.data?.error || "خطا در بازیابی");
     } finally {
       setRestoreLoading(false);
+      setTimeout(() => setUploadProgress(0), 2000);
     }
   };
 
@@ -323,6 +334,14 @@ const BackupTab = ({ activeTab }: { activeTab: string }) => {
                 required
                 disabled={restoreLoading}
               />
+              {restoreLoading && (
+                <div className="w-full bg-white/20 rounded h-3 mt-2 overflow-hidden">
+                  <div
+                    className="bg-blue-500 h-3 transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
               <button
                 type="submit"
                 className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all"

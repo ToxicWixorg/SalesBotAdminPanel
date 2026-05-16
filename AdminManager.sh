@@ -41,10 +41,11 @@ err()  { echo -e "${R}✗ $*${N}"; }
 # ─── ۰. نصب پیش‌نیازها ────────────────────────────────────────────────────────
 install_prereqs() {
   header
-  info "Installing prerequisites: Git, Bun, Node.js, PM2, Nginx..."
+
+  info "Installing prerequisites: Git, Bun, Node.js, PM2, Nginx, PostgreSQL client..."
 
   apt-get update -y
-  apt-get install -y git curl unzip nginx
+  apt-get install -y git curl unzip nginx postgresql-client
 
   # Bun
   if ! command -v bun &>/dev/null; then
@@ -66,6 +67,13 @@ install_prereqs() {
     pm2 startup systemd -u root --hp /root
   else
     ok "PM2 already installed"
+  fi
+
+  # PostgreSQL client (psql)
+  if ! command -v psql &>/dev/null; then
+    err "PostgreSQL client (psql) نصب نشد! لطفا دستی نصب کنید."
+  else
+    ok "psql $(psql --version) already installed"
   fi
 
   ok "Prerequisites installed."

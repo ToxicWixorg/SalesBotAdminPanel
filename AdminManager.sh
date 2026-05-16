@@ -44,8 +44,16 @@ install_prereqs() {
 
   info "Installing prerequisites: Git, Bun, Node.js, PM2, Nginx, PostgreSQL client..."
 
+
   apt-get update -y
   apt-get install -y git curl unzip nginx postgresql-client
+
+  # بررسی نصب بودن pg_dump
+  if command -v pg_dump &>/dev/null; then
+    ok "pg_dump version: $(pg_dump --version)"
+  else
+    err "pg_dump نصب نشد! لطفا به صورت دستی بسته postgresql-client را نصب کنید."
+  fi
 
   # Bun
   if ! command -v bun &>/dev/null; then

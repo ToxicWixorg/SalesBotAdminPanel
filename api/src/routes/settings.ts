@@ -1,3 +1,9 @@
+// ── POST /api/admin/settings/backup/restore ─ بازیابی دیتابیس از فایل SQL (فقط سوپرادمین)
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { unlink } from "node:fs/promises";
+import { spawn } from "node:child_process";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ROUTE: /api/admin/settings
 //
@@ -1057,6 +1063,94 @@ settingsRouter.post("/backup/run", async (c) => {
 
     return c.json({ error: errorMessage }, 500);
   }
+});
+
+settingsRouter.post("/backup/restore", async (c) => {
+  const currentAdmin = c.get("admin");
+  if (!currentAdmin.isSuperAdmin)
+    return c.json({ error: "Only super admin can restore backup" }, 403);
+
+  const contentType = c.req.header("content-type") || "";
+  if (!contentType.includes("multipart/form-data")) {
+    return c.json({ error: "Invalid content type" }, 400);
+  }
+
+  const formData = await c.req.formData();
+  const file = formData.get("file");
+  if (!file || typeof file === "string") {
+    return c.json({ error: "No file uploaded" }, 400);
+  }
+
+  // Save uploaded file to temp path
+  const fileName = `restore-${Date.now()}.sql`;
+  const filePath = join(tmpdir(), fileName);
+  const arrayBuffer = await file.arrayBuffer();
+  await Bun.write(filePath, Buffer.from(arrayBuffer));
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    await unlink(filePath);
+    return c.json({ error: "DATABASE_URL not configured" }, 500);
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(databaseUrl);
+  } catch {
+    await unlink(filePath);
+    return c.json({ error: "DATABASE_URL is invalid" }, 500);
+  }
+
+  const username = decodeURIComponent(parsed.username || "postgres");
+  const password = decodeURIComponent(parsed.password || "");
+  const database = parsed.pathname.replace(/^\//, "") || "postgres";
+  const host = parsed.hostname || "localhost";
+  const port = parsed.port || "5432";
+
+  // Run psql to restore
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const env = { ...process.env, PGPASSWORD: password };
+      const args = [
+        "-U",
+        username,
+        "-d",
+        database,
+        "-h",
+        host,
+        "-p",
+        port,
+        "-f",
+        filePath,
+      ];
+      const child = spawn("psql", args, { env });
+      let stderr = "";
+      child.stderr.on("data", (chunk) => {
+        stderr += chunk.toString();
+      });
+      child.on("error", (err) => reject(err));
+      child.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(stderr || `psql exited with code ${code}`));
+      });
+    });
+  } catch (err) {
+    await unlink(filePath);
+    return c.json(
+      { error: err instanceof Error ? err.message : String(err) },
+      500,
+    );
+  }
+
+  await unlink(filePath);
+  await logAdminAction(c, {
+    action: "restore",
+    entityType: "backup",
+    entityId: 1,
+    description: "بازیابی دیتابیس از فایل بکاپ توسط سوپرادمین",
+    severity: "critical",
+  });
+  return c.json({ success: true });
 });
 
 settingsRouter.get("/payment/config", async (c) => {

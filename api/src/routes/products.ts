@@ -337,12 +337,12 @@ productsRouter.put("/:id", async (c) => {
   normalizeLocalizedPayload(body);
 
   // مقدار stock را بر اساس وجود پلن فعال کن
-  const plansCountRows = await db
+  const [plansCountRows] = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
     .where(eq(productPlansTable.productId, id));
-  const plansCount = plansCountRows[0]?.count ?? 0;
-  body.stock = plansCount > 0;
+  const plansCount = Number(plansCountRows?.count) ?? 0;
+  body.stock = plansCount ? plansCount > 0 : false;
 
   const [updated] = await db
     .update(productsTable)
@@ -390,7 +390,7 @@ productsRouter.patch("/:id/toggle", async (c) => {
 // ── PATCH /api/admin/products/:id/stock ──────────────────────────────────────
 productsRouter.patch("/:id/stock", async (c) => {
   const id = parseInt(c.req.param("id"));
-  const { stock } = await c.req.json<{ stock: number }>();
+  const { stock } = await c.req.json<{ stock: boolean }>();
 
   const [updated] = await db
     .update(productsTable)
@@ -540,14 +540,14 @@ productsRouter.post("/:id/plans", async (c) => {
   });
 
   // بعد از ساخت پلن، stock را بر اساس وجود پلن فعال کن
-  const plansCountRows = await db
+  const [plansCountRows] = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
     .where(eq(productPlansTable.productId, productId));
-  const plansCount = plansCountRows[0]?.count ?? 0;
+  const plansCount = Number(plansCountRows?.count) ?? 0;
   await db
     .update(productsTable)
-    .set({ stock: plansCount > 0, updatedAt: new Date() })
+    .set({ stock: plansCount ? plansCount > 0 : false, updatedAt: new Date() })
     .where(eq(productsTable.id, productId));
   return c.json(plan, 201);
 });

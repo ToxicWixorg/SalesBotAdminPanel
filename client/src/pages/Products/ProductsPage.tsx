@@ -71,12 +71,6 @@ export default function ProductsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
   });
 
-  const stockMutation = useMutation({
-    mutationFn: ({ id, stock }: { id: number; stock: number }) =>
-      api.patch(`/api/admin/products/${id}/stock`, { stock }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
-  });
-
   const Search = () => {
     return setFilters((f) => ({ ...f, search: filterValue }));
   };

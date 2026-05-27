@@ -626,10 +626,10 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                   }
                                 />
                               </div>
-                              <div className="flex flex-wrap gap-2 items-center">
+                              <div className="flex flex-col gap-2 items-center">
                                 <textarea
                                   rows={2}
-                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
+                                  className="w-full text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
                                   placeholder="FA متن نمایشی (مثلا: ایمیل اکانت)"
                                   value={field.textFA}
                                   onChange={(e) =>
@@ -642,7 +642,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                 />
                                 <textarea
                                   rows={2}
-                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
+                                  className="w-full text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
                                   placeholder="EN Display Text (e.g. Account Email)"
                                   value={field.textEN}
                                   onChange={(e) =>
@@ -655,7 +655,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                 />
                                 <textarea
                                   rows={2}
-                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
+                                  className="w-full text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40 resize-y"
                                   placeholder="RU Текст для отображения (например: Email аккаунта)"
                                   value={field.textRU}
                                   onChange={(e) =>

@@ -3,14 +3,12 @@ import { getLocalizedName } from "../utils/localizedFields";
 const ProductTable = ({
   products,
   toggleMutation,
-  stockMutation,
   setEditProduct,
   setPlansProduct,
   t,
 }: {
   products: any;
   toggleMutation: any;
-  stockMutation: any;
   setEditProduct: any;
   setPlansProduct: any;
   t: any;

@@ -125,7 +125,6 @@ export default function ProductsPage() {
         <ProductTable
           products={products}
           toggleMutation={toggleMutation}
-          stockMutation={stockMutation}
           setEditProduct={setEditProduct}
           setPlansProduct={setPlansProduct}
           t={t}

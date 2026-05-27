@@ -97,7 +97,7 @@ export const productsTable = pgTable(
     canUnlockPerks: boolean("can_unlock_perks").default(false),
     canNotifyStock: boolean("can_notify_stock").default(true),
     isActive: boolean("is_active").default(true),
-    stock: integer("stock").default(0),
+    stock: boolean("stock").default(false),
     minStock: integer("min_stock").default(5),
     warrantyDays: integer("warranty_days").default(0),
     terms: text("terms"),

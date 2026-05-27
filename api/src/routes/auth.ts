@@ -33,7 +33,7 @@ authRouter.post("/login", async (c) => {
     return c.json({ error: "telegramId and password are required" }, 400);
   }
 
-  // 1. پیدا کردن ادمین با userId تلگرام
+
   const admin = await db.query.adminsTable.findFirst({
     where: and(
       eq(adminsTable.userId, Number(body.telegramId)),

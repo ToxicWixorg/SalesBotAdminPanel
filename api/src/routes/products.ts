@@ -219,6 +219,14 @@ productsRouter.post("/", async (c) => {
   normalizeLocalizedPayload(body);
 
   let product;
+  if (body.inventoryBased === false) {
+    const plansCountRows = await db
+      .select({ count: sql`count(*)::int` })
+      .from(productPlansTable)
+      .where(eq(productPlansTable.productId, body.id ?? 0));
+    const plansCount = plansCountRows[0]?.count ?? 0;
+    body.stock = plansCount;
+  }
   try {
     [product] = await db.insert(productsTable).values(body).returning();
   } catch (err: unknown) {
@@ -328,6 +336,16 @@ productsRouter.put("/:id", async (c) => {
   delete body.id;
   delete body.createdAt;
   normalizeLocalizedPayload(body);
+
+  // اگر محصول inventory-base نیست، stock را برابر تعداد پلن‌ها قرار بده
+  if (body.inventoryBased === false) {
+    const plansCountRows = await db
+      .select({ count: sql`count(*)::int` })
+      .from(productPlansTable)
+      .where(eq(productPlansTable.productId, id));
+    const plansCount = plansCountRows[0]?.count ?? 0;
+    body.stock = plansCount;
+  }
 
   const [updated] = await db
     .update(productsTable)

@@ -220,10 +220,15 @@ productsRouter.post("/", async (c) => {
 
   let product;
   // مقدار stock را بر اساس وجود پلن فعال کن
-  const [plansCountRows] = await db
+  const plansCountRows = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
-    .where(eq(productPlansTable.productId, body.id ?? 0));
+    .where(
+      and(
+        eq(productPlansTable.productId, body.id ?? 0),
+        eq(productPlansTable.isActive, true),
+      ),
+    );
   const plansCount = Number(plansCountRows?.count) || 0;
   body.stock = plansCount ? plansCount > 0 : false;
   try {
@@ -337,10 +342,15 @@ productsRouter.put("/:id", async (c) => {
   normalizeLocalizedPayload(body);
 
   // مقدار stock را بر اساس وجود پلن فعال کن
-  const [plansCountRows] = await db
+  const plansCountRows: { count: number } = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
-    .where(eq(productPlansTable.productId, id));
+    .where(
+      and(
+        eq(productPlansTable.productId, id),
+        eq(productPlansTable.isActive, true),
+      ),
+    );
   const plansCount = Number(plansCountRows?.count) ?? 0;
   body.stock = plansCount ? plansCount > 0 : false;
 
@@ -447,7 +457,6 @@ productsRouter.post("/:id/plans", async (c) => {
   const productId = parseInt(c.req.param("id"));
   const body = await c.req.json();
 
-  // Validation: deliveryType باید مشخص شود
   if (!body.deliveryType) {
     return c.json({ error: "deliveryType is required" }, 400);
   }
@@ -539,12 +548,11 @@ productsRouter.post("/:id/plans", async (c) => {
     description: `Created plan: ${displayName(plan)} (${body.deliveryType}) for product ${productId}`,
   });
 
-  // بعد از ساخت پلن، stock را بر اساس وجود پلن فعال کن
-  const [plansCountRows] = await db
+  const plansCountRows = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
     .where(eq(productPlansTable.productId, productId));
-  const plansCount = Number(plansCountRows?.count) ?? 0;
+  const plansCount = Number(plansCountRows[0]?.count) ?? 0;
   await db
     .update(productsTable)
     .set({ stock: plansCount ? plansCount > 0 : false, updatedAt: new Date() })

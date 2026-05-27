@@ -32,11 +32,12 @@ type Plan = {
 
 type RequiredInput = {
   key: string;
-  label: string;
+  textFA: string;
+  textEN: string;
+  textRU: string;
   inputType: "text" | "email" | "password" | "number" | "url";
   required: boolean;
   sensitive: boolean;
-  placeholder?: string;
 };
 
 const SCHEDULE_TYPES = [
@@ -180,11 +181,12 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
       "requiredInputs",
       form.requiredInputs.concat({
         key: "",
-        label: "",
+        textFA: "",
+        textEN: "",
+        textRU: "",
         inputType: "text",
         required: true,
         sensitive: false,
-        placeholder: "",
       }),
     );
   };
@@ -198,11 +200,12 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
     rows[idx] = {
       ...(rows[idx] ?? {
         key: "",
-        label: "",
+        textFA: "",
+        textEN: "",
+        textRU: "",
         inputType: "text",
         required: true,
         sensitive: false,
-        placeholder: "",
       }),
       [key]: value,
     };
@@ -622,18 +625,46 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                     )
                                   }
                                 />
+                              </div>
+                              <div className="flex flex-wrap gap-2 items-center">
                                 <input
                                   className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
-                                  placeholder="label مثلا: ایمیل اکانت"
-                                  value={field.label}
+                                  placeholder="FA متن نمایشی (مثلا: ایمیل اکانت)"
+                                  value={field.textFA}
                                   onChange={(e) =>
                                     updateRequiredInput(
                                       idx,
-                                      "label",
+                                      "textFA",
                                       e.target.value,
                                     )
                                   }
                                 />
+                                <input
+                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
+                                  placeholder="EN Display Text (e.g. Account Email)"
+                                  value={field.textEN}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "textEN",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                                <input
+                                  className="flex-1 min-w-27 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
+                                  placeholder="RU Текст для отображения (например: Email аккаунта)"
+                                  value={field.textRU}
+                                  onChange={(e) =>
+                                    updateRequiredInput(
+                                      idx,
+                                      "textRU",
+                                      e.target.value,
+                                    )
+                                  }
+                                />
+                              </div>
+                              <div className="flex flex-wrap gap-2 items-center">
                                 <select
                                   className="text-xs bg-slate-800 border border-white/20 rounded px-2 py-1.5 text-white outline-none"
                                   value={field.inputType}
@@ -652,30 +683,6 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                   <option value="number">number</option>
                                   <option value="url">url</option>
                                 </select>
-                                <button
-                                  type="button"
-                                  onClick={() => removeRequiredInput(idx)}
-                                  className="text-red-400 hover:text-red-300 text-sm px-1"
-                                  title="حذف فیلد"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-
-                              {/* Row 2: placeholder + checkboxes */}
-                              <div className="flex flex-wrap gap-2 items-center">
-                                <input
-                                  className="flex-1 min-w-35 text-xs bg-white/10 border border-white/20 rounded px-2 py-1.5 text-white outline-none focus:border-white/40"
-                                  placeholder="placeholder (اختیاری)"
-                                  value={field.placeholder ?? ""}
-                                  onChange={(e) =>
-                                    updateRequiredInput(
-                                      idx,
-                                      "placeholder",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
                                 <label className="flex items-center gap-1 text-[11px] cursor-pointer text-white/70 whitespace-nowrap">
                                   <input
                                     type="checkbox"
@@ -706,6 +713,14 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                                   />
                                   حساس (ماسک)
                                 </label>
+                                <button
+                                  type="button"
+                                  onClick={() => removeRequiredInput(idx)}
+                                  className="text-red-400 hover:text-red-300 text-sm px-1"
+                                  title="حذف فیلد"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             </div>
                           ))}

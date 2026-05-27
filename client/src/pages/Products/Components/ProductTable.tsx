@@ -54,23 +54,11 @@ const ProductTable = ({
                 <span className="text-white/30 text-xs mr-1">
                   {t("products.stock")}:
                 </span>
-                {product.stock}
-                <button
-                  className="text-xs bg-white/15 hover:bg-white/25 rounded-full px-2 py-0.5 transition-all"
-                  onClick={() => {
-                    const val = prompt(
-                      t("products.updateStock"),
-                      String(product.stock),
-                    );
-                    if (val !== null && !isNaN(Number(val)))
-                      stockMutation.mutate({
-                        id: product.id,
-                        stock: Number(val),
-                      });
-                  }}
-                >
-                  ✎
-                </button>
+                {product.stock ? (
+                  <span className="text-green-400">{t("available")}</span>
+                ) : (
+                  <span className="text-red-400">{t("outOfStock")}</span>
+                )}
               </span>
             </div>
 

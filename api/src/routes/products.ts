@@ -37,11 +37,12 @@ productsRouter.use("*", requireAuth, requireSection("products"));
 
 type RequiredInput = {
   key: string;
-  label: string;
+  textFA: string;
+  textEN: string;
+  textRU: string;
   inputType?: "text" | "email" | "password" | "number" | "url";
   required?: boolean;
   sensitive?: boolean;
-  placeholder?: string;
 };
 
 function normalizeRequiredInputs(value: unknown): RequiredInput[] {
@@ -56,9 +57,10 @@ function normalizeRequiredInputs(value: unknown): RequiredInput[] {
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "_");
-      const label = String(row.label ?? "").trim();
-
-      if (!key || !label) return null;
+      const textFA = String(row.textFA ?? "").trim();
+      const textEN = String(row.textEN ?? "").trim();
+      const textRU = String(row.textRU ?? "").trim();
+      if (!key || (!textFA && !textEN && !textRU)) return null;
 
       const inputTypeRaw = String(row.inputType ?? "text")
         .trim()
@@ -71,14 +73,12 @@ function normalizeRequiredInputs(value: unknown): RequiredInput[] {
 
       return {
         key,
-        label,
+        textFA,
+        textEN,
+        textRU,
         inputType,
         required: row.required === undefined ? true : Boolean(row.required),
         sensitive: Boolean(row.sensitive),
-        placeholder:
-          row.placeholder === undefined
-            ? undefined
-            : String(row.placeholder ?? "").trim(),
       };
     })
     .filter((x): x is RequiredInput => Boolean(x));

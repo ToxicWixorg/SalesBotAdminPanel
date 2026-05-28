@@ -131,11 +131,12 @@ export const productPlansTable = pgTable(
       .$type<
         {
           key: string;
-          label: string;
+          textFA: string;
+          textEN: string;
+          textRU: string;
           inputType?: "text" | "email" | "password" | "number" | "url";
           required?: boolean;
           sensitive?: boolean;
-          placeholder?: string;
         }[]
       >()
       .default([]),

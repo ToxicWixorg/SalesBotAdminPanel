@@ -1,4 +1,5 @@
 import { getLocalizedName } from "../utils/localizedFields";
+import ProductStock from "./ProductStock";
 
 const ProductTable = ({
   products,
@@ -64,16 +65,7 @@ const ProductTable = ({
             </div>
 
             <div className="flex items-center gap-4 flex-wrap text-sm text-white/60">
-              <span className="flex items-center gap-1.5">
-                <span className="text-white/30 text-xs mr-1">
-                  {t("products.stock")}:
-                </span>
-                {product.stock ? (
-                  <span className="text-green-400">{t("available")}</span>
-                ) : (
-                  <span className="text-red-400">{t("outOfStock")}</span>
-                )}
-              </span>
+              <ProductStock productId={product.id} />
             </div>
 
             {/* Row 3: Actions */}

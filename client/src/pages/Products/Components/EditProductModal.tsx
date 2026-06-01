@@ -203,25 +203,28 @@ export default function EditProductModal({ product, onClose }: Props) {
               </select>
             </label>
 
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-white/60">{t("products.stock")}</span>
-              <input
-                type="number"
-                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                value={form.stock}
-                onChange={(e) => set("stock", Number(e.target.value))}
-              />
-            </label>
+            <div className="flex flex-col gap-2">
+              <div className="text-sm">
+                <span className="text-white/60">{t("products.stock")}</span>
+                <div className="mt-1">
+                  {/* Stock is computed from plans: active if any active plan exists */}
+                  <span className="text-white/70 text-sm">
+                    {t("products.stockComputedHint") ||
+                      "Stock is derived from product plans. To change stock status, edit plans."}
+                  </span>
+                </div>
+              </div>
 
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-white/60">{t("products.minStock")}</span>
-              <input
-                type="number"
-                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
-                value={form.minStock}
-                onChange={(e) => set("minStock", Number(e.target.value))}
-              />
-            </label>
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="text-white/60">{t("products.minStock")}</span>
+                <input
+                  type="number"
+                  className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"
+                  value={form.minStock}
+                  onChange={(e) => set("minStock", Number(e.target.value))}
+                />
+              </label>
+            </div>
           </div>
 
           <label className="flex flex-col gap-1 text-sm">

@@ -131,7 +131,7 @@ EOF
 
   if [[ ! -f "$CLIENT_DIR/.env" ]]; then
     cat > "$CLIENT_DIR/.env" << 'EOF'
-VITE_API_URL=http://YOUR_SERVER_IP:8080
+  VITE_API_URL=http://YOUR_SERVER_IP:8080
 EOF
     err "Set VITE_API_URL in client/.env to your server address, then rebuild (Option 5)."
   fi

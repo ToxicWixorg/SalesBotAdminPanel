@@ -38,6 +38,16 @@ info() { echo -e "${Y}➜ $*${N}"; }
 ok()   { echo -e "${G}✓ $*${N}"; }
 err()  { echo -e "${R}✗ $*${N}"; }
 
+fix_client_permissions() {
+  if [[ -d "$CLIENT_DIR/dist" ]]; then
+    info "Fixing permissions for client dist files..."
+    find "$CLIENT_DIR" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$CLIENT_DIR" -type f -exec chmod 644 {} \; 2>/dev/null || true
+    chmod 755 "$CLIENT_DIR" "$PROJECT_DIR" 2>/dev/null || true
+    ok "Client permissions fixed."
+  fi
+}
+
 # ─── ۰. نصب پیش‌نیازها ────────────────────────────────────────────────────────
 install_prereqs() {
   header
@@ -131,14 +141,13 @@ EOF
 
   if [[ ! -f "$CLIENT_DIR/.env" ]]; then
     cat > "$CLIENT_DIR/.env" << 'EOF'
-  VITE_API_URL=http://YOUR_SERVER_IP:8080
+VITE_API_URL=http://YOUR_SERVER_IP:8080/api
 EOF
     err "Set VITE_API_URL in client/.env to your server address, then rebuild (Option 5)."
   fi
 
   bun run build
-
-  # ─── Nginx ─────────────────────────────────────────────────────────────────
+  fix_client_permissions
   setup_nginx
 
   ok "Installation complete!"
@@ -182,6 +191,7 @@ update_panel() {
 
   info "Rebuilding client..."
   cd "$CLIENT_DIR" && bun install && bun run build
+  fix_client_permissions
 
   info "Restarting API..."
   pm2 startOrRestart "$API_DIR/ecosystem.config.cjs" 2>/dev/null || start_api
@@ -349,6 +359,7 @@ rebuild_client() {
   cd "$CLIENT_DIR"
   bun install
   bun run build
+  fix_client_permissions
   ok "Client rebuilt. Files are in $CLIENT_DIR/dist"
   setup_nginx
   sleep 2
@@ -390,9 +401,22 @@ server {
     gzip_min_length 1024;
 
     # Cache static assets
-    location ~* \.(js|css|woff2|ttf|png|svg|ico)\$ {
+    location /assets/ {
+        root $CLIENT_DIR/dist;
         expires 1y;
         add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+    }
+
+    location ~* \.(js|css|woff2|ttf|png|svg|ico)
+    {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files \$uri =404;
+    }
+
+    location /favicon.svg {
+        root $CLIENT_DIR/dist;
         try_files \$uri =404;
     }
 

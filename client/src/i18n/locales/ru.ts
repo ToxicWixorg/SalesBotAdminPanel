@@ -84,8 +84,9 @@ const ru: Translations = {
 
   products: {
     title: "Продукты",
-    newProduct: "+ Новый продукт",  
+    newProduct: "+ Новый продукт",
     orderChangesNotice: " Заказы изменены",
+    displayOrder: "Номер порядка продукта",
     searchPlaceholder: "Поиск...",
     saveOrder: "Сохранить порядок",
     name: "Название",

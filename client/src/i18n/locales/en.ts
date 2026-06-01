@@ -86,6 +86,7 @@ const en: Translations = {
     title: "Products",
     newProduct: "+ New Product",
     orderChangesNotice: "Orders changed",
+    displayOrder: " Product order number",
     searchPlaceholder: "Search...",
     saveOrder: "Save Order",
     name: "Name",

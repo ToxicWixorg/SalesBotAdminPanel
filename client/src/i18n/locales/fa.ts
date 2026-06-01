@@ -89,6 +89,7 @@ const fa = {
     title: "محصولات",
     newProduct: "+ محصول جدید",
     orderChangesNotice: "تغییرات سفارش",
+    displayOrder : "شماره ترتیب محصول",
     searchPlaceholder: "جستجو...",
     saveOrder: "ذخیره ترتیب",
     name: "نام",

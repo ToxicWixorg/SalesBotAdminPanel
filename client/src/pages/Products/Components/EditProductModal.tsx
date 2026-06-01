@@ -202,7 +202,6 @@ export default function EditProductModal({ product, onClose }: Props) {
                 ))}
               </select>
             </label>
-            </div>
           </div>
 
           <label className="flex flex-col gap-1 text-sm">

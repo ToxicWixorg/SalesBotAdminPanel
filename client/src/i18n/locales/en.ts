@@ -4,6 +4,7 @@ const en: Translations = {
   common: {
     next: "Next",
     previous: "Previous",
+    page: "Page",
     loading: "Loading...",
     save: "Save",
     cancel: "Cancel",
@@ -84,6 +85,7 @@ const en: Translations = {
   products: {
     title: "Products",
     newProduct: "+ New Product",
+    orderChangesNotice: "Orders changed",
     searchPlaceholder: "Search...",
     saveOrder: "Save Order",
     name: "Name",

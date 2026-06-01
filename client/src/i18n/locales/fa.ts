@@ -3,6 +3,7 @@ const fa = {
   common: {
     next: "بعدی",
     previous: "قبلی",
+    page: "صفحه",
     loading: "در حال بارگذاری...",
     save: "ذخیره",
     cancel: "لغو",
@@ -87,6 +88,7 @@ const fa = {
   products: {
     title: "محصولات",
     newProduct: "+ محصول جدید",
+    orderChangesNotice: "تغییرات سفارش",
     searchPlaceholder: "جستجو...",
     saveOrder: "ذخیره ترتیب",
     name: "نام",

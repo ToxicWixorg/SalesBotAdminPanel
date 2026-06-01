@@ -3,6 +3,7 @@ import type { Translations } from "./fa";
 const ru: Translations = {
   common: {
     next: "Следующий",
+    page: "Страница",
     previous: "Предыдущий",
     loading: "Загрузка...",
     save: "Сохранить",
@@ -83,7 +84,8 @@ const ru: Translations = {
 
   products: {
     title: "Продукты",
-    newProduct: "+ Новый продукт",
+    newProduct: "+ Новый продукт",  
+    orderChangesNotice: " Заказы изменены",
     searchPlaceholder: "Поиск...",
     saveOrder: "Сохранить порядок",
     name: "Название",

@@ -2,16 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
 
 export default function ProductStock({ productId }: { productId: number }) {
-  const { data: plans } = useQuery(
-    ["plans", productId],
-    () => api.get(`/api/admin/products/${productId}/plans`).then((r) => r.data),
-    {
-      staleTime: 60_000,
-    },
-  );
+  const { data: plans } = useQuery<any[]>({
+    queryKey: ["plans", productId],
+    queryFn: async () =>
+      (await api.get(`/api/admin/products/${productId}/plans`)).data,
+    staleTime: 60_000,
+  });
 
-  const hasActivePlan = (plans ?? []).some((p: any) => p.isActive);
-  const activeCount = (plans ?? []).filter((p: any) => p.isActive).length;
+  const planList = plans ?? [];
+  const hasActivePlan = planList.some((p: any) => p.isActive);
+  const activeCount = planList.filter((p: any) => p.isActive).length;
 
   return (
     <span className="flex items-center gap-1.5">

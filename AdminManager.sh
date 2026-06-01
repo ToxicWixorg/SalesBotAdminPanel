@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 R='\033[31m'; G='\033[32m'; Y='\033[33m'; C='\033[36m'; B='\033[1m'; W='\033[97m'; N='\033[0m'
 
@@ -7,38 +7,38 @@ API_DIR="$PROJECT_DIR/api"
 CLIENT_DIR="$PROJECT_DIR/client"
 PM2_API_NAME="admin-api-demo"
 REPO_URL="https://github.com/ToxicWixorg/SalesBotAdminPanel.git"
-# اگر ریپوی جداگانه داری این را خالی بگذار
+# Ø§Ú¯Ø± Ø±ÛŒÙ¾ÙˆÛŒ Ø¬Ø¯Ø§Ú¯Ø§Ù†Ù‡ Ø¯Ø§Ø±ÛŒ Ø§ÛŒÙ† Ø±Ø§ Ø®Ø§Ù„ÛŒ Ø¨Ú¯Ø°Ø§Ø±
 REPO_SUBDIR=""
-# دامین سرور (خالی = فقط IP)
+# Ø¯Ø§Ù…ÛŒÙ† Ø³Ø±ÙˆØ± (Ø®Ø§Ù„ÛŒ = ÙÙ‚Ø· IP)
 SERVER_DOMAIN=""
-# پورت Nginx
+# Ù¾ÙˆØ±Øª Nginx
 NGINX_PORT=8080
 
 header() {
   clear
-  echo -e "${C}╔══════════════════════════════════════════════════════════════════════════╗${N}"
-  echo -e "${C}║${N}      ${W}${B}⚡ Admin Panel Manager ⚡${N}                                      ${C}║${N}"
-  echo -e "${C}╠══════════════════════════════════════════════════════════════════════════╣${N}"
-  echo -e "${C}║${N}   ${B}${G}Project Path:${N}  $PROJECT_DIR                                     ${C}║${N}"
-  echo -e "${C}║${N}   ${B}${G}API Status:${N}    $(get_api_status)                                       ${C}║${N}"
-  echo -e "${C}╚══════════════════════════════════════════════════════════════════════════╝${N}"
+  echo -e "${C}â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—${N}"
+  echo -e "${C}â•‘${N}      ${W}${B}âš¡ Admin Panel Manager âš¡${N}                                      ${C}â•‘${N}"
+  echo -e "${C}â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•£${N}"
+  echo -e "${C}â•‘${N}   ${B}${G}Project Path:${N}  $PROJECT_DIR                                     ${C}â•‘${N}"
+  echo -e "${C}â•‘${N}   ${B}${G}API Status:${N}    $(get_api_status)                                       ${C}â•‘${N}"
+  echo -e "${C}â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•${N}"
   echo ""
 }
 
 get_api_status() {
   if pm2 jlist 2>/dev/null | grep -q "\"name\":\"$PM2_API_NAME\"" && \
      pm2 jlist 2>/dev/null | grep -q "\"status\":\"online\""; then
-    echo -e "${G}🟢 Online${N}"
+    echo -e "${G}ðŸŸ¢ Online${N}"
   else
-    echo -e "${R}🔴 Offline${N}"
+    echo -e "${R}ðŸ”´ Offline${N}"
   fi
 }
 
-info() { echo -e "${Y}➜ $*${N}"; }
-ok()   { echo -e "${G}✓ $*${N}"; }
-err()  { echo -e "${R}✗ $*${N}"; }
+info() { echo -e "${Y}âžœ $*${N}"; }
+ok()   { echo -e "${G}âœ“ $*${N}"; }
+err()  { echo -e "${R}âœ— $*${N}"; }
 
-# ─── ۰. نصب پیش‌نیازها ────────────────────────────────────────────────────────
+# â”€â”€â”€ Û°. Ù†ØµØ¨ Ù¾ÛŒØ´â€ŒÙ†ÛŒØ§Ø²Ù‡Ø§ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 install_prereqs() {
   header
 
@@ -48,11 +48,11 @@ install_prereqs() {
   apt-get update -y
   apt-get install -y git curl unzip nginx postgresql-client
 
-  # بررسی نصب بودن pg_dump
+  # Ø¨Ø±Ø±Ø³ÛŒ Ù†ØµØ¨ Ø¨ÙˆØ¯Ù† pg_dump
   if command -v pg_dump &>/dev/null; then
     ok "pg_dump version: $(pg_dump --version)"
   else
-    err "pg_dump نصب نشد! لطفا به صورت دستی بسته postgresql-client را نصب کنید."
+    err "pg_dump Ù†ØµØ¨ Ù†Ø´Ø¯! Ù„Ø·ÙØ§ Ø¨Ù‡ ØµÙˆØ±Øª Ø¯Ø³ØªÛŒ Ø¨Ø³ØªÙ‡ postgresql-client Ø±Ø§ Ù†ØµØ¨ Ú©Ù†ÛŒØ¯."
   fi
 
   # Bun
@@ -79,7 +79,7 @@ install_prereqs() {
 
   # PostgreSQL client (psql)
   if ! command -v psql &>/dev/null; then
-    err "PostgreSQL client (psql) نصب نشد! لطفا دستی نصب کنید."
+    err "PostgreSQL client (psql) Ù†ØµØ¨ Ù†Ø´Ø¯! Ù„Ø·ÙØ§ Ø¯Ø³ØªÛŒ Ù†ØµØ¨ Ú©Ù†ÛŒØ¯."
   else
     ok "psql $(psql --version) already installed"
   fi
@@ -88,7 +88,7 @@ install_prereqs() {
   sleep 2
 }
 
-# ─── ۱. نصب / نصب مجدد ────────────────────────────────────────────────────────
+# â”€â”€â”€ Û±. Ù†ØµØ¨ / Ù†ØµØ¨ Ù…Ø¬Ø¯Ø¯ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 install_panel() {
   header
   info "Cloning repository..."
@@ -96,7 +96,7 @@ install_panel() {
   TMPDIR=$(mktemp -d)
   git clone "$REPO_URL" "$TMPDIR/repo"
 
-  # اگر admin-panel در یک زیرپوشه است آن را جابجا کن
+  # Ø§Ú¯Ø± admin-panel Ø¯Ø± ÛŒÚ© Ø²ÛŒØ±Ù¾ÙˆØ´Ù‡ Ø§Ø³Øª Ø¢Ù† Ø±Ø§ Ø¬Ø§Ø¨Ø¬Ø§ Ú©Ù†
   if [[ -n "$REPO_SUBDIR" && -d "$TMPDIR/repo/$REPO_SUBDIR" ]]; then
     rm -rf "$PROJECT_DIR"
     mv "$TMPDIR/repo/$REPO_SUBDIR" "$PROJECT_DIR"
@@ -106,7 +106,7 @@ install_panel() {
   fi
   rm -rf "$TMPDIR"
 
-  # ─── API ───────────────────────────────────────────────────────────────────
+  # â”€â”€â”€ API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   info "Installing API dependencies..."
   cd "$API_DIR"
   bun install
@@ -118,13 +118,13 @@ PORT=3000
 DATABASE_URL=postgresql://bot:991fa522db6ddb9935c7d9b1@localhost:5433/bot
 JWT_SECRET=change-this-to-a-random-secret
 BOT_TOKEN=
-# Origins جدا شده با کاما (دامنه یا IP ادمین پنل)
+# Origins Ø¬Ø¯Ø§ Ø´Ø¯Ù‡ Ø¨Ø§ Ú©Ø§Ù…Ø§ (Ø¯Ø§Ù…Ù†Ù‡ ÛŒØ§ IP Ø§Ø¯Ù…ÛŒÙ† Ù¾Ù†Ù„)
 ALLOWED_ORIGINS=http://localhost,http://YOUR_SERVER_IP
 EOF
     err "Fill in API .env (Option 3) before starting."
   fi
 
-  # ─── Client (build) ────────────────────────────────────────────────────────
+  # â”€â”€â”€ Client (build) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   info "Installing client dependencies & building..."
   cd "$CLIENT_DIR"
   bun install
@@ -138,14 +138,14 @@ EOF
 
   bun run build
 
-  # ─── Nginx ─────────────────────────────────────────────────────────────────
+  # â”€â”€â”€ Nginx â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setup_nginx
 
   ok "Installation complete!"
   sleep 2
 }
 
-# ─── ۲. آپدیت از گیت ─────────────────────────────────────────────────────────
+# â”€â”€â”€ Û². Ø¢Ù¾Ø¯ÛŒØª Ø§Ø² Ú¯ÛŒØª â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 update_panel() {
   header
   info "Stopping API..."
@@ -161,16 +161,16 @@ update_panel() {
     SRC="$TMPDIR/repo"
   fi
 
-  # حفظ .env فایل‌ها
+  # Ø­ÙØ¸ .env ÙØ§ÛŒÙ„â€ŒÙ‡Ø§
   [[ -f "$API_DIR/.env" ]]    && cp "$API_DIR/.env"    /tmp/api.env.bak
   [[ -f "$CLIENT_DIR/.env" ]] && cp "$CLIENT_DIR/.env" /tmp/client.env.bak
 
-  # جایگزینی کد
+  # Ø¬Ø§ÛŒÚ¯Ø²ÛŒÙ†ÛŒ Ú©Ø¯
   rm -rf "$PROJECT_DIR"
   mv "$SRC" "$PROJECT_DIR"
   rm -rf "$TMPDIR"
 
-  # برگرداندن .env
+  # Ø¨Ø±Ú¯Ø±Ø¯Ø§Ù†Ø¯Ù† .env
   [[ -f /tmp/api.env.bak ]]    && mv /tmp/api.env.bak    "$API_DIR/.env"
   [[ -f /tmp/client.env.bak ]] && mv /tmp/client.env.bak "$CLIENT_DIR/.env"
 
@@ -191,14 +191,14 @@ update_panel() {
   sleep 2
 }
 
-# ─── ۳. ویرایش .env ───────────────────────────────────────────────────────────
+# â”€â”€â”€ Û³. ÙˆÛŒØ±Ø§ÛŒØ´ .env â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 edit_env() {
   header
-  echo -e "${C}┌────────────────────────────────────┐${N}"
-  echo -e "${C}│${N}  ${B}${G}1)${N} Edit API .env               ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}2)${N} Edit Client .env            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${W}b)${N} Back                        ${C}│${N}"
-  echo -e "${C}└────────────────────────────────────┘${N}"
+  echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}1)${N} Edit API .env               ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}2)${N} Edit Client .env            ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${W}b)${N} Back                        ${C}â”‚${N}"
+  echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
   read -r -p "Select: " e
   case $e in
     1) nano "$API_DIR/.env" ;;
@@ -207,11 +207,11 @@ edit_env() {
   esac
 }
 
-# ─── میگریشن ──────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Ù…ÛŒÚ¯Ø±ÛŒØ´Ù† â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 run_migrations() {
   header
 
-  # خواندن DATABASE_URL از .env ادمین پنل
+  # Ø®ÙˆØ§Ù†Ø¯Ù† DATABASE_URL Ø§Ø² .env Ø§Ø¯Ù…ÛŒÙ† Ù¾Ù†Ù„
   DB_URL=$(grep -E "^DATABASE_URL=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | xargs)
   if [[ -z "$DB_URL" ]]; then
     err "DATABASE_URL not found in $API_DIR/.env"
@@ -306,18 +306,18 @@ MIGRATIONS_EOF
   if [[ $? -eq 0 ]]; then
     ok "All migrations applied successfully!"
   else
-    err "Migration failed — check DB connection or psql installation."
+    err "Migration failed â€” check DB connection or psql installation."
   fi
   sleep 3
 }
 
-# ─── ۴. شروع / ری‌استارت API ──────────────────────────────────────────────────
+# â”€â”€â”€ Û´. Ø´Ø±ÙˆØ¹ / Ø±ÛŒâ€ŒØ§Ø³ØªØ§Ø±Øª API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 start_api() {
   header
   if [[ ! -f "$API_DIR/.env" ]]; then
     err "API .env not found. Install first (Option 1)."; sleep 2; return; fi
 
-  # بررسی متغیرهای اجباری
+  # Ø¨Ø±Ø±Ø³ÛŒ Ù…ØªØºÛŒØ±Ù‡Ø§ÛŒ Ø§Ø¬Ø¨Ø§Ø±ÛŒ
   missing=()
   for var in BOT_TOKEN JWT_SECRET DATABASE_URL; do
     val=$(grep -E "^${var}=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | xargs)
@@ -342,7 +342,7 @@ start_api() {
   sleep 2
 }
 
-# ─── ۵. ری‌بیلد کلاینت ────────────────────────────────────────────────────────
+# â”€â”€â”€ Ûµ. Ø±ÛŒâ€ŒØ¨ÛŒÙ„Ø¯ Ú©Ù„Ø§ÛŒÙ†Øª â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 rebuild_client() {
   header
   info "Rebuilding client..."
@@ -354,7 +354,7 @@ rebuild_client() {
   sleep 2
 }
 
-# ─── ۶. توقف API ──────────────────────────────────────────────────────────────
+# â”€â”€â”€ Û¶. ØªÙˆÙ‚Ù API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 stop_api() {
   header
   pm2 stop "$PM2_API_NAME" 2>/dev/null || info "API not running"
@@ -362,15 +362,15 @@ stop_api() {
   sleep 2
 }
 
-# ─── ۷. راه‌اندازی Nginx ──────────────────────────────────────────────────────
+# â”€â”€â”€ Û·. Ø±Ø§Ù‡â€ŒØ§Ù†Ø¯Ø§Ø²ÛŒ Nginx â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 setup_nginx() {
   info "Configuring Nginx..."
 
-  # خواندن پورت از API .env اگر وجود دارد
+  # Ø®ÙˆØ§Ù†Ø¯Ù† Ù¾ÙˆØ±Øª Ø§Ø² API .env Ø§Ú¯Ø± ÙˆØ¬ÙˆØ¯ Ø¯Ø§Ø±Ø¯
   API_PORT=$(grep -E "^PORT=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs)
   API_PORT=${API_PORT:-3000}
 
-  # server_name: دامین یا wildcard
+  # server_name: Ø¯Ø§Ù…ÛŒÙ† ÛŒØ§ wildcard
   SNAME=${SERVER_DOMAIN:-_}
 
   cat > /etc/nginx/sites-available/admin-panel-demo << EOF
@@ -418,16 +418,16 @@ EOF
   ok "Nginx configured. Panel is available on port $NGINX_PORT."
 }
 
-# ─── SSL با acme.sh (DNS challenge) ──────────────────────────────────────────
+# â”€â”€â”€ SSL Ø¨Ø§ acme.sh (DNS challenge) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 setup_ssl() {
   header
-  echo -e "${C}این گزینه با DNS Challenge کار می‌کند — نیازی به باز بودن پورت 80 نیست.${N}"
-  echo -e "${Y}پیش‌نیاز: پورت 443 باید از طرف هاستینگ باز باشد.${N}"
+  echo -e "${C}Ø§ÛŒÙ† Ú¯Ø²ÛŒÙ†Ù‡ Ø¨Ø§ DNS Challenge Ú©Ø§Ø± Ù…ÛŒâ€ŒÚ©Ù†Ø¯ â€” Ù†ÛŒØ§Ø²ÛŒ Ø¨Ù‡ Ø¨Ø§Ø² Ø¨ÙˆØ¯Ù† Ù¾ÙˆØ±Øª 80 Ù†ÛŒØ³Øª.${N}"
+  echo -e "${Y}Ù¾ÛŒØ´â€ŒÙ†ÛŒØ§Ø²: Ù¾ÙˆØ±Øª 443 Ø¨Ø§ÛŒØ¯ Ø§Ø² Ø·Ø±Ù Ù‡Ø§Ø³ØªÛŒÙ†Ú¯ Ø¨Ø§Ø² Ø¨Ø§Ø´Ø¯.${N}"
   echo ""
-  read -r -p "دامین خود را وارد کن (مثال: admin.example.ir): " ssl_domain
-  [[ -z "$ssl_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
+  read -r -p "Ø¯Ø§Ù…ÛŒÙ† Ø®ÙˆØ¯ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù† (Ù…Ø«Ø§Ù„: admin.example.ir): " ssl_domain
+  [[ -z "$ssl_domain" ]] && { err "Ø¯Ø§Ù…ÛŒÙ† Ø®Ø§Ù„ÛŒ Ø§Ø³Øª."; sleep 2; return; }
 
-  # نصب acme.sh اگر نیست
+  # Ù†ØµØ¨ acme.sh Ø§Ú¯Ø± Ù†ÛŒØ³Øª
   if [[ ! -f ~/.acme.sh/acme.sh ]]; then
     info "Installing acme.sh..."
     curl -fsSL https://get.acme.sh | bash -s -- --email "admin@${ssl_domain}"
@@ -437,33 +437,33 @@ setup_ssl() {
   ACME="${HOME}/.acme.sh/acme.sh"
 
   echo ""
-  echo -e "${C}مرحله ۱: در حال دریافت TXT record مورد نیاز...${N}"
+  echo -e "${C}Ù…Ø±Ø­Ù„Ù‡ Û±: Ø¯Ø± Ø­Ø§Ù„ Ø¯Ø±ÛŒØ§ÙØª TXT record Ù…ÙˆØ±Ø¯ Ù†ÛŒØ§Ø²...${N}"
   "$ACME" --issue --dns -d "$ssl_domain" --yes-I-know-dns-manual-mode-enough-go-ahead-please 2>&1 | tee /tmp/acme_step1.txt
 
   echo ""
-  echo -e "${C}┌─────────────────────────────────────────────────────┐${N}"
-  echo -e "${C}│${N} در پنل DNS (ایران‌سرور) این TXT record را اضافه کن: ${C}│${N}"
-  echo -e "${C}│${N}   Name: ${W}_acme-challenge.${ssl_domain}${N}           ${C}│${N}"
-  echo -e "${C}│${N}   Type: ${W}TXT${N}                                       ${C}│${N}"
-  echo -e "${C}│${N}   Value: به خروجی بالا (DCV value) نگاه کن         ${C}│${N}"
-  echo -e "${C}└─────────────────────────────────────────────────────┘${N}"
+  echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
+  echo -e "${C}â”‚${N} Ø¯Ø± Ù¾Ù†Ù„ DNS (Ø§ÛŒØ±Ø§Ù†â€ŒØ³Ø±ÙˆØ±) Ø§ÛŒÙ† TXT record Ø±Ø§ Ø§Ø¶Ø§ÙÙ‡ Ú©Ù†: ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}   Name: ${W}_acme-challenge.${ssl_domain}${N}           ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}   Type: ${W}TXT${N}                                       ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}   Value: Ø¨Ù‡ Ø®Ø±ÙˆØ¬ÛŒ Ø¨Ø§Ù„Ø§ (DCV value) Ù†Ú¯Ø§Ù‡ Ú©Ù†         ${C}â”‚${N}"
+  echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
   echo ""
-  echo -e "${Y}بعد از اضافه کردن TXT record، چند دقیقه صبر کن تا DNS پروپاگیت بشه.${N}"
-  read -r -p "آماده‌ای؟ Enter بزن تا گواهی صادر بشه..."
+  echo -e "${Y}Ø¨Ø¹Ø¯ Ø§Ø² Ø§Ø¶Ø§ÙÙ‡ Ú©Ø±Ø¯Ù† TXT recordØŒ Ú†Ù†Ø¯ Ø¯Ù‚ÛŒÙ‚Ù‡ ØµØ¨Ø± Ú©Ù† ØªØ§ DNS Ù¾Ø±ÙˆÙ¾Ø§Ú¯ÛŒØª Ø¨Ø´Ù‡.${N}"
+  read -r -p "Ø¢Ù…Ø§Ø¯Ù‡â€ŒØ§ÛŒØŸ Enter Ø¨Ø²Ù† ØªØ§ Ú¯ÙˆØ§Ù‡ÛŒ ØµØ§Ø¯Ø± Ø¨Ø´Ù‡..."
 
-  # مرحله ۲: صدور گواهی
-  info "در حال صدور گواهی SSL..."
+  # Ù…Ø±Ø­Ù„Ù‡ Û²: ØµØ¯ÙˆØ± Ú¯ÙˆØ§Ù‡ÛŒ
+  info "Ø¯Ø± Ø­Ø§Ù„ ØµØ¯ÙˆØ± Ú¯ÙˆØ§Ù‡ÛŒ SSL..."
   "$ACME" --renew -d "$ssl_domain" --yes-I-know-dns-manual-mode-enough-go-ahead-please
 
   CERT_DIR="${HOME}/.acme.sh/${ssl_domain}_ecc"
   [[ ! -d "$CERT_DIR" ]] && CERT_DIR="${HOME}/.acme.sh/${ssl_domain}"
 
   if [[ ! -f "$CERT_DIR/$ssl_domain.cer" ]]; then
-    err "صدور گواهی ناموفق بود. TXT record را چک کن و دوباره امتحان کن."
+    err "ØµØ¯ÙˆØ± Ú¯ÙˆØ§Ù‡ÛŒ Ù†Ø§Ù…ÙˆÙÙ‚ Ø¨ÙˆØ¯. TXT record Ø±Ø§ Ú†Ú© Ú©Ù† Ùˆ Ø¯ÙˆØ¨Ø§Ø±Ù‡ Ø§Ù…ØªØ­Ø§Ù† Ú©Ù†."
     sleep 3; return
   fi
 
-  # نصب گواهی در nginx
+  # Ù†ØµØ¨ Ú¯ÙˆØ§Ù‡ÛŒ Ø¯Ø± nginx
   mkdir -p /etc/nginx/ssl
   "$ACME" --install-cert -d "$ssl_domain" \
     --cert-file /etc/nginx/ssl/cert.pem \
@@ -471,12 +471,12 @@ setup_ssl() {
     --fullchain-file /etc/nginx/ssl/fullchain.pem \
     --reloadcmd "systemctl reload nginx"
 
-  # پیکربندی Nginx برای HTTPS
+  # Ù¾ÛŒÚ©Ø±Ø¨Ù†Ø¯ÛŒ Nginx Ø¨Ø±Ø§ÛŒ HTTPS
   API_PORT=$(grep -E "^PORT=" "$API_DIR/.env" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs)
   API_PORT=${API_PORT:-3000}
 
-  # پورت HTTPS: اگر 443 بسته است از NGINX_PORT استفاده کن
-  read -r -p "از پورت 443 استفاده کنم؟ (اگر بسته است n بزن — از پورت $NGINX_PORT استفاده می‌شود) [y/N]: " use_443
+  # Ù¾ÙˆØ±Øª HTTPS: Ø§Ú¯Ø± 443 Ø¨Ø³ØªÙ‡ Ø§Ø³Øª Ø§Ø² NGINX_PORT Ø§Ø³ØªÙØ§Ø¯Ù‡ Ú©Ù†
+  read -r -p "Ø§Ø² Ù¾ÙˆØ±Øª 443 Ø§Ø³ØªÙØ§Ø¯Ù‡ Ú©Ù†Ù…ØŸ (Ø§Ú¯Ø± Ø¨Ø³ØªÙ‡ Ø§Ø³Øª n Ø¨Ø²Ù† â€” Ø§Ø² Ù¾ÙˆØ±Øª $NGINX_PORT Ø§Ø³ØªÙØ§Ø¯Ù‡ Ù…ÛŒâ€ŒØ´ÙˆØ¯) [y/N]: " use_443
   if [[ "$use_443" =~ ^[Yy]$ ]]; then
     HTTPS_PORT=443
   else
@@ -523,7 +523,7 @@ EOF
   ln -sf /etc/nginx/sites-available/admin-panel-demo /etc/nginx/sites-enabled/admin-panel-demo
   nginx -t && systemctl reload nginx
 
-  # آپدیت .env
+  # Ø¢Ù¾Ø¯ÛŒØª .env
   if [[ $HTTPS_PORT -eq 443 ]]; then
     ORIGIN_URL="https://$ssl_domain"
   else
@@ -539,94 +539,94 @@ EOF
   info "Rebuilding client with HTTPS URL..."
   cd "$CLIENT_DIR" && bun run build
 
-  ok "HTTPS فعال شد!"
-  echo -e "  سایت: ${W}$ORIGIN_URL${N}"
-  echo -e "  ${Y}گواهی Let's Encrypt هر 90 روز منقضی می‌شود — گزینه r برای تجدید${N}"
+  ok "HTTPS ÙØ¹Ø§Ù„ Ø´Ø¯!"
+  echo -e "  Ø³Ø§ÛŒØª: ${W}$ORIGIN_URL${N}"
+  echo -e "  ${Y}Ú¯ÙˆØ§Ù‡ÛŒ Let's Encrypt Ù‡Ø± 90 Ø±ÙˆØ² Ù…Ù†Ù‚Ø¶ÛŒ Ù…ÛŒâ€ŒØ´ÙˆØ¯ â€” Ú¯Ø²ÛŒÙ†Ù‡ r Ø¨Ø±Ø§ÛŒ ØªØ¬Ø¯ÛŒØ¯${N}"
   sleep 4
 }
 
-# ─── تجدید SSL ────────────────────────────────────────────────────────────────
+# â”€â”€â”€ ØªØ¬Ø¯ÛŒØ¯ SSL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 renew_ssl() {
   header
   ACME="${HOME}/.acme.sh/acme.sh"
   if [[ ! -f "$ACME" ]]; then
-    err "acme.sh نصب نیست. ابتدا SSL تنظیم کن (گزینه 8)."; sleep 2; return
+    err "acme.sh Ù†ØµØ¨ Ù†ÛŒØ³Øª. Ø§Ø¨ØªØ¯Ø§ SSL ØªÙ†Ø¸ÛŒÙ… Ú©Ù† (Ú¯Ø²ÛŒÙ†Ù‡ 8)."; sleep 2; return
   fi
-  info "در حال تجدید گواهی..."
+  info "Ø¯Ø± Ø­Ø§Ù„ ØªØ¬Ø¯ÛŒØ¯ Ú¯ÙˆØ§Ù‡ÛŒ..."
   "$ACME" --renew-all --yes-I-know-dns-manual-mode-enough-go-ahead-please
   systemctl reload nginx
-  ok "تجدید انجام شد."
+  ok "ØªØ¬Ø¯ÛŒØ¯ Ø§Ù†Ø¬Ø§Ù… Ø´Ø¯."
   sleep 2
 }
 
-# ─── setup دامین / HTTPS (Cloudflare) ────────────────────────────────────────
+# â”€â”€â”€ setup Ø¯Ø§Ù…ÛŒÙ† / HTTPS (Cloudflare) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 setup_domain() {
   header
-  echo -e "${Y}این گزینه تنظیمات دامین را برای Cloudflare HTTPS آپدیت می‌کند.${N}"
-  echo -e "${C}پیش‌نیاز:${N}"
-  echo -e "  1) یک دامین داشته باشی (مثلاً admin.example.com)"
-  echo -e "  2) دامین رو به IP ${W}77.223.214.210${N} پوینت کنی در Cloudflare"
-  echo -e "  3) در Cloudflare، Proxy را ON کنی (ابر نارنجی)"
+  echo -e "${Y}Ø§ÛŒÙ† Ú¯Ø²ÛŒÙ†Ù‡ ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ø¯Ø§Ù…ÛŒÙ† Ø±Ø§ Ø¨Ø±Ø§ÛŒ Cloudflare HTTPS Ø¢Ù¾Ø¯ÛŒØª Ù…ÛŒâ€ŒÚ©Ù†Ø¯.${N}"
+  echo -e "${C}Ù¾ÛŒØ´â€ŒÙ†ÛŒØ§Ø²:${N}"
+  echo -e "  1) ÛŒÚ© Ø¯Ø§Ù…ÛŒÙ† Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´ÛŒ (Ù…Ø«Ù„Ø§Ù‹ admin.example.com)"
+  echo -e "  2) Ø¯Ø§Ù…ÛŒÙ† Ø±Ùˆ Ø¨Ù‡ IP ${W}77.223.214.210${N} Ù¾ÙˆÛŒÙ†Øª Ú©Ù†ÛŒ Ø¯Ø± Cloudflare"
+  echo -e "  3) Ø¯Ø± CloudflareØŒ Proxy Ø±Ø§ ON Ú©Ù†ÛŒ (Ø§Ø¨Ø± Ù†Ø§Ø±Ù†Ø¬ÛŒ)"
   echo ""
-  read -r -p "دامین خود را وارد کن (مثال: admin.example.com): " input_domain
-  [[ -z "$input_domain" ]] && { err "دامین خالی است."; sleep 2; return; }
-  # validate: باید حداقل یک نقطه داشته باشد و فقط حروف/عدد/خط‌تیره/نقطه باشد
+  read -r -p "Ø¯Ø§Ù…ÛŒÙ† Ø®ÙˆØ¯ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù† (Ù…Ø«Ø§Ù„: admin.example.com): " input_domain
+  [[ -z "$input_domain" ]] && { err "Ø¯Ø§Ù…ÛŒÙ† Ø®Ø§Ù„ÛŒ Ø§Ø³Øª."; sleep 2; return; }
+  # validate: Ø¨Ø§ÛŒØ¯ Ø­Ø¯Ø§Ù‚Ù„ ÛŒÚ© Ù†Ù‚Ø·Ù‡ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ø¯ Ùˆ ÙÙ‚Ø· Ø­Ø±ÙˆÙ/Ø¹Ø¯Ø¯/Ø®Ø·â€ŒØªÛŒØ±Ù‡/Ù†Ù‚Ø·Ù‡ Ø¨Ø§Ø´Ø¯
   if ! echo "$input_domain" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9._-]+\.[a-zA-Z]{2,}$'; then
-    err "دامین نامعتبر است: '$input_domain'"
-    err "مثال صحیح: admin.example.com"
+    err "Ø¯Ø§Ù…ÛŒÙ† Ù†Ø§Ù…Ø¹ØªØ¨Ø± Ø§Ø³Øª: '$input_domain'"
+    err "Ù…Ø«Ø§Ù„ ØµØ­ÛŒØ­: admin.example.com"
     sleep 3; return
   fi
 
   SERVER_DOMAIN="$input_domain"
   ORIGIN_URL="https://$input_domain"
 
-  # آپدیت API .env
+  # Ø¢Ù¾Ø¯ÛŒØª API .env
   if [[ -f "$API_DIR/.env" ]]; then
     if grep -q "^ALLOWED_ORIGINS=" "$API_DIR/.env"; then
       sed -i "s|^ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=$ORIGIN_URL|" "$API_DIR/.env"
     else
       echo "ALLOWED_ORIGINS=$ORIGIN_URL" >> "$API_DIR/.env"
     fi
-    ok "API .env آپدیت شد → ALLOWED_ORIGINS=$ORIGIN_URL"
+    ok "API .env Ø¢Ù¾Ø¯ÛŒØª Ø´Ø¯ â†’ ALLOWED_ORIGINS=$ORIGIN_URL"
   fi
 
-  # آپدیت Client .env
+  # Ø¢Ù¾Ø¯ÛŒØª Client .env
   if [[ -f "$CLIENT_DIR/.env" ]]; then
     if grep -q "^VITE_API_URL=" "$CLIENT_DIR/.env"; then
       sed -i "s|^VITE_API_URL=.*|VITE_API_URL=$ORIGIN_URL/api|" "$CLIENT_DIR/.env"
     else
       echo "VITE_API_URL=$ORIGIN_URL/api" >> "$CLIENT_DIR/.env"
     fi
-    ok "Client .env آپدیت شد → VITE_API_URL=$ORIGIN_URL/api"
+    ok "Client .env Ø¢Ù¾Ø¯ÛŒØª Ø´Ø¯ â†’ VITE_API_URL=$ORIGIN_URL/api"
   fi
 
-  # آپدیت Nginx
+  # Ø¢Ù¾Ø¯ÛŒØª Nginx
   setup_nginx
 
-  # ری‌استارت API
+  # Ø±ÛŒâ€ŒØ§Ø³ØªØ§Ø±Øª API
   pm2 restart "$PM2_API_NAME" --update-env 2>/dev/null || true
 
-  # ری‌بیلد کلاینت
+  # Ø±ÛŒâ€ŒØ¨ÛŒÙ„Ø¯ Ú©Ù„Ø§ÛŒÙ†Øª
   info "Rebuilding client with new API URL..."
   cd "$CLIENT_DIR" && bun run build
 
   echo ""
-  ok "تنظیمات کامل شد!"
-  echo -e "${C}حالا در Cloudflare:${N}"
-  echo -e "  • A Record: ${W}$input_domain${N} → ${W}77.223.214.210${N} (Proxied ON)"
-  echo -e "  • SSL/TLS mode: ${W}Flexible${N} (در Cloudflare dashboard)"
-  echo -e "  • سایت: ${W}https://$input_domain${N}"
+  ok "ØªÙ†Ø¸ÛŒÙ…Ø§Øª Ú©Ø§Ù…Ù„ Ø´Ø¯!"
+  echo -e "${C}Ø­Ø§Ù„Ø§ Ø¯Ø± Cloudflare:${N}"
+  echo -e "  â€¢ A Record: ${W}$input_domain${N} â†’ ${W}77.223.214.210${N} (Proxied ON)"
+  echo -e "  â€¢ SSL/TLS mode: ${W}Flexible${N} (Ø¯Ø± Cloudflare dashboard)"
+  echo -e "  â€¢ Ø³Ø§ÛŒØª: ${W}https://$input_domain${N}"
   sleep 4
 }
 
-# ─── ۸. لاگ‌ها ────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Û¸. Ù„Ø§Ú¯â€ŒÙ‡Ø§ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 show_logs() {
-  echo -e "${C}┌────────────────────────────────────┐${N}"
-  echo -e "${C}│${N}  ${B}${G}1)${N} Live logs                   ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}2)${N} Last 100 lines              ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}3)${N} Nginx error log             ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${W}b)${N} Back                        ${C}│${N}"
-  echo -e "${C}└────────────────────────────────────┘${N}"
+  echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}1)${N} Live logs                   ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}2)${N} Last 100 lines              ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}3)${N} Nginx error log             ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${W}b)${N} Back                        ${C}â”‚${N}"
+  echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
   read -r -p "Select: " l
   case $l in
     1) pm2 logs "$PM2_API_NAME" ;;
@@ -636,25 +636,25 @@ show_logs() {
   esac
 }
 
-# ─── منوی اصلی ────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Ù…Ù†ÙˆÛŒ Ø§ØµÙ„ÛŒ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 while true; do
   header
-  echo -e "${C}┌──────────────────────────────────────┐${N}"
-  echo -e "${C}│${N}  ${B}${G}0)${N} 🛠️  Install Prerequisites           ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}1)${N} 📥 Install / Reinstall Panel       ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}2)${N} 🔄 Update from GitHub              ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}3)${N} ✏️  Edit .env settings              ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}4)${N} ▶️  Start / Restart API             ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}5)${N} 🔨 Rebuild Client (frontend)       ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}6)${N} ⏹️  Stop API                       ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}7)${N} 🌐 Setup / Reload Nginx            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}8)${N} � Setup Domain / HTTPS            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}9)${N} 📋 Logs                            ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}m)${N} 🗄️  Run DB Migrations              ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${G}s)${N} 📊 PM2 Status                      ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${R}d)${N} 🗑️  Remove Project                 ${C}│${N}"
-  echo -e "${C}│${N}  ${B}${R}q)${N} 🚪 Exit                            ${C}│${N}"
-  echo -e "${C}└──────────────────────────────────────┘${N}"
+  echo -e "${C}â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}0)${N} ðŸ› ï¸  Install Prerequisites           ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}1)${N} ðŸ“¥ Install / Reinstall Panel       ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}2)${N} ðŸ”„ Update from GitHub              ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}3)${N} âœï¸  Edit .env settings              ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}4)${N} â–¶ï¸  Start / Restart API             ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}5)${N} ðŸ”¨ Rebuild Client (frontend)       ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}6)${N} â¹ï¸  Stop API                       ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}7)${N} ðŸŒ Setup / Reload Nginx            ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}8)${N} ï¿½ Setup Domain / HTTPS            ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}9)${N} ðŸ“‹ Logs                            ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}m)${N} ðŸ—„ï¸  Run DB Migrations              ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${G}s)${N} ðŸ“Š PM2 Status                      ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${R}d)${N} ðŸ—‘ï¸  Remove Project                 ${C}â”‚${N}"
+  echo -e "${C}â”‚${N}  ${B}${R}q)${N} ðŸšª Exit                            ${C}â”‚${N}"
+  echo -e "${C}â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜${N}"
   echo ""
   read -r -p "Select an option: " choice
 
@@ -687,3 +687,4 @@ while true; do
     *) echo "Invalid option"; sleep 1 ;;
   esac
 done
+

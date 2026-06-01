@@ -204,12 +204,51 @@ productsRouter.get("/", async (c) => {
 
   const products = await db.query.productsTable.findMany({
     where: conditions.length > 0 ? and(...conditions) : undefined,
-    orderBy: [desc(productsTable.createdAt)],
+    orderBy: [asc(productsTable.displayOrder), desc(productsTable.createdAt)],
     limit: parseInt(limit),
     offset,
   });
 
   return c.json(products);
+});
+
+// ── PATCH /api/admin/products/reorder ───────────────────────────────────────
+productsRouter.patch("/reorder", async (c) => {
+  const body = await c.req.json();
+  const products = Array.isArray(body?.products) ? body.products : null;
+
+  if (!products) return c.json({ error: "invalid_payload" }, 400);
+
+  try {
+    await db.transaction(async (tx) => {
+      for (const item of products) {
+        const id = Number(item.id ?? item.productId);
+        const displayOrder = Number(
+          item.displayOrder ?? item.display_order ?? 0,
+        );
+        if (!Number.isFinite(id)) continue;
+        await tx
+          .update(productsTable)
+          .set({ displayOrder })
+          .where(eq(productsTable.id, id));
+      }
+    });
+
+    // Log admin action (non-blocking)
+    try {
+      await logAdminAction(c, {
+        action: "products.reorder",
+        entityType: "product",
+        metadata: { count: products.length },
+      });
+    } catch (_) {
+      // ignore logging failures
+    }
+
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ error: "failed_to_reorder", details: String(err) }, 500);
+  }
 });
 
 // ── POST /api/admin/products ──────────────────────────────────────────────────
@@ -229,7 +268,7 @@ productsRouter.post("/", async (c) => {
         eq(productPlansTable.isActive, true),
       ),
     );
-  const plansCount = Number(plansCountRows?.count) || 0;
+  const plansCount = Number(plansCountRows[0]?.count) || 0;
   body.stock = plansCount ? plansCount > 0 : false;
   try {
     [product] = await db.insert(productsTable).values(body).returning();
@@ -342,7 +381,7 @@ productsRouter.put("/:id", async (c) => {
   normalizeLocalizedPayload(body);
 
   // مقدار stock را بر اساس وجود پلن فعال کن
-  const plansCountRows: { count: number } = await db
+  const plansCountRows = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
     .where(
@@ -351,7 +390,7 @@ productsRouter.put("/:id", async (c) => {
         eq(productPlansTable.isActive, true),
       ),
     );
-  const plansCount = Number(plansCountRows?.count) ?? 0;
+  const plansCount = Number(plansCountRows[0]?.count) ?? 0;
   body.stock = plansCount ? plansCount > 0 : false;
 
   const [updated] = await db

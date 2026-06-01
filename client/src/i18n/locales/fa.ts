@@ -1,6 +1,8 @@
 const fa = {
   // ── عمومی ──────────────────────────────────────────────────
   common: {
+    next: "بعدی",
+    previous: "قبلی",
     loading: "در حال بارگذاری...",
     save: "ذخیره",
     cancel: "لغو",
@@ -86,6 +88,7 @@ const fa = {
     title: "محصولات",
     newProduct: "+ محصول جدید",
     searchPlaceholder: "جستجو...",
+    saveOrder: "ذخیره ترتیب",
     name: "نام",
     category: "دسته",
     deliveryType: "نوع تحویل",
@@ -204,6 +207,9 @@ const fa = {
       customEmojiId: "Custom Emoji ID",
       enable: "فعال کردن",
       disable: "غیرفعال کردن",
+    },
+    tabs: {
+      all: "همه محصولات",
     },
   },
 

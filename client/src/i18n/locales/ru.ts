@@ -2,6 +2,8 @@ import type { Translations } from "./fa";
 
 const ru: Translations = {
   common: {
+    next: "Следующий",
+    previous: "Предыдущий",
     loading: "Загрузка...",
     save: "Сохранить",
     cancel: "Отмена",
@@ -83,6 +85,7 @@ const ru: Translations = {
     title: "Продукты",
     newProduct: "+ Новый продукт",
     searchPlaceholder: "Поиск...",
+    saveOrder: "Сохранить порядок",
     name: "Название",
     category: "Категория",
     deliveryType: "Тип доставки",
@@ -201,6 +204,9 @@ const ru: Translations = {
       family_join: "Семейный доступ",
       renewable: "Возобновляемый",
       reservation: "Бронирование",
+    },
+    tabs: {
+      all: "Все продукты",
     },
   },
 

@@ -5,12 +5,16 @@ const ProductTable = ({
   toggleMutation,
   setEditProduct,
   setPlansProduct,
+  orderValues,
+  onOrderChange,
   t,
 }: {
   products: any;
   toggleMutation: any;
   setEditProduct: any;
   setPlansProduct: any;
+  orderValues: Record<number, number>;
+  onOrderChange: (productId: number, displayOrder: number) => void;
   t: any;
 }) => {
   return (
@@ -22,10 +26,22 @@ const ProductTable = ({
             className="rounded-2xl bg-white/5 hover:bg-white/10 transition-all px-5 py-4 flex flex-col gap-3"
           >
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="text-xs text-white/40 font-mono">
                   #{product.id}
                 </span>
+                <label className="flex items-center gap-2 text-xs text-white/50 bg-white/10 rounded-full px-2 py-0.5">
+                  <span>{t("products.displayOrder") || "Order"}:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={orderValues[product.id] ?? product.displayOrder ?? 0}
+                    onChange={(e) =>
+                      onOrderChange(product.id, Number(e.target.value))
+                    }
+                    className="w-14 bg-slate-900 border border-white/10 rounded-lg px-2 py-0.5 text-white text-xs outline-none"
+                  />
+                </label>
                 <span className="font-semibold text-white/90">
                   {getLocalizedName(product)}
                 </span>

@@ -2,6 +2,8 @@ import type { Translations } from "./fa";
 
 const en: Translations = {
   common: {
+    next: "Next",
+    previous: "Previous",
     loading: "Loading...",
     save: "Save",
     cancel: "Cancel",
@@ -83,6 +85,7 @@ const en: Translations = {
     title: "Products",
     newProduct: "+ New Product",
     searchPlaceholder: "Search...",
+    saveOrder: "Save Order",
     name: "Name",
     category: "Category",
     deliveryType: "Delivery Type",
@@ -202,6 +205,9 @@ const en: Translations = {
       customEmojiId: "Custom Emoji ID",
       enable: "Enable",
       disable: "Disable",
+    },
+    tabs: {
+      all: "All products",
     },
   },
 

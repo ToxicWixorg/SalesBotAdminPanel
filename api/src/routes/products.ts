@@ -251,6 +251,48 @@ productsRouter.patch("/reorder", async (c) => {
   }
 });
 
+function parseOptionalNumber(value: unknown, fallback: number): number {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function parseNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+type ProductRegion = { flag: string; name: string };
+
+function parseRegions(value: unknown): ProductRegion[] {
+  let arrayValue: unknown[] | null = null;
+
+  if (Array.isArray(value)) {
+    arrayValue = value;
+  } else if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) arrayValue = parsed;
+    } catch {
+      return [];
+    }
+  }
+
+  if (!arrayValue) {
+    return [];
+  }
+
+  return arrayValue
+    .filter((item): item is Record<string, unknown> =>
+      Boolean(item && typeof item === "object"),
+    )
+    .map((item) => ({
+      flag: String(item.flag ?? "").trim(),
+      name: String(item.name ?? "").trim(),
+    }))
+    .filter((item): item is ProductRegion => Boolean(item.flag && item.name));
+}
+
 // ── POST /api/admin/products ──────────────────────────────────────────────────
 productsRouter.post("/", async (c) => {
   const body = await c.req.json();
@@ -283,10 +325,7 @@ productsRouter.post("/", async (c) => {
       ? String(body.descriptionRU).trim()
       : null,
     image: body.image ? String(body.image).trim() : null,
-    categoryId:
-      body.categoryId === "" || body.categoryId === null
-        ? null
-        : Number(body.categoryId),
+    categoryId: parseNullableNumber(body.categoryId),
     requiresEmail: Boolean(body.requiresEmail),
     requiresOtp: Boolean(body.requiresOtp),
     requiresLogin: Boolean(body.requiresLogin),
@@ -294,16 +333,31 @@ productsRouter.post("/", async (c) => {
     isRenewable: Boolean(body.isRenewable),
     isActive: Boolean(body.isActive),
     stock: plansCount > 0,
-    minStock: Number(body.minStock ?? 5),
-    warrantyDays: Number(body.warrantyDays ?? 0),
+    minStock: parseOptionalNumber(body.minStock, 5),
+    warrantyDays: parseOptionalNumber(body.warrantyDays, 0),
     terms: body.terms ? String(body.terms).trim() : null,
-    maxPerUser: Number(body.maxPerUser ?? 0),
+    maxPerUser: parseOptionalNumber(body.maxPerUser, 0),
     customEmojiId: body.customEmojiId
       ? String(body.customEmojiId).trim()
       : null,
-    regions: Array.isArray(body.regions) ? body.regions : [],
+    regions: parseRegions(body.regions),
     updatedAt: new Date(),
   } as const;
+
+  const requiredName = firstNonEmpty(
+    payload.nameFA,
+    payload.nameEN,
+    payload.nameRU,
+  );
+  if (!requiredName || !payload.slug) {
+    return c.json(
+      {
+        error: "invalid_payload",
+        details: "Product name and slug are required.",
+      },
+      400,
+    );
+  }
 
   let product;
   try {
@@ -371,7 +425,17 @@ productsRouter.post("/", async (c) => {
           return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
         }
         console.error("Product fallback insert failed:", fallbackErr);
-        throw fallbackErr;
+        const details =
+          fallbackErr instanceof Error
+            ? fallbackErr.message
+            : String(fallbackErr);
+        return c.json(
+          {
+            error: "Failed to create product",
+            details,
+          },
+          500,
+        );
       }
     } else {
       const pgErr = extractPgError(err);
@@ -379,7 +443,14 @@ productsRouter.post("/", async (c) => {
         return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
       }
       console.error("Product insert failed:", err);
-      throw err;
+      const details = err instanceof Error ? err.message : String(err);
+      return c.json(
+        {
+          error: "Failed to create product",
+          details,
+        },
+        500,
+      );
     }
   }
 
@@ -390,6 +461,8 @@ productsRouter.post("/", async (c) => {
     entityType: "product",
     entityId: product.id,
     description: `Created product: ${displayName(product)}`,
+  }).catch((err) => {
+    console.error("Failed to log admin action:", err);
   });
 
   return c.json(product, 201);

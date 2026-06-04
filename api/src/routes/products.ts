@@ -257,8 +257,6 @@ productsRouter.post("/", async (c) => {
 
   normalizeLocalizedPayload(body);
 
-  let product;
-  // مقدار stock را بر اساس وجود پلن فعال کن
   const plansCountRows = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
@@ -269,9 +267,47 @@ productsRouter.post("/", async (c) => {
       ),
     );
   const plansCount = Number(plansCountRows[0]?.count) || 0;
-  body.stock = plansCount ? plansCount > 0 : false;
+
+  const payload = {
+    nameFA: String(body.nameFA ?? "").trim(),
+    nameEN: String(body.nameEN ?? "").trim(),
+    nameRU: String(body.nameRU ?? "").trim(),
+    slug: String(body.slug ?? "").trim(),
+    descriptionFA: body.descriptionFA
+      ? String(body.descriptionFA).trim()
+      : null,
+    descriptionEN: body.descriptionEN
+      ? String(body.descriptionEN).trim()
+      : null,
+    descriptionRU: body.descriptionRU
+      ? String(body.descriptionRU).trim()
+      : null,
+    image: body.image ? String(body.image).trim() : null,
+    categoryId:
+      body.categoryId === "" || body.categoryId === null
+        ? null
+        : Number(body.categoryId),
+    requiresEmail: Boolean(body.requiresEmail),
+    requiresOtp: Boolean(body.requiresOtp),
+    requiresLogin: Boolean(body.requiresLogin),
+    requiresRegion: Boolean(body.requiresRegion),
+    isRenewable: Boolean(body.isRenewable),
+    isActive: Boolean(body.isActive),
+    stock: plansCount > 0,
+    minStock: Number(body.minStock ?? 5),
+    warrantyDays: Number(body.warrantyDays ?? 0),
+    terms: body.terms ? String(body.terms).trim() : null,
+    maxPerUser: Number(body.maxPerUser ?? 0),
+    customEmojiId: body.customEmojiId
+      ? String(body.customEmojiId).trim()
+      : null,
+    regions: Array.isArray(body.regions) ? body.regions : [],
+    updatedAt: new Date(),
+  } as const;
+
+  let product;
   try {
-    [product] = await db.insert(productsTable).values(body).returning();
+    [product] = await db.insert(productsTable).values(payload).returning();
   } catch (err: unknown) {
     if (isLegacyNameConstraintError(err, "products")) {
       try {
@@ -282,7 +318,6 @@ productsRouter.post("/", async (c) => {
             name_en,
             name_ru,
             slug,
-            description,
             description_fa,
             description_en,
             description_ru,
@@ -301,27 +336,26 @@ productsRouter.post("/", async (c) => {
             updated_at
           )
           values (
-            ${body.nameFA},
-            ${body.nameFA},
-            ${body.nameEN},
-            ${body.nameRU},
-            ${body.slug},
-            ${body.descriptionFA ?? null},
-            ${body.descriptionFA ?? null},
-            ${body.descriptionEN ?? null},
-            ${body.descriptionRU ?? null},
-            ${body.image ?? null},
-            ${body.categoryId ?? null},
-            ${body.requiresEmail ?? false},
-            ${body.requiresOtp ?? false},
-            ${body.requiresLogin ?? false},
-            ${body.requiresRegion ?? false},
-            ${body.isActive ?? true},
-            ${body.stock ?? 0},
-            ${body.minStock ?? 5},
-            ${body.terms ?? null},
-            ${body.customEmojiId ?? null},
-            ${JSON.stringify(body.regions ?? [])}::jsonb,
+            ${payload.nameFA},
+            ${payload.nameFA},
+            ${payload.nameEN},
+            ${payload.nameRU},
+            ${payload.slug},
+            ${payload.descriptionFA},
+            ${payload.descriptionEN},
+            ${payload.descriptionRU},
+            ${payload.image},
+            ${payload.categoryId},
+            ${payload.requiresEmail},
+            ${payload.requiresOtp},
+            ${payload.requiresLogin},
+            ${payload.requiresRegion},
+            ${payload.isActive},
+            ${payload.stock},
+            ${payload.minStock},
+            ${payload.terms},
+            ${payload.customEmojiId},
+            ${JSON.stringify(payload.regions)}::jsonb,
             NOW()
           )
         `);
@@ -329,13 +363,14 @@ productsRouter.post("/", async (c) => {
         [product] = await db
           .select()
           .from(productsTable)
-          .where(eq(productsTable.slug, body.slug))
+          .where(eq(productsTable.slug, payload.slug))
           .limit(1);
       } catch (fallbackErr: unknown) {
         const pgFallback = extractPgError(fallbackErr);
         if (pgFallback?.code === "23505") {
           return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
         }
+        console.error("Product fallback insert failed:", fallbackErr);
         throw fallbackErr;
       }
     } else {
@@ -343,6 +378,7 @@ productsRouter.post("/", async (c) => {
       if (pgErr?.code === "23505") {
         return c.json({ error: "این محصول قبلاً وجود دارد" }, 409);
       }
+      console.error("Product insert failed:", err);
       throw err;
     }
   }

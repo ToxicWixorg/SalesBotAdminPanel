@@ -12,7 +12,7 @@ REPO_SUBDIR=""
 # دامین سرور (خالی = فقط IP)
 SERVER_DOMAIN=""
 # پورت Nginx
-NGINX_PORT=8080
+NGINX_PORT=8081
 
 header() {
   clear

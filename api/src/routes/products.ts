@@ -293,22 +293,30 @@ function parseRegions(value: unknown): ProductRegion[] {
     .filter((item): item is ProductRegion => Boolean(item.flag && item.name));
 }
 
-// ── POST /api/admin/products ──────────────────────────────────────────────────
-productsRouter.post("/", async (c) => {
-  const body = await c.req.json();
-
-  normalizeLocalizedPayload(body);
-
+async function syncProductStockFromPlans(productId: number) {
   const plansCountRows = await db
     .select({ count: sql`count(*)::int` })
     .from(productPlansTable)
     .where(
       and(
-        eq(productPlansTable.productId, body.id ?? 0),
+        eq(productPlansTable.productId, productId),
         eq(productPlansTable.isActive, true),
       ),
     );
-  const plansCount = Number(plansCountRows[0]?.count) || 0;
+  const activePlansCount = Number(plansCountRows[0]?.count) || 0;
+  const stock = activePlansCount > 0 ? 1 : 0;
+  await db
+    .update(productsTable)
+    .set({ stock, updatedAt: new Date() })
+    .where(eq(productsTable.id, productId));
+  return stock;
+}
+
+// ── POST /api/admin/products ──────────────────────────────────────────────────
+productsRouter.post("/", async (c) => {
+  const body = await c.req.json();
+
+  normalizeLocalizedPayload(body);
 
   const payload = {
     nameFA: String(body.nameFA ?? "").trim(),
@@ -332,7 +340,7 @@ productsRouter.post("/", async (c) => {
     requiresRegion: Boolean(body.requiresRegion),
     isRenewable: Boolean(body.isRenewable),
     isActive: Boolean(body.isActive),
-    stock: plansCount > 0,
+    stock: 0,
     minStock: parseOptionalNumber(body.minStock, 5),
     warrantyDays: parseOptionalNumber(body.warrantyDays, 0),
     terms: body.terms ? String(body.terms).trim() : null,
@@ -489,18 +497,9 @@ productsRouter.put("/:id", async (c) => {
   delete body.createdAt;
   normalizeLocalizedPayload(body);
 
-  // مقدار stock را بر اساس وجود پلن فعال کن
-  const plansCountRows = await db
-    .select({ count: sql`count(*)::int` })
-    .from(productPlansTable)
-    .where(
-      and(
-        eq(productPlansTable.productId, id),
-        eq(productPlansTable.isActive, true),
-      ),
-    );
-  const plansCount = Number(plansCountRows[0]?.count) ?? 0;
-  body.stock = plansCount ? plansCount > 0 : false;
+  if (body.stock !== undefined) {
+    body.stock = parseOptionalNumber(body.stock, 0);
+  }
 
   const [updated] = await db
     .update(productsTable)
@@ -548,11 +547,12 @@ productsRouter.patch("/:id/toggle", async (c) => {
 // ── PATCH /api/admin/products/:id/stock ──────────────────────────────────────
 productsRouter.patch("/:id/stock", async (c) => {
   const id = parseInt(c.req.param("id"));
-  const { stock } = await c.req.json<{ stock: boolean }>();
+  const { stock } = await c.req.json<{ stock: unknown }>();
+  const parsedStock = parseOptionalNumber(stock, 0);
 
   const [updated] = await db
     .update(productsTable)
-    .set({ stock, updatedAt: new Date() })
+    .set({ stock: parsedStock, updatedAt: new Date() })
     .where(eq(productsTable.id, id))
     .returning();
 
@@ -562,7 +562,7 @@ productsRouter.patch("/:id/stock", async (c) => {
     action: "update_stock",
     entityType: "product",
     entityId: id,
-    description: `Stock updated to ${stock}`,
+    description: `Stock updated to ${parsedStock}`,
   });
 
   return c.json(updated);
@@ -696,15 +696,7 @@ productsRouter.post("/:id/plans", async (c) => {
     description: `Created plan: ${displayName(plan)} (${body.deliveryType}) for product ${productId}`,
   });
 
-  const plansCountRows = await db
-    .select({ count: sql`count(*)::int` })
-    .from(productPlansTable)
-    .where(eq(productPlansTable.productId, productId));
-  const plansCount = Number(plansCountRows[0]?.count) ?? 0;
-  await db
-    .update(productsTable)
-    .set({ stock: plansCount ? plansCount > 0 : false, updatedAt: new Date() })
-    .where(eq(productsTable.id, productId));
+  await syncProductStockFromPlans(productId);
   return c.json(plan, 201);
 });
 
@@ -739,12 +731,16 @@ productsRouter.put("/:id/plans/:planId", async (c) => {
     description: `Updated plan: ${displayName(updated)} (${updated.deliveryType})`,
   });
 
+  await syncProductStockFromPlans(updated.productId);
   return c.json(updated);
 });
 
 productsRouter.delete("/:id/plans/:planId", async (c) => {
+  const productId = parseInt(c.req.param("id"));
   const planId = parseInt(c.req.param("planId"));
+
   await db.delete(productPlansTable).where(eq(productPlansTable.id, planId));
+  await syncProductStockFromPlans(productId);
   return c.json({ success: true });
 });
 

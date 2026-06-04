@@ -36,7 +36,15 @@ const localizedProductName = sql<string>`COALESCE(${productsTable.nameFA}, ${pro
 const localizedPlanName = sql<string>`COALESCE(${productPlansTable.nameFA}, ${productPlansTable.nameEN}, ${productPlansTable.nameRU})`;
 
 type SupportedLanguage = "fa" | "en" | "ru";
-type NotifiableOrderStatus = "in_progress" | "completed" | "cancelled";
+type NotifiableOrderStatus =
+  | "pending_payment"
+  | "pending_admin"
+  | "pending_schedule"
+  | "scheduled"
+  | "rescheduled"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
 
 const ORDER_STATUS_MESSAGES: Record<
   SupportedLanguage,
@@ -49,54 +57,129 @@ const ORDER_STATUS_MESSAGES: Record<
   >
 > = {
   fa: {
-    in_progress: {
-      title: "🔄 <b>سفارش شما در حال انجام است</b>",
+    pending_payment: {
+      title: "⏳ <b>سفارش ثبت شده</b>",
       description: (productName, orderId) =>
-        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nتیم ما پردازش سفارش شما را شروع کرده است.`,
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش ثبت شده و منتظر پرداخت کاربر است.\nدر صورت عدم پرداخت، سفارش به صورت خودکار منقضی خواهد شد.`,
+    },
+    pending_admin: {
+      title: "⏱️ <b>درانتظار بررسی</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nپرداخت تایید شده و سفارش در صف بررسی توسط تیم پشتیبانی قرار دارد.\nلطفاً تا زمان پردازش سفارش منتظر بمانید.`,
+    },
+    pending_schedule: {
+      title: "📅 <b>درانتظار زمان‌بندی</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش ثبت شده و منتظر تعیین زمان تحویل یا فعال‌سازی می‌باشد.\nپس از مشخص شدن زمان، سفارش وارد مرحله اجرا خواهد شد.`,
+    },
+    scheduled: {
+      title: "📅 <b>درانتظار زمان‌بندی</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش ثبت شده و منتظر تعیین زمان تحویل یا فعال‌سازی می‌باشد.\nپس از مشخص شدن زمان، سفارش وارد مرحله اجرا خواهد شد.`,
+    },
+    rescheduled: {
+      title: "📅 <b>درانتظار زمان‌بندی</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش ثبت شده و منتظر تعیین زمان تحویل یا فعال‌سازی می‌باشد.\nپس از مشخص شدن زمان، سفارش وارد مرحله اجرا خواهد شد.`,
+    },
+    in_progress: {
+      title: "🔄 <b>درحال انجام</b>",
+      description: (productName, orderId) =>
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش توسط تیم ما در حال پردازش و فعال‌سازی است.\nلطفاً تا تکمیل فرآیند از ارسال درخواست‌های تکراری خودداری نمایید.`,
     },
     completed: {
-      title: "✅ <b>سفارش شما تکمیل شد</b>",
+      title: "✅ <b>تکمیل شده</b>",
       description: (productName, orderId) =>
-        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش شما با موفقیت تکمیل شد. برای مشاهده جزئیات، بخش سفارشات من را بررسی کنید.`,
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nسفارش با موفقیت تکمیل و تحویل داده شده است.\nدر قسمت سفارش‌های من می‌توانید اطلاعات را دریافت کنید.\nدر صورت وجود هرگونه مشکل، از طریق تیکت پشتیبانی با ما در ارتباط باشید.`,
     },
     cancelled: {
-      title: "❌ <b>سفارش شما لغو شد</b>",
+      title: "❌ <b>لغو شده</b>",
       description: (productName, orderId) =>
-        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nاگر این تغییر غیرمنتظره بوده، با پشتیبانی تماس بگیرید.`,
+        `محصول: <b>${productName}</b>\nشماره سفارش: <b>#${orderId}</b>\n\nاین سفارش لغو شده است.\nدر صورت کسر وجه، مبلغ مطابق قوانین مجموعه به کیف پول یا حساب شما بازگردانده خواهد شد.`,
     },
   },
   en: {
-    in_progress: {
-      title: "🔄 <b>Your order is now in progress</b>",
+    pending_payment: {
+      title: "⏳ <b>Order Registered</b>",
       description: (productName, orderId) =>
-        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nOur team has started processing your order.`,
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order has been registered and is awaiting payment.\nIf payment is not made, the order will be automatically cancelled.`,
+    },
+    pending_admin: {
+      title: "⏱️ <b>Under Review</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nPayment has been verified and your order is in the queue for review by our support team.\nPlease wait while we process your order.`,
+    },
+    pending_schedule: {
+      title: "📅 <b>Awaiting Scheduling</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order has been registered and is awaiting scheduling.\nOnce the delivery time is determined, your order will move to the execution phase.`,
+    },
+    scheduled: {
+      title: "📅 <b>Awaiting Scheduling</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order has been registered and is awaiting scheduling.\nOnce the delivery time is determined, your order will move to the execution phase.`,
+    },
+    rescheduled: {
+      title: "📅 <b>Awaiting Scheduling</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order has been registered and is awaiting scheduling.\nOnce the delivery time is determined, your order will move to the execution phase.`,
+    },
+    in_progress: {
+      title: "🔄 <b>In Progress</b>",
+      description: (productName, orderId) =>
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order is currently being processed and activated by our team.\nPlease refrain from sending duplicate requests until the process is complete.`,
     },
     completed: {
-      title: "✅ <b>Your order has been completed</b>",
+      title: "✅ <b>Completed</b>",
       description: (productName, orderId) =>
-        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order was completed successfully. Check My Orders for the details.`,
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nYour order has been successfully completed and delivered.\nYou can retrieve the details in the My Orders section.\nIf you encounter any issues, please contact us through a support ticket.`,
     },
     cancelled: {
-      title: "❌ <b>Your order has been cancelled</b>",
+      title: "❌ <b>Cancelled</b>",
       description: (productName, orderId) =>
-        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nIf this change was unexpected, please contact support.`,
+        `Product: <b>${productName}</b>\nOrder: <b>#${orderId}</b>\n\nThis order has been cancelled.\nIf a payment was deducted, the amount will be refunded to your wallet or account according to our policy.`,
     },
   },
   ru: {
-    in_progress: {
-      title: "🔄 <b>Ваш заказ теперь в обработке</b>",
+    pending_payment: {
+      title: "⏳ <b>Заказ зарегистрирован</b>",
       description: (productName, orderId) =>
-        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nНаша команда начала обработку вашего заказа.`,
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ зарегистрирован и ожидает оплаты.\nЕсли платёж не будет произведён, заказ будет автоматически отменён.`,
+    },
+    pending_admin: {
+      title: "⏱️ <b>На проверке</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nПлатёж подтвержден, и ваш заказ находится в очереди на проверку нашей командой поддержки.\nПожалуйста, ожидайте обработки заказа.`,
+    },
+    pending_schedule: {
+      title: "📅 <b>Ожидание планирования</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ зарегистрирован и ожидает планирования.\nПосле определения времени доставки заказ перейдёт на этап выполнения.`,
+    },
+    scheduled: {
+      title: "📅 <b>Ожидание планирования</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ зарегистрирован и ожидает планирования.\nПосле определения времени доставки заказ перейдёт на этап выполнения.`,
+    },
+    rescheduled: {
+      title: "📅 <b>Ожидание планирования</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ зарегистрирован и ожидает планирования.\nПосле определения времени доставки заказ перейдёт на этап выполнения.`,
+    },
+    in_progress: {
+      title: "🔄 <b>Выполняется</b>",
+      description: (productName, orderId) =>
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ в настоящий момент обрабатывается и активируется нашей командой.\nПожалуйста, воздержитесь от отправки повторных запросов до завершения процесса.`,
     },
     completed: {
-      title: "✅ <b>Ваш заказ завершён</b>",
+      title: "✅ <b>Завершено</b>",
       description: (productName, orderId) =>
-        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ успешно завершён. Подробности доступны в разделе «Мои заказы».`,
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nВаш заказ успешно завершён и доставлен.\nВы можете получить подробности в разделе «Мои заказы».\nЕсли у вас возникнут какие-либо проблемы, пожалуйста, свяжитесь с нами через тикет поддержки.`,
     },
     cancelled: {
-      title: "❌ <b>Ваш заказ отменён</b>",
+      title: "❌ <b>Отменено</b>",
       description: (productName, orderId) =>
-        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nЕсли это произошло неожиданно, пожалуйста, свяжитесь с поддержкой.`,
+        `Товар: <b>${productName}</b>\nЗаказ: <b>#${orderId}</b>\n\nЭтот заказ был отменён.\nЕсли платёж был снят, сумма будет возвращена на ваш кошелёк или счёт в соответствии с нашей политикой.`,
     },
   },
 };
@@ -109,7 +192,16 @@ function normalizeLanguage(languageCode?: string | null): SupportedLanguage {
 function isNotifiableOrderStatus(
   status: string,
 ): status is NotifiableOrderStatus {
-  return ["in_progress", "completed", "cancelled"].includes(status);
+  return [
+    "pending_payment",
+    "pending_admin",
+    "pending_schedule",
+    "scheduled",
+    "rescheduled",
+    "in_progress",
+    "completed",
+    "cancelled",
+  ].includes(status);
 }
 
 async function notifyUserAboutOrderStatusChange(params: {
@@ -371,6 +463,11 @@ ordersRouter.patch("/:id/deliver", async (c) => {
     delivery: Record<string, unknown>;
   }>();
 
+  const order = await db.query.ordersTable.findFirst({
+    where: eq(ordersTable.id, id),
+  });
+  if (!order) return c.json({ error: "Order not found" }, 404);
+
   const [updated] = await db
     .update(ordersTable)
     .set({
@@ -384,25 +481,32 @@ ordersRouter.patch("/:id/deliver", async (c) => {
 
   if (!updated) return c.json({ error: "Order not found" }, 404);
 
-  // Notify user via Telegram Bot API
-  const BOT_TOKEN = process.env.BOT_TOKEN;
-  if (BOT_TOKEN && updated.userId) {
-    const deliveryText = Object.entries(delivery)
-      .map(([k, v]) => `• <b>${k}</b>: <code>${v}</code>`)
-      .join("\n");
-    const notifyText =
-      `🎉 <b>Your Order #${id} Has Been Delivered!</b>\n\n` +
-      `Your access details:\n${deliveryText || "(Check order details in bot)"}\n\n` +
-      `View full details in the bot: My Orders → Order #${id}`;
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: Number(updated.userId),
-        text: notifyText,
-        parse_mode: "HTML",
-      }),
-    }).catch((e) => console.error("[NOTIFY] Failed to notify user:", e));
+  // Notify user via new notification system
+  const [user, product] = await Promise.all([
+    db.query.usersTable.findFirst({
+      where: eq(usersTable.id, updated.userId),
+      columns: {
+        id: true,
+        languageCode: true,
+        notifyOrders: true,
+      },
+    }),
+    db
+      .select({ name: localizedProductName })
+      .from(productsTable)
+      .where(eq(productsTable.id, updated.productId))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
+
+  if (user?.id && user.notifyOrders !== false) {
+    await notifyUserAboutOrderStatusChange({
+      chatId: user.id,
+      languageCode: user.languageCode,
+      productName: product?.name,
+      orderId: id,
+      status: "completed",
+    });
   }
 
   await logAdminAction(c, {
@@ -502,6 +606,34 @@ ordersRouter.patch("/:id/reschedule", async (c) => {
     description: `Rescheduled to ${scheduledTime}`,
   });
 
+  // Notify user about reschedule (await but non-blocking if notification fails)
+  try {
+    const [user, product] = await Promise.all([
+      db.query.usersTable.findFirst({
+        where: eq(usersTable.id, updated.userId),
+        columns: { id: true, languageCode: true, notifyOrders: true },
+      }),
+      db
+        .select({ name: localizedProductName })
+        .from(productsTable)
+        .where(eq(productsTable.id, updated.productId))
+        .limit(1)
+        .then((rows) => rows[0]),
+    ]);
+
+    if (user?.id && user.notifyOrders !== false) {
+      await notifyUserAboutOrderStatusChange({
+        chatId: user.id,
+        languageCode: user.languageCode,
+        productName: product?.name,
+        orderId: id,
+        status: "rescheduled",
+      });
+    }
+  } catch (err) {
+    console.error("[orders] notify reschedule failed:", err);
+  }
+
   return c.json(updated);
 });
 
@@ -559,17 +691,32 @@ ordersRouter.patch("/:id/approve-payment", async (c) => {
 
   if (!updated) return c.json({ error: "Order not found" }, 404);
 
-  const BOT_TOKEN = process.env.BOT_TOKEN;
-  if (BOT_TOKEN && updated.userId) {
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: Number(updated.userId),
-        text: `✅ <b>پرداخت تأیید شد!</b>\n\nسفارش #${id} شما تأیید شد و در حال آماده‌سازی است.`,
-        parse_mode: "HTML",
-      }),
-    }).catch((e) => console.error("[NOTIFY] approve-payment:", e));
+  // Notify user about status change
+  const [user, product] = await Promise.all([
+    db.query.usersTable.findFirst({
+      where: eq(usersTable.id, updated.userId),
+      columns: {
+        id: true,
+        languageCode: true,
+        notifyOrders: true,
+      },
+    }),
+    db
+      .select({ name: localizedProductName })
+      .from(productsTable)
+      .where(eq(productsTable.id, updated.productId))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
+
+  if (user?.id && user.notifyOrders !== false) {
+    await notifyUserAboutOrderStatusChange({
+      chatId: user.id,
+      languageCode: user.languageCode,
+      productName: product?.name,
+      orderId: id,
+      status: "pending_admin",
+    });
   }
 
   await logAdminAction(c, {
@@ -605,18 +752,32 @@ ordersRouter.patch("/:id/reject-payment", async (c) => {
 
   if (!updated) return c.json({ error: "Order not found" }, 404);
 
-  const BOT_TOKEN = process.env.BOT_TOKEN;
-  if (BOT_TOKEN && updated.userId) {
-    const reasonText = reason ? `\n\nدلیل: ${reason}` : "";
-    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: Number(updated.userId),
-        text: `❌ <b>پرداخت تأیید نشد.</b>\n\nسفارش #${id} لغو شد.${reasonText}`,
-        parse_mode: "HTML",
-      }),
-    }).catch((e) => console.error("[NOTIFY] reject-payment:", e));
+  // Notify user about status change
+  const [user, product] = await Promise.all([
+    db.query.usersTable.findFirst({
+      where: eq(usersTable.id, updated.userId),
+      columns: {
+        id: true,
+        languageCode: true,
+        notifyOrders: true,
+      },
+    }),
+    db
+      .select({ name: localizedProductName })
+      .from(productsTable)
+      .where(eq(productsTable.id, updated.productId))
+      .limit(1)
+      .then((rows) => rows[0]),
+  ]);
+
+  if (user?.id && user.notifyOrders !== false) {
+    await notifyUserAboutOrderStatusChange({
+      chatId: user.id,
+      languageCode: user.languageCode,
+      productName: product?.name,
+      orderId: id,
+      status: "cancelled",
+    });
   }
 
   await logAdminAction(c, {

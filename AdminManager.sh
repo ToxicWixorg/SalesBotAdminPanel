@@ -125,11 +125,19 @@ install_panel() {
     info "Creating API .env..."
     cat > "$API_DIR/.env" << 'EOF'
 PORT=3000
-DATABASE_URL=postgresql://bot:991fa522db6ddb9935c7d9b1@localhost:5433/bot
-JWT_SECRET=change-this-to-a-random-secret
+
+DATABASE_URL=postgresql://bot:991fa522db6ddb9935c7d9b1@localhost:5432/bot
+
+BOT_USERNAME=
+
 BOT_TOKEN=
-# Origins جدا شده با کاما (دامنه یا IP ادمین پنل)
-ALLOWED_ORIGINS=http://localhost,http://YOUR_SERVER_IP
+
+JWT_SECRET=llkkjjuuhhyyggttffdd
+
+ALLOWED_ORIGINS=http://YOUR_SERVER_IP:8081,http://YOUR_SERVER_IP:8080
+
+ADMIN_PANEL_URL=http://YOUR_SERVER_IP:8081
+
 EOF
     err "Fill in API .env (Option 3) before starting."
   fi
@@ -211,8 +219,18 @@ edit_env() {
   echo -e "${C}└────────────────────────────────────┘${N}"
   read -r -p "Select: " e
   case $e in
-    1) nano "$API_DIR/.env" ;;
-    2) nano "$CLIENT_DIR/.env" ;;
+    1) nano "$API_DIR/.env"  
+    if cp "$API_DIR/.env" "$API_DIR/.env.production" 2>/dev/null; then
+        ok "Saved .env to .env.production"
+    else
+        err "Failed to copy .env to .env.production"
+    fi ;;
+    2) nano "$CLIENT_DIR/.env" 
+    if cp "$CLIENT_DIR/.env" "$CLIENT_DIR/.env.production" 2>/dev/null; then
+        ok "Saved .env to .env.production"
+    else
+        err "Failed to copy .env to .env.production"
+    fi ;;
     b) return ;;
   esac
 }

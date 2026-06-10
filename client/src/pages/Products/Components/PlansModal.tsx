@@ -278,7 +278,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                         <td className="p-2">{getLocalizedName(plan)}</td>
                         <td className="p-2">
                           {Number(plan.price).toLocaleString()}{" "}
-                          {t("common.toman")}
+                          {t("common.usdt")}
                         </td>
                         <td className="p-2">
                           {plan.duration
@@ -396,7 +396,7 @@ export default function PlansModal({ productId, productName, onClose }: Props) {
                   <hr className="border border-slate-600 my-4" />
 
                   <label className="flex flex-col gap-1 text-sm">
-                    <span className="text-white/60">{`${t("products.planModal.cost")} ( ${t("common.toman")} )`}</span>
+                    <span className="text-white/60">{`${t("products.planModal.cost")} ( ${t("common.usdt")} )`}</span>
                     <input
                       type="number"
                       className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white outline-none focus:border-white/40"

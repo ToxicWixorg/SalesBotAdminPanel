@@ -966,11 +966,50 @@ export const botSettingsTable = pgTable("bot_settings", {
   maintenanceMessage: text("maintenance_message"),
   referralEnabled: boolean("referral_enabled").default(true),
   shopEnabled: boolean("shop_enabled").default(true),
+  // 🎁 Purchase gift — sent once after an order is delivered
+  giftEnabled: boolean("gift_enabled").default(true),
+  giftTemplateFa: text("gift_template_fa"), // template with {item} and {orderId} placeholders
+  giftTemplateEn: text("gift_template_en"),
+  giftTemplateRu: text("gift_template_ru"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type BotSettings = typeof botSettingsTable.$inferSelect;
 export type InsertBotSettings = typeof botSettingsTable.$inferInsert;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🎁 GIFT ITEMS ━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Consumable pool of purchase gifts. One item is claimed (used) per delivered
+// order and never reused. An empty pool means no gift is sent.
+export const giftItemsTable = pgTable(
+  "gift_items",
+  {
+    id: serial("id").primaryKey(),
+    content: text("content").notNull(), // multi-line gift account info
+
+    // Status: available | used
+    status: text("status").notNull().default("available"),
+
+    usedAt: timestamp("used_at"),
+    usedByOrderId: integer("used_by_order_id").references(
+      () => ordersTable.id,
+      { onDelete: "set null" },
+    ),
+    usedByUserId: bigint("used_by_user_id", { mode: "number" }),
+
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => ({
+    statusIdx: index("gift_items_status_idx").on(table.status),
+    usedByOrderIdIdx: index("gift_items_used_by_order_id_idx").on(
+      table.usedByOrderId,
+    ),
+  }),
+);
+
+export type GiftItem = typeof giftItemsTable.$inferSelect;
+export type InsertGiftItem = typeof giftItemsTable.$inferInsert;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 💬 SESSION CHATS ━━━━━━━━━━━━━━━━━━━━━

@@ -24,6 +24,7 @@ import { broadcastRouter } from "./src/routes/broadcast.ts";
 import { settingsRouter } from "./src/routes/settings.ts";
 import { accountRouter } from "./src/routes/account.ts";
 import { inventoryRouter } from "./src/routes/inventory.ts";
+import { giftsRouter } from "./src/routes/gifts.ts";
 import { sessionChatsRouter } from "./src/routes/session-chats.ts";
 import { publicPaymentsRouter } from "./src/routes/public-payments.ts";
 
@@ -79,6 +80,7 @@ app.route("/api/admin/broadcast", broadcastRouter);
 app.route("/api/admin/settings", settingsRouter);
 app.route("/api/account", accountRouter);
 app.route("/api/admin/inventory", inventoryRouter);
+app.route("/api/admin/gifts", giftsRouter);
 
 // ─── Serve Frontend Static Files ────────────────────────────────────────────
 import { join } from "node:path";

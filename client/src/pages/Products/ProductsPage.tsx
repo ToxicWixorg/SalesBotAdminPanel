@@ -10,6 +10,7 @@ import PlansModal from "./Components/PlansModal";
 import NewProductModal from "./Components/NewProductModal";
 import ProductTable from "./Components/ProductTable";
 import CategoriesSection from "./Components/CategoriesSection";
+import GiftItemsSection from "./Components/GiftItemsSection";
 import { getLocalizedName } from "./utils/localizedFields";
 
 type Category = {
@@ -313,6 +314,8 @@ export default function ProductsPage() {
       )}
 
       <CategoriesSection />
+
+      <GiftItemsSection />
     </div>
   );
 }

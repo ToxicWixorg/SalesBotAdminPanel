@@ -28,6 +28,7 @@ import {
 } from "../db/schema.ts";
 import { requireAuth, requireSection } from "../middleware/auth.ts";
 import { logAdminAction } from "../helpers/logger.ts";
+import { sendGiftIfAvailable } from "../helpers/gift.ts";
 
 export const ordersRouter = new Hono();
 ordersRouter.use("*", requireAuth, requireSection("orders"));
@@ -450,6 +451,15 @@ ordersRouter.patch("/:id/status", async (c) => {
         status,
       });
     }
+
+    // 🎁 Send a one-time purchase gift when the order becomes completed.
+    if (status === "completed" && user?.id) {
+      await sendGiftIfAvailable({
+        chatId: user.id,
+        orderId: id,
+        languageCode: user.languageCode,
+      });
+    }
   }
 
   return c.json(updated);
@@ -506,6 +516,15 @@ ordersRouter.patch("/:id/deliver", async (c) => {
       productName: product?.name,
       orderId: id,
       status: "completed",
+    });
+  }
+
+  // 🎁 Send a one-time purchase gift after manual delivery.
+  if (user?.id) {
+    await sendGiftIfAvailable({
+      chatId: user.id,
+      orderId: id,
+      languageCode: user.languageCode,
     });
   }
 
